@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "created_at": "2026-02-16T12:00:00Z",
-  "updated_at": "2026-02-16T05:47:09.109518+00:00",
+  "updated_at": "2026-02-16T05:49:13.119984+00:00",
   "current_agent": "researcher",
   "agent_status": {
     "orchestrator": {
@@ -63,8 +63,8 @@
           "id": "item_004",
           "description": "Survey Lean 4/Mathlib coverage of required mathematical infrastructure",
           "acceptance_criteria": "Produce a document (lean_mathlib_survey.md) that: (a) catalogs which Mathlib modules cover compact metric spaces, probability measures, weak-* topology, Borel sigma-algebras, convexity in topological vector spaces, and semicontinuity; (b) determines whether Sion's minimax theorem or von Neumann's minimax theorem is formalized in Mathlib; (c) identifies which key lemmas for the proof (compactness of Delta(A) in weak-*, measurable selection, Bayes-optimality) have Mathlib counterparts; (d) lists all theorems that will need to go in a dependency file with sorry. Must include specific Mathlib module paths (e.g., Mathlib.Topology.Algebra.Module.WeakDual).",
-          "status": "pending",
-          "notes": null,
+          "status": "completed",
+          "notes": "Produced lean_mathlib_survey.md. Key gaps: Sion minimax and measurable selection not in Mathlib. Markov kernels, probability measures, Borel spaces well covered.",
           "error": null
         },
         {
@@ -268,7 +268,7 @@
   ],
   "summary": {
     "total_items": 25,
-    "completed": 3,
+    "completed": 4,
     "in_progress": 0,
     "failed": 0,
     "pending": 24
