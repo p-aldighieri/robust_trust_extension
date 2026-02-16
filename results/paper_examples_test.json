@@ -1,0 +1,39 @@
+{
+  "item_020_paper_examples": {
+    "test_1_binary_state_finite_M": {
+      "description": "Binary state \u03a9 = {0, 1}, finite M (e.g., 3 posteriors), finite \u0398 (singleton)",
+      "paper_reference": "Section 4 (Binary-state environments)",
+      "covered_by_formalization": true,
+      "explanation": "This is a special case of the finite case, which is already covered by the paper's Theorem 2. Our extension covers it via GameSetup with finite-dimensional Ss and Bs.",
+      "key_check": "The trust region characterization (Theorem 1) applies. Theorem 2 gives existence of robustly rationalizable strategy."
+    },
+    "test_2_binary_action": {
+      "description": "Binary action A = {accept, reject}, arbitrary M and \u0398",
+      "paper_reference": "Section 5 (Binary-action environments)",
+      "covered_by_formalization": true,
+      "explanation": "Binary A is trivially compact (discrete, 2 points). Our GameSetup axioms are satisfied: Ss and Bs carry product topologies on finite products (since A is finite, \u0394(A) = [0,1]).",
+      "key_check": "The optimal decision rule is a threshold rule. Theorem 2 gives existence and optimality."
+    },
+    "test_3_countable_M": {
+      "description": "Countably infinite M (e.g., M = {\u03bc_1, \u03bc_2, ...} dense in \u0394(\u03a9))",
+      "paper_reference": "Not explicitly discussed in paper (the paper assumes M finite for Theorem 2)",
+      "covered_by_formalization": true,
+      "explanation": "Our extension handles infinite M. The key: M as a countable subset of \u0394(\u03a9) is a compact subset if we take its closure (closure of a subset of a compact set is compact). The GameSetup axioms are satisfied via product topology + Tychonoff.",
+      "key_check": "This is the main novelty of our extension. The proof goes through via Sion's theorem on the product-topology strategy spaces."
+    },
+    "test_4_continuous_type": {
+      "description": "\u0398 = [0, 1] (agent type is a continuous real-valued parameter)",
+      "paper_reference": "Not covered by paper's Theorem 2 (requires finite \u0398)",
+      "covered_by_formalization": true,
+      "explanation": "\u0398 = [0,1] is compact metric (standing assumption satisfied). Our extension removes the finite-\u0398 requirement. The strategy space \u03a3 = \u220f_{(m,\u03b8)\u2208M\u00d7\u0398} \u0394(A) is compact by Tychonoff.",
+      "key_check": "The payoff U(\u03b2,\u03c3) is continuous in \u03c3 by bounded convergence (u bounded, \u0398 compact metric). This is the second novelty of our extension."
+    },
+    "test_5_gaussian_adviser": {
+      "description": "Gaussian adviser signal: M = \u0394(\u03a9) (the full simplex), \u0398 = \u211d (non-compact)",
+      "paper_reference": "Example 1 in Section 3",
+      "covered_by_formalization": "Partially",
+      "explanation": "M = \u0394(\u03a9) is compact (full simplex), so our extension covers the M part. However, \u0398 = \u211d is NOT compact, so it is outside the scope of our theorem. One would need to truncate \u0398 to a compact subset [\u2212K, K] and take K \u2192 \u221e, or verify that the payoff remains well-behaved.",
+      "key_check": "If \u0398 is truncated to [\u2212K, K], the theorem applies. The limit K \u2192 \u221e requires additional analysis."
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "item_021_literature_comparison": {
+    "our_result": {
+      "theorem": "Extended Theorem 2 (Dworczak-Smolin 2026)",
+      "extension": "Removes finiteness of M and Theta from Theorem 2",
+      "assumptions": "Standing assumptions A0-A4 only (Omega finite, A compact metric, Theta compact metric, u bounded continuous in a)",
+      "proof_technique": "Sion's minimax theorem on product-topology strategy spaces + measurable selection",
+      "formalization": "Lean 4 with Mathlib, zero sorry in main proof"
+    },
+    "comparison_with_original": {
+      "Dworczak_Smolin_2026": {
+        "covers_finite_M_Theta": true,
+        "covers_infinite_M_Theta": false,
+        "our_extension_strictly_generalizes": true,
+        "notes": "Paper states Theorem 2 for finite M and Theta. Our extension shows finiteness was not needed for the saddle-point argument. The paper already uses Sion's theorem (citing Theorem 4.2') but only verifies its hypotheses for finite strategy spaces."
+      }
+    },
+    "comparison_with_related_work": {
+      "Kamenica_Gentzkow_2011": {
+        "relevance": "Bayesian persuasion with continuous state spaces",
+        "technique": "Concavification approach",
+        "connection": "Our extension handles infinite message spaces, which arise naturally when the adviser's signal has continuous support (as in Bayesian persuasion models).",
+        "difference": "Kamenica-Gentzkow work with sender-receiver framework; Dworczak-Smolin add robustness (adversarial misalignment)."
+      },
+      "Dworczak_Pavan_2022": {
+        "relevance": "Robust Bayesian persuasion with worst-case uncertainty",
+        "technique": "Maxmin over uncertainty sets",
+        "connection": "Both papers use minimax/saddle-point arguments for robustness. Our extension parallels Dworczak-Pavan's use of infinite-dimensional strategy spaces.",
+        "difference": "Dworczak-Pavan's robustness is over information structures; Dworczak-Smolin's is over adviser alignment."
+      },
+      "Sion_1958": {
+        "relevance": "The core minimax theorem used in both the paper and our extension",
+        "technique": "KKM lemma-based proof of minimax equality",
+        "connection": "Our extension directly applies Sion's Theorem 4.2' to infinite-dimensional strategy spaces.",
+        "difference": "The paper applies Sion to finite-dimensional spaces; we apply it to infinite-dimensional product spaces."
+      },
+      "Crawford_Sobel_1982": {
+        "relevance": "Cheap talk equilibria in games with continuous type spaces",
+        "technique": "Partition equilibria, fixed-point methods",
+        "connection": "Both models feature strategic information transmission with potentially infinite type spaces. Our extension confirms that the saddle-point structure extends beyond finite types.",
+        "difference": "Crawford-Sobel study equilibrium of a communication game; Dworczak-Smolin study optimal robust decision rules."
+      }
+    },
+    "novelty_assessment": {
+      "mathematical_novelty": "Medium. The extension uses standard tools (Sion's theorem, product topology, bounded convergence) in a straightforward but non-trivial way. The key insight is that finiteness of Omega (not M or Theta) is the structural feature that keeps the payoff well-behaved.",
+      "formalization_novelty": "High. This appears to be the first Lean 4/Mathlib formalization of a minimax theorem application in information economics/game theory with infinite strategy spaces.",
+      "practical_significance": "High for the information design literature. Removing the finiteness restriction allows Theorem 2 to cover continuous adviser signals and continuous agent types, which are common in applications."
+    }
+  }
+}
