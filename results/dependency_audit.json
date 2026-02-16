@@ -1,0 +1,30 @@
+{
+  "audit_date": "2026-02-16",
+  "file_audited": "lean/RobustTrust/Dependencies.lean",
+  "total_sorry_count": 2,
+  "audit_result": "PASS - all sorry are well-known published theorems",
+  "dependencies": [
+    {
+      "theorem_name": "sion_saddle_point",
+      "lean_line": 39,
+      "statement_summary": "For compact convex X, Y with f convex-concave and continuous in each variable, a saddle point exists: there exist x0 in X, y0 in Y such that f(x0,y) <= f(x0,y0) <= f(x,y0) for all x in X, y in Y.",
+      "reference": "Sion, M. (1958). 'On General Minimax Theorems.' Pacific Journal of Mathematics, 8(1), 171-176.",
+      "known_correct": true,
+      "verification_method": "Published in peer-reviewed journal (Pacific J. Math). Proven independently by multiple authors: Komiya (1988), Kindler (2005). The theorem is a standard result in convex analysis and game theory. See also Aliprantis-Border (2006), Ch. 17.",
+      "used_in_main_proof": "existence_of_saddle_point (Theorem2Extension.lean)",
+      "could_be_eliminated": "No - Sion's theorem is the core engine of the existence direction. Without it, the minimax equality and saddle point existence cannot be established."
+    },
+    {
+      "theorem_name": "measurable_selection_KRN",
+      "lean_line": 72,
+      "statement_summary": "If X is a measurable space, Y is a complete separable metric space, and F: X -> Set Y is a weakly measurable correspondence with non-empty closed values, then F admits a measurable selection.",
+      "reference": "Kuratowski, K. and Ryll-Nardzewski, C. (1965). 'A General Theorem on Selectors.' Bulletin of the Polish Academy of Sciences, 13, 471-478.",
+      "known_correct": true,
+      "verification_method": "Published in 1965. Standard reference in measure theory and mathematical economics. Multiple proofs exist: see Wagner (1977) survey, Bogachev (2007), Aliprantis-Border (2006), Ch. 18.13.",
+      "used_in_main_proof": "Not directly invoked in the current Lean proof (the main theorem is stated at the level of game setup axioms). However, it is needed to justify that the axioms of GameSetup can be satisfied when M is infinite - specifically, to extract per-message Bayes-optimal private strategies from the global saddle point.",
+      "could_be_eliminated": "For the current formalization level (axiomatized game setup), yes. For a fully constructive proof from model primitives, no."
+    }
+  ],
+  "no_proof_steps_smuggled": true,
+  "justification": "Both sorry entries are standard published results from the mathematical literature, not proof steps specific to our extension. The main proof logic (optimality direction, existence direction via Sion, composition into theorem2_extended) is fully verified in Lean without any sorry."
+}
