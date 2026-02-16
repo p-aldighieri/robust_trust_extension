@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "created_at": "2026-02-16T12:00:00Z",
-  "updated_at": "2026-02-16T06:06:37.487232+00:00",
+  "updated_at": "2026-02-16T06:07:22.577462+00:00",
   "current_agent": "researcher",
   "agent_status": {
     "orchestrator": {
@@ -196,15 +196,15 @@
           "id": "item_018",
           "description": "Verify full Lean 4 project compiles end-to-end",
           "acceptance_criteria": "Running `lake build` in the lean/ directory succeeds with zero errors. All .lean files compile. The main result file (Theorem2Extension.lean) contains zero sorrys. The Dependencies.lean file contains only sorry'd statements for well-known published theorems, each with a citation comment. A CI-reproducible build log (lean/BUILD_LOG.txt) is saved.",
-          "status": "pending",
-          "notes": null,
+          "status": "completed",
+          "notes": "Full build succeeds. 0 sorry in main theorem file. 2 sorry in Dependencies.lean (well-known published results).",
           "error": null
         },
         {
           "id": "item_019",
           "description": "Audit the theorem dependency file for correctness",
           "acceptance_criteria": "A review document (proofs/dependency_audit.md) that for each sorry in Dependencies.lean: (a) states the theorem and its precise published reference; (b) confirms the statement matches the published version (not a weakened or altered form); (c) confirms the theorem is not used to smuggle proof steps \u2014 i.e., the sorry'd statement is a standalone known result, not a lemma specific to this proof. Must be signed off with a declaration: 'All sorry'd theorems are well-known published results faithfully transcribed.'",
-          "status": "pending",
+          "status": "in_progress",
           "notes": null,
           "error": null
         },
@@ -268,8 +268,8 @@
   ],
   "summary": {
     "total_items": 25,
-    "completed": 17,
-    "in_progress": 0,
+    "completed": 18,
+    "in_progress": 1,
     "failed": 0,
     "pending": 8
   }

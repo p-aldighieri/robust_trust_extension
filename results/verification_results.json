@@ -1,0 +1,44 @@
+{
+  "item_018_verification": {
+    "build_status": "success",
+    "total_jobs": 2556,
+    "files_compiled": [
+      "RobustTrust/Basic.lean",
+      "RobustTrust/Model.lean",
+      "RobustTrust/Dependencies.lean",
+      "RobustTrust/Theorem2Extension.lean",
+      "RobustTrust.lean"
+    ],
+    "sorry_audit": {
+      "Theorem2Extension.lean": 0,
+      "Model.lean": 0,
+      "Basic.lean": 0,
+      "Dependencies.lean": 2
+    },
+    "sorry_details": [
+      {
+        "file": "Dependencies.lean",
+        "line": 58,
+        "theorem": "sion_saddle_point",
+        "citation": "Sion (1958), Theorem 4.2'",
+        "justification": "Well-known published minimax theorem, not yet in Mathlib"
+      },
+      {
+        "file": "Dependencies.lean",
+        "line": 84,
+        "theorem": "measurable_selection_KRN",
+        "citation": "Kuratowski-Ryll-Nardzewski (1965)",
+        "justification": "Well-known published selection theorem, not yet in Mathlib"
+      }
+    ],
+    "main_theorems_verified": [
+      "saddle_point_inequality",
+      "optimality_of_rr",
+      "existence_of_saddle_point",
+      "existence_direction",
+      "theorem2_extended"
+    ],
+    "lean_version": "v4.28.0-rc1",
+    "mathlib_version": "commit 3bbc5c706c3a2ef00ded08af13c3f36be6e58a65"
+  }
+}
