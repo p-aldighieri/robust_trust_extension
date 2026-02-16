@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "created_at": "2026-02-16T12:00:00Z",
-  "updated_at": "2026-02-16T06:09:45.065426+00:00",
+  "updated_at": "2026-02-16T06:09:50.816649+00:00",
   "current_agent": "researcher",
   "agent_status": {
     "orchestrator": {
@@ -235,16 +235,16 @@
           "id": "item_022",
           "description": "Write the main research report synthesizing all results",
           "acceptance_criteria": "A document (REPORT.md) in the repo root that: (a) states the problem (extending Theorem 2 to infinite M, Theta); (b) summarizes the approach and key mathematical ideas; (c) presents the main result (extended theorem statement or counterexample); (d) outlines the proof structure with cross-references to the detailed proof documents in proofs/; (e) discusses limitations and open questions; (f) includes a complete bibliography referencing sources.bib. Must be at least 2000 words and written at a level accessible to an economics PhD student familiar with mechanism design.",
-          "status": "pending",
-          "notes": null,
+          "status": "completed",
+          "notes": "REPORT.md written with 10 sections covering problem, result, proof outline, insights, formalization, examples, comparison, limitations, and bibliography. Cross-references proofs/main_proof.md and lean/ARCHITECTURE.md.",
           "error": null
         },
         {
           "id": "item_023",
           "description": "Document the Lean 4 formalization architecture",
           "acceptance_criteria": "A document (lean/ARCHITECTURE.md) that: (a) describes the module dependency graph of the Lean files; (b) explains the design decisions (e.g., how strategy spaces are represented, which Mathlib abstractions are used); (c) lists all imports from Mathlib with brief explanations of what they provide; (d) explains how to build and verify the project from scratch. Must be sufficient for a Lean-literate mathematician to navigate and verify the formalization independently.",
-          "status": "pending",
-          "notes": null,
+          "status": "completed",
+          "notes": "lean/ARCHITECTURE.md written with module dependency graph, design decisions, Mathlib imports table, build instructions, and mapping from math to Lean.",
           "error": null
         },
         {
@@ -269,7 +269,7 @@
   "summary": {
     "total_items": 25,
     "completed": 21,
-    "in_progress": 0,
+    "in_progress": 1,
     "failed": 0,
     "pending": 4
   }
