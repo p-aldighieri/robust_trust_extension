@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Robust Trust Conversation Log",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "role",
+    "chat_url",
+    "packet",
+    "response",
+    "decision"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "chat_url": {
+      "type": "string"
+    },
+    "packet": {
+      "type": "object",
+      "required": [
+        "packet_json",
+        "packet_markdown"
+      ],
+      "properties": {
+        "packet_json": {
+          "type": "string"
+        },
+        "packet_markdown": {
+          "type": "string"
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "durable_project_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "temporary_attachments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "local_context_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": [
+        "raw_text"
+      ],
+      "properties": {
+        "raw_text": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "next_step"
+      ],
+      "properties": {
+        "next_step": {
+          "type": "string"
+        },
+        "next_role": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "context_updates": {
+      "type": "object",
+      "properties": {
+        "promote_to_durable_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "keep_temporary": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "remove_from_durable_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
