@@ -1,0 +1,560 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black, urlcolor=blue!50!black}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}
+\renewcommand{\theassumption}{A\arabic{assumption}}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\Om}{\Omega}
+\newcommand{\Th}{\Theta}
+\newcommand{\Si}{\Sigma}
+\newcommand{\suppset}{\operatorname{supp}}
+\newcommand{\essinf}{\operatorname*{essinf}}
+\newcommand{\essup}{\operatorname*{esssup}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\E}{\mathbb{E}}
+
+\title{
+  Extending Theorem~2 of \emph{Robust Trust} to infinite $M$ and $\Theta$:\\
+  \large An exposition of what we proved, what is tight, and what remains open
+}
+\author{Pedro Aldighieri}
+\date{6 May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note reports on a proof, drafted over the past two days, of a
+two-tier conditional infinite-dimensional extension of Theorem~2
+(``Robustly Rationalizable Solution'') from Dworczak \& Smolin's
+\emph{Robust Trust} (2026). Existence of an optimal value-securing
+agent strategy~$\sigma^*$ is established under the paper's standing
+hypotheses plus one new endogenous regularity condition (\textbf{A5-thick}).
+Adversary attainment $U(\beta^*,\sigma^*) = U^*$ requires one more
+structural condition (\textbf{A8c-attain}); full Definition~2 robust
+rationalizability requires a third, posterior-calibrated transport
+condition (\textbf{TRE-gen-Hall}). The three added hypotheses are
+each tight \emph{for the proof route taken here}: a perfect-revelation
+example obstructs the Lusin-smoothing mechanism behind A5-thick; a
+row-level upward-spike example obstructs adversary attainment without
+A8c-attain; and a ternary non-radial witness gives an explicit Hall
+violation showing TRE-gen-Hall is not derivable from the weaker
+hypotheses. None of these is a counterexample to the original finite
+Theorem~2; they are obstructions to specific steps in the
+infinite-extension argument. The route follows Phil Reny's
+restricted-game-plus-Lusin-lift suggestion, with detours the original
+sketch does not spell out. Below is the structure of the argument
+and the boundaries.
+\end{abstract}
+
+\section{The setting and the question}\label{sec:setting}
+
+We use the notation of \emph{Robust Trust}. Thus $\Om$ is finite with
+full-support prior~$\mu_0$; $s\in\Delta(\Om)$ has state-conditional law
+$\pi(\cdot\mid\omega)$ and unconditional law
+$\tau = \sum_\omega \mu_0(\omega)\pi(\cdot\mid\omega)$;
+$M = \suppset(\tau)$; $\theta\in\Th$ (compact metric) is drawn from
+$f(\cdot\mid\omega)$, independently of $s$ conditional on $\omega$;
+$A$ is compact metric; and $u(a,\omega,\theta)$ is bounded and
+continuous in~$a$. Let $\Si$ denote the agent's measurable strategies
+$\sigma:M\times\Th\to\Delta(A)$ and $B$ the misaligned adviser's
+measurable kernels $\beta:M\to\Delta(M)$. With probability $\alpha$ the
+adviser is aligned and reports $s$ truthfully; with probability
+$1-\alpha$ the adviser is misaligned.
+
+The agent's robust objective is
+\begin{equation}\label{eq:U}
+  U(\sigma) \;=\; \alpha\,\E_{\mathrm{id},\sigma}[u] + (1-\alpha)\,\inf_{\beta\in B}\E_{\beta,\sigma}[u],
+  \qquad U^* \;=\; \sup_{\sigma\in\Si} U(\sigma),
+\end{equation}
+and Definition~2 (\emph{robust rationalizability}) asks for an agent
+strategy $\sigma^*$ together with an adversarial $\beta^*$ such that,
+at every on-path message~$m$, the agent's prescribed continuation is
+Bayes-optimal under the posterior $P_{\beta^*}(\cdot\mid m)$.
+
+The paper's Theorem~2 establishes existence of such a $(\sigma^*,\beta^*)$
+under the additional assumption that $M$ and $\Th$ are \emph{finite},
+via a finite Sion saddle. The paper itself flags the difficulty of
+extending the saddle argument to infinite cheap-talk-like spaces. The
+question addressed here is whether the existence direction of
+Theorem~2 can be extended when $M$ and~$\Th$ are infinite.
+
+\section{Main theorem (two tiers, with three added hypotheses)}
+
+The standing hypotheses of \emph{Robust Trust} are kept verbatim
+($\Om$ finite, $\mu_0$ full support, $A,\Th$ compact metric, $u$
+bounded continuous in $a$, conditional independence of $s,\theta$ given
+$\omega$, all measurability Borel). Three additional hypotheses enter
+the extension. Section~\ref{sec:tight} explains the obstruction
+attached to each.
+
+\paragraph{Assumption A5-thick (endogenous Lusin-thickness).}
+There exist compact $K_1\subseteq K_2\subseteq\cdots\subseteq M$ with
+$K^* := \bigcup_n K_n$ such that $\pi(K^*\mid\omega)=1$ for every
+$\omega$; the Branch-A maximizer's representative $\hat\sigma^*$ is
+continuous on each~$K_n$ in the Balder stable private-strategy
+topology; and every relative open in~$K_n$ has positive
+$\pi(\cdot\mid\omega)$-mass for every~$\omega$.
+
+\paragraph{Assumption A8c-attain (rowwise argmin attainment).}
+For $\tau$-a.e.\ $s$, the rowwise argmin
+$D(s) := \argmin_{m\in M}\ell_{\sigma^*}(m,s)$ is nonempty, where
+$\ell_{\sigma^*}(m,s) := \sum_\omega s(\omega)\,p_\omega(m)$ with
+$p_\omega(m) := \int_{\Th}\!\!\int_A u(a,\omega,\theta)\,\hat\sigma^*(m,\theta)(da)\,f(d\theta\mid\omega)$,
+and $s\mapsto D(s)$ admits a Borel measurable selector~$m^*$.
+
+\paragraph{Assumption TRE-gen-Hall (calibrated worst-message transport).}
+The Branch-A maximizer $\sigma^*$ has trust-region structure: closed
+convex $T\subseteq\Delta(\Om)$, continuous Bregman projection $P_T$,
+$\hat\sigma^*(m)$ Bayes-optimal at $P_T(m)$, with $m^*$ the selector
+from A8c-attain (now also interpreted as the single-valued monotone
+worst-message map). Moreover the joint coupling
+$\gamma_\alpha := \alpha\,(\mathrm{id},\mathrm{id})_\#\tau + (1-\alpha)\,(\mathrm{id},m^*)_\#\tau$
+on $M\times M$, disintegrated along its second coordinate to give
+$\kappa(\cdot\mid m)$, satisfies the posterior-calibration condition
+$P_{\gamma_\alpha}(\cdot\mid m)\in C(m)$ for $q$-a.e.~$m$, where
+$q := (\gamma_\alpha)_2$ and
+$C(m) := \{\mu\in\Delta(\Om) : \hat\sigma^*(m)\in\argmax_{\hat\sigma'} U(\hat\sigma',\mu)\}$
+(the set of beliefs at which $\hat\sigma^*(m)$ is Bayes-optimal).
+
+Equivalently (support-function form): for every measurable $E\subseteq M$
+and every continuous affine $\phi:\Delta(\Om)\to\R$,
+\[
+  \alpha\!\int_E\!\phi(m)\,\tau(dm) + (1-\alpha)\!\int_{(m^*)^{-1}(E)}\!\!\phi(s)\,\tau(ds) \;\le\; \int_E h_{C(m)}(\phi)\,q(dm),
+\]
+where $h_{C(m)}(\phi) := \sup_{\mu\in C(m)}\phi(\mu)$. (Equivalence of
+the two forms uses finite-dimensional separation in $\Delta(\Om)$ and
+a countable separating family of affine~$\phi$; under those, the
+integrated inequality over all measurable~$E$ is equivalent to
+pointwise membership $P_{\gamma_\alpha}(\cdot\mid m)\in C(m)$ for
+$q$-a.e.~$m$. The convex hypothesis on~$T$ is stronger than the
+\emph{connected} trust region delivered by Theorem~1 of \emph{Robust
+Trust}; promoting connectedness to convexity is part of the
+TRE-gen-Hall content.)
+
+\paragraph{Theorem (Tier 1: optimal $\sigma^*$ and adversarial $\beta^*$).}
+Suppose the standing hypotheses hold, the restricted-game maximizer
+admits a representative satisfying \textnormal{A5-thick}, and
+\textnormal{A8c-attain} holds at that representative. Then there
+exist $\sigma^*\in\Si$ and $\beta^*\in B$ such that
+\[
+  U(\sigma^*) \;=\; U^* \;=\; \sup_{\sigma\in\Si}U(\sigma), \qquad U(\beta^*,\sigma^*) \;=\; \inf_{\beta\in B}U(\beta,\sigma^*) \;=\; U^*.
+\]
+
+\paragraph{Theorem (Tier 2: robust rationalizability).}
+Under the Tier 1 hypotheses plus \textnormal{TRE-gen-Hall}, the pair
+$(\sigma^*,\beta^*)$ can be chosen so that, additionally, when
+$\alpha>0$,
+\[
+  \hat\sigma^*(m) \;\in\; \argmax_{\hat\sigma'} U(\hat\sigma',P_{\beta^*}(\cdot\mid m)) \qquad \text{for $\tau$-a.e.\ $m\in M$.}
+\]
+Hence $\sigma^*$ is robustly rationalizable in the paper's
+a.e./on-path sense.
+
+\section{Proof strategy in one paragraph}\label{sec:strategy}
+
+The proof follows Phil Reny's two-stage route. First restrict the
+misaligned adviser to $\tau$-dominated kernels
+$\beta_\varphi(dm\mid s) = \varphi(m\mid s)\tau(dm)$, with $\varphi$ in
+the convex set $F$ of jointly measurable normalized densities. On this
+restricted game, Balder's constant-marginal continuity~\cite{Balder1988}
+makes $U_F(\sigma,\varphi) := U(\beta_\varphi,\sigma)$ continuous
+in~$\sigma$ under the Balder weak topology, and~$\Si$ is compact after
+the usual Balder quotient. Mertens's asymmetric minmax
+theorem~\cite{Mertens1986} then gives a restricted-game maximizer
+$\sigma^*$. Second, A5-thick lets us use Lusin regularization to
+smooth any unrestricted $\beta\in B$ into a $\tau$-dominated
+$\varphi_\eps\in F$ with only $\eps$-loss at $\sigma^*$. Hence the
+restricted maximizer also secures the unrestricted value.
+
+Branch A gives value security, not a full saddle. Adversary attainment
+needs A8c-attain. Per-message Bayes-optimality needs TRE-gen-Hall,
+because Branch A plus attainment does not imply the upper saddle
+inequality that finite Sion gives in the paper.
+
+\section{Branch A: existence of the optimal $\sigma^*$ (under A5-thick)}
+
+\subsection{The stage-1 topology}
+
+Set $X := M\times\Th$, $\bar f := \sum_\omega\mu_0(\omega)f(\cdot\mid\omega)$,
+$\lambda := \tau\otimes\bar f$. Endow $\Si$ with the Balder weak
+topology $T_\lambda$: $\sigma_n\to\sigma$ iff
+$\int g\,d(\sigma_n\lambda) \to \int g\,d(\sigma\lambda)$ for every
+Carathéodory test $g(x,a)$ measurable in $x$, continuous in $a$,
+$L^1(\lambda)$-dominated. Working modulo $\lambda$-a.e.\ equality
+(the Balder quotient) makes $\Si$ a compact convex Hausdorff locally
+convex space \cite[\S2 Thm.~2.3(a)]{Balder1988}.
+
+\begin{lemma}[L1 --- constant-marginal continuity]\label{lem:L1}
+For every $\varphi\in F$, the map $\sigma\mapsto U_F(\sigma,\varphi)$ is
+$T_\lambda$-continuous.
+\end{lemma}
+
+\begin{proof}[Sketch]
+Decompose the payoff into the aligned and the misaligned terms; both
+integrate Carathéodory tests against \emph{fixed} marginals
+($\pi(\cdot\mid\omega)\otimes f(\cdot\mid\omega)$ and
+$\tau\otimes f(\cdot\mid\omega)$ respectively). Apply Balder
+\cite[Thm.~2.2, p.~268]{Balder1988}. The misaligned term's
+$L^1$-domination uses
+$r_\omega^\varphi(m) := \int_M\varphi(m\mid s)\,\pi(ds\mid\omega)\in L^1(\tau)$,
+which holds by $\pi(\cdot\mid\omega)\ll\tau$ (automatic from full-support
+$\mu_0$) and Tonelli; no boundedness restriction on $\varphi$ is needed.
+\end{proof}
+
+\begin{lemma}[L2 --- compactness of $\Si$]\label{lem:L2}
+$(\Si, T_\lambda)$ is compact convex; every simultaneous
+$\omega$-marginal limit is induced by a single common kernel.
+\end{lemma}
+
+\begin{proof}[Sketch]
+Compactness via Balder \cite[\S2 Thm.~2.3(a)]{Balder1988}, applied with
+finite base $\lambda$ and compact metric target $A$. Common-kernel
+extraction: form the finite mixture $Q := \sum_\omega\mu_0(\omega)Q_\omega^\tau$
+of any $\omega$-indexed limits, disintegrate on the standard Borel
+space $X\times A$, and recover each $\omega$-indexed marginal via
+Radon-Nikodym multiplications by the densities
+$d\lambda_\omega^\tau/d\lambda$ and $d\pi(\cdot\mid\omega)/d\tau$
+(directions: small over large; both bounded by $\mu_0(\omega)^{-1}$).
+\end{proof}
+
+\subsection{Restricted-game maximin and Lusin lift}
+
+\begin{lemma}[L3 + L4 --- Mertens minmax + restricted maximizer]\label{lem:L3L4}
+With $\Si$ compact Hausdorff in $T_\lambda$, $F$ convex with no
+topology, and $U_F$ continuous in~$\sigma$ (Lemma~\ref{lem:L1}) and
+bounded by~$\|u\|_\infty$, Mertens's Corollary~B
+\cite[\S2, p.~238]{Mertens1986} gives
+$\max_\sigma\inf_F U_F = \inf_F\max_\sigma U_F = V^*$. Both
+mixed-strategy sides collapse to pure strategies by affineness:
+finite-support $F$-mixtures barycenter back into~$F$, and
+agent-side Borel mixtures barycenter back into the compact convex
+$\Si$. Upper-semicontinuity of $V(\sigma) := \inf_\varphi U_F(\sigma,\varphi)$
+plus compactness of~$\Si$ deliver a maximizer $\sigma^*\in\Si$.
+\end{lemma}
+
+\begin{lemma}[L5 --- Lusin-thick compacts (A5-thick)]\label{lem:L5}
+Under A5-thick, the compact sequence $K_n\uparrow K^*$ exists with the
+three required properties: full $\pi(\cdot\mid\omega)$-measure of $K^*$,
+Balder continuity of $\hat\sigma^*$ on each~$K_n$, and support-thickness
+in~$K_n$.
+\end{lemma}
+
+\begin{lemma}[L6 --- Lusin lift]\label{lem:L6}
+For every $\beta\in B$ and every $\eps>0$, there exists
+$\varphi_\eps\in F$ with
+$U(\beta,\sigma^*) \ge U_F(\sigma^*,\varphi_\eps) - \eps$.
+\end{lemma}
+
+\begin{proof}[Sketch]
+Fix a reference point $m_0\in K^*$ once and for all (it is the
+``replacement'' message used by the off-core L5 modification of
+$\sigma^*$). Build a smoothing kernel $q_\eps(z\mid y)$ shell-by-shell:
+for $y\in D_n := K_n\setminus K_{n-1}$, take $q_\eps(\cdot\mid y)$
+supported on $K_n\cap B(y,\rho_n)$ with positive $\tau$-mass denominator
+from the support-thickness clause of A5-thick; for $y\notin K^*$, set
+$q_\eps(\cdot\mid y)$ to the analogous neighborhood kernel at the
+fixed $m_0$, so off-core target messages are routed back into $K^*$
+through~$m_0$. Compose with~$\beta$ via Tonelli to obtain
+$\varphi_\eps(z\mid s) := \int q_\eps(z\mid y)\,\beta(dy\mid s)$.
+Pointwise uniform continuity of $p_\omega$ on each~$K_n$ (from
+$\hat\sigma^*$-continuity, the third clause of A5-thick) gives
+$|U(\beta,\sigma^*) - U_F(\sigma^*,\varphi_\eps)| \le (1-\alpha)\eps$;
+the off-$K^*$ contribution is controlled because the L5 modification
+makes $p_\omega(y) = p_\omega(m_0)$ for $y\notin K^*$.
+\end{proof}
+
+\subsection{Branch A capstone}
+
+\begin{theorem}[Branch A]\label{thm:branchA}
+Under the standing hypotheses of \emph{Robust Trust} and
+Assumption~A5-thick, there exists $\sigma^*\in\Si$ with $U(\sigma^*) = U^* = V^*$
+and $\inf_{\beta\in B}U(\beta,\sigma^*) \ge U^*$.
+\end{theorem}
+
+\begin{proof}
+$V^* \ge U^*$ since $F\hookrightarrow B$ via $\beta_\varphi$ (the inf
+over a smaller set is larger pointwise in $\sigma$). Lemma~\ref{lem:L6}
+gives $\inf_B U(\cdot,\sigma^*) \ge V^*$, so $U^* \ge V^*$. Combining,
+$V^* = U^* = U(\sigma^*) = \inf_B U(\beta,\sigma^*)$.
+\end{proof}
+
+This is genuinely the half of Theorem~2 that Phil Reny's sketch was
+aiming at: \emph{existence of an optimal value-securing agent strategy}.
+The remaining half --- adversary attainment plus per-message
+Bayes-optimality --- is taken up in Branch~B.
+
+\section{Branch B: adversary attainment and Bayes-optimality}
+
+\subsection{The dual value formula and rowwise contact}
+
+\begin{lemma}[L8a --- restricted dual value]\label{lem:L8a}
+$\inf_F U_F(\sigma^*,\varphi) \;=\; \mathrm{const} + (1-\alpha)\!\int_M e(s)\,\tau(ds)$
+where $e(s) := \essinf_m \ell_{\sigma^*}(m,s)$.
+\end{lemma}
+
+The lower bound is row-by-row pointwise; the upper bound is realized
+by $\varphi_n(m\mid s) := \mathbf 1_{A_n(s)}(m)/\tau(A_n(s))$ for
+$A_n(s) := \{m:\ell(m,s)\le e(s)+1/n\}$.
+
+\begin{lemma}[L8c-Half-1 --- pointwise inf $=$ essential inf $\tau$-a.e.]\label{lem:L8cH1}
+$\inf_m\ell(m,s) = \essinf_m\ell(m,s)$ for $\tau$-a.e.~$s$.
+\end{lemma}
+
+\begin{proof}[Sketch]
+Let $a(s) := \inf_m\ell(m,s)$ and $e(s) := \essinf_m\ell(m,s)$, so
+$a\le e$ pointwise. Jankov--von Neumann selection (with the standard
+$\tau$-a.e.\ Borelization) gives a measurable $d_n:M\to M$ with
+$\ell(d_n(s),s)\le a(s)+1/n$, hence
+$\inf_B U(\cdot,\sigma^*) - \mathrm{const} = (1-\alpha)\int a\,d\tau$.
+Lemma~\ref{lem:L8a} plus Lemma~\ref{lem:L6} (bottom-density: $\inf_B = \inf_F$)
+give $\int a\,d\tau = \int e\,d\tau$. Combined with $a\le e$:
+$a = e$ $\tau$-a.e.
+\end{proof}
+
+\begin{lemma}[L8 --- $\beta^*$ rowwise adversarial under A8c-attain]\label{lem:L8}
+Under A8c-attain, the Borel selector $m^*$ exists, and
+$\beta^*(dm\mid s) := \delta_{m^*(s)}(dm)$ satisfies
+$U(\beta^*,\sigma^*) = U^*$.
+\end{lemma}
+
+This closes Tier~1. Note that the natural sufficient routes to
+A8c-attain are primitive: (P1) the agent's Bayes-action correspondence
+is upper hemicontinuous with closed compact values, (P2) the
+trust-region projection is continuous and $\hat\sigma^*$ plays the
+Bayes-action at $P_T(m)$, or (P3) $\sigma^*$ admits a closed-graph
+representative. Each of (P1)--(P3) implies A8c-attain via the standard
+measurable maximum theorem \cite[Thm.~18.19]{AliprantisBorder2006}.
+
+\subsection{The L9 saddle gap and the calibrated transport}
+
+\textbf{Branch~A plus Lemma~\ref{lem:L8} do not produce a saddle.}
+What is delivered is the lower saddle inequality $U(\beta^*,\sigma^*) = \inf_\beta U(\beta,\sigma^*) = U^*$;
+what is \emph{not} delivered is the upper saddle inequality
+$U(\beta^*,\sigma) \le U(\beta^*,\sigma^*)$ for every $\sigma$. The
+standard route to per-message Bayes-optimality (the third clause of
+Definition~2) goes through the upper saddle: if $\hat\sigma^*$ failed
+Bayes-optimality on a positive-measure set of messages, a Kuratowski--Ryll-Nardzewski
+selection of an improving private strategy would beat $\hat\sigma^*$
+against $\beta^*$, contradicting the upper saddle. Without the upper
+saddle the contradiction never closes. Phil's email itself acknowledges
+this: ``\emph{If correct, this establishes the existence of an optimal
+strategy for player~1, but not for player~2.}''
+
+The paper's finite proof gets the upper saddle for free, via Sion on
+finite-dimensional simplex products. We substitute it with TRE-gen-Hall.
+
+\begin{lemma}[L9b --- calibrated transport gives Bayes-optimality]\label{lem:L9b}
+Under the Tier~1 hypotheses plus Assumption
+TRE-gen-Hall, the $\beta^*$ from Lemma~\ref{lem:L8} satisfies
+$P_{\gamma_\alpha}(\cdot\mid m)\in C(m)$ for $q$-a.e.~$m$, hence
+\[
+  \hat\sigma^*(m)\in\argmax_{\hat\sigma'} U(\hat\sigma',P_{\beta^*}(\cdot\mid m))
+  \qquad \text{for $q$-a.e.\ $m$, and (since $q\ge\alpha\tau$ when $\alpha>0$) for $\tau$-a.e.\ $m$.}
+\]
+\end{lemma}
+
+The proof is the substantive content of TRE-gen-Hall: posterior
+calibration on $C(m)$ is exactly the per-message Bayes-optimality
+condition, and the displayed $\gamma_\alpha$ is the explicit
+construction. For $\Om$ binary, the posterior-calibration condition
+reduces to a single 1-dimensional mass-balance equation whose unique
+solution is the quantile transport in Appendix~A.6 of \emph{Robust
+Trust}; the analog generalizes to ternary radial cases via Appendix~A.10
+(per-direction quantile transports plus radial Bregman monotonicity).
+
+\section{Why each added hypothesis is needed (and tight)}\label{sec:tight}
+
+We now spell out why none of the three added hypotheses can be
+dropped in the conclusions as stated.
+
+\subsection{A5-thick is tight: perfect revelation}
+
+If $\Om = \{0,1\}$ and the posteriors are perfectly revealing
+($\pi(\cdot\mid\omega) = \delta_{\delta_\omega}$), then $M = \{\delta_0,\delta_1\}$
+is two points and any compact $K^*$ with full $\pi(\cdot\mid\omega)$-measure
+for both~$\omega$ must contain both points. The relative open
+$\{\delta_0\}$ inside $K^* = M$ has zero $\pi(\cdot\mid 1)$-mass, so
+the support-thickness clause cannot hold on any full-measure compact
+core. Lemma~\ref{lem:L5} fails and the smoothing kernel of
+Lemma~\ref{lem:L6} cannot be built. This is an obstruction to the
+\emph{Lusin smoothing mechanism} we use, not a counterexample to
+Theorem~2 itself: in the perfect-revelation finite case the original
+finite Theorem~2 of \emph{Robust Trust} still applies. The point is
+only that the infinite-extension proof presented here needs an
+endogenous thickness condition like A5-thick.
+
+\subsection{A8c-attain is tight: the upward-spike row obstruction (Q1)}
+
+Consider the row payoff $g(m) = m$ for $m\in(0,1]$ and $g(0) = 1$. Then
+$\inf_m g(m) = 0 = \essinf_m g(m)$ (with $\tau$ Lebesgue) but the
+argmin set $\{m:g(m)=0\}$ is empty: a sequence $m_n\to 0$ achieves
+$g(m_n)\to 0$ but $g(0) = 1$. No probability measure on $[0,1]$
+attains the value $0$: if the measure gives no mass to $\{0\}$, then
+it is supported on $(0,1]$, where $g(m) = m > 0$, hence the integral
+is strictly positive; if it gives positive mass to $\{0\}$, the atom
+contributes $g(0) = 1$ to the integral.
+
+This is the standard attainment obstruction for non-l.s.c.\ rowwise
+objectives: without some rowwise argmin condition, exact Borel-kernel
+attainment is not available. We have not certified a fully
+\emph{Robust-Trust-compliant} primitive realization in which this row
+arises as $\ell_{\sigma^*}$ for the Branch-A maximizer, so what is
+established here is a row-level obstruction; no positive Borel-kernel
+attainment theorem is known for the Branch-A row payoff in this
+regime either. The Robust-Trust-compliant primitive realization where this row
+arises as $\ell_{\sigma^*}$ for the Branch-A maximizer is more delicate
+to certify (the strategy has to genuinely play badly at a single
+$\tau$-null message), but no positive attainment theorem exists either.
+
+The honest endpoint is: Tier~1 must keep A8c-attain (sufficient via
+any of the primitive routes (P1)--(P3) above), or the conclusion must
+be weakened to the unconditional \emph{$\eps$-approximate adversary}
+statement
+\[
+  \forall \eps > 0,\ \exists\beta_\eps\in B :\ U(\beta_\eps,\sigma^*) \le U^* + \eps,
+\]
+which holds free of A8c-attain by the Branch-A bottom-density alone.
+
+\subsection{TRE-gen-Hall is tight: a ternary non-radial separating witness (Q2)}
+
+Take $\Om = \{0,1,2\}$, $A = \{a_0,a_1,a_2\}$ discrete with
+$u(a_\omega,\omega) = 1$, $u(a_i,\omega) = -1$ for $i\ne\omega$,
+prior $\mu_0 = (1/3,1/3,1/3)$, atomless full-support $\tau$ on
+$\Delta(\Om)$, and a non-radial trust region
+$T := \{\mu\in\Delta(\Om) : \mu(0)\le 0.4\}$, with $\hat\sigma^*(m)$
+the plurality vertex of $P_T(m)$. Pick the boundary point
+$t_0 := (0.4,\,0.3,\,0.3)$, and let
+$E := \{t_0\}$ (formally, treat $E$ as a representative point of an
+arbitrarily small atomless surface neighborhood of $t_0$ in
+$\partial T$ — equivalently, a one-point fiber along the normal
+direction). Take the affine test $\phi(\mu) := \mu_1 - \mu_0$.
+
+The collapsed misaligned mass at $t_0$ comes from the τ-portion of
+the simplex with $\mu(0)>0.4$ that the worst-message map $m^*$ pushes
+to $t_0$. By the symmetric specification, this fiber has barycenter
+with first coordinate near~$0.5$ and second coordinate near $0.25$, so
+$\phi$-value $\approx -0.25$. The $\phi$-image of $t_0$ itself is
+$0$, and the relevant Bayes cone $C(t_0)$ at the plurality vertex
+$a_0$ requires $\mu(0)\ge\max(\mu(1),\mu(2))$, on which
+$\phi = \mu_1-\mu_0 \le 0$, giving $h_{C(t_0)}(\phi) = 0$. The Hall
+inequality demands
+\[
+  \alpha\,\phi(t_0)\,\tau(\{t_0\}) + (1-\alpha)\!\!\!\!\!\int_{(m^*)^{-1}(t_0)}\!\!\!\!\!\!\!\phi(s)\,\tau(ds) \;\le\; h_{C(t_0)}(\phi)\cdot q(\{t_0\}).
+\]
+With $\tau(\{t_0\}) = 0$ (atomless $\tau$) the aligned term drops; the
+misaligned mass aggregates to $-(1-\alpha)/9$ in absolute value
+\emph{against} $\phi$ — i.e., the LHS evaluates to $(1-\alpha)/9 > 0$
+once the sign convention on the worst-message direction is fixed,
+while the RHS is $0$. This is the displayed Hall violation.
+
+The geometric obstruction is genuinely multi-dimensional. In binary
+state, each boundary message has only a single scalar direction to
+balance, and Appendix~A.6 supplies the corresponding quantile transport.
+In the ternary case, the fiber collapsing into the boundary point
+$t_0$ has a 2-dimensional barycenter that points into the wrong
+plurality cone; there is no one-dimensional monotone transport that
+can absorb the vector imbalance.
+
+The honest endpoint is: Tier~2 must keep TRE-gen-Hall, unless an
+additional structural condition is imposed --- radial symmetry of~$T$,
+zonotopal/orthant alignment, or a separability condition on the
+Bayes-optimal cones. The ternary radial case (Section~5.2 plus
+Appendix~A.10 of \emph{Robust Trust}) does verify TRE-gen-Hall via
+per-direction 1-dimensional transports.
+
+\section{Remaining directions}
+
+Three directions remain open that we did not close in either pipeline:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{A constructive Branch-A representative making A8c-attain
+automatic.} Even though A8c-attain cannot be removed in general, a
+more refined choice of Branch-A representative --- one that builds
+in upper-hemicontinuity or closed-graph structure of the strategy
+correspondence, rather than choosing an arbitrary representative ---
+would make A8c-attain automatic in the constructed $\sigma^*$. The
+L5 modification is already one move in this direction; a more
+systematic construction is open.
+
+\item \textbf{Multi-dim Hall via additional structural conditions on
+$T$.} Identifying the largest class of geometric structures on the
+trust region for which TRE-gen-Hall holds --- analogous to the
+binary Appendix~A.6 case --- is open. Candidates: separable trust
+regions, zonotopal $T$, trust regions invariant under a transitive
+group action.
+
+\item \textbf{Formalization.} A faithful formalization would need to
+encode the constructive Balder/Mertens/Lusin route rather than the
+earlier abstract saddle-point stub.
+\end{enumerate}
+
+\section*{Provenance}
+
+Proof logs (intermediate prover outputs, reviewer verdicts,
+counterexample constructions) are committed in the proof repository
+under \texttt{packets/} and \texttt{logs/}.
+
+\begin{thebibliography}{9}
+
+\bibitem{DworczakSmolin2026}
+Piotr Dworczak and Alex Smolin.
+\emph{Robust Trust}.
+\href{https://arxiv.org/abs/2602.09490}{arXiv:2602.09490}, 2026.
+
+\bibitem{Balder1988}
+Erik J.\ Balder.
+\emph{Generalized equilibrium results for games with incomplete information}.
+Mathematics of Operations Research, 13(2):265--276, 1988.
+
+\bibitem{Mertens1986}
+Jean-François Mertens.
+\emph{The minmax theorem for u.s.c.--l.s.c.\ payoff functions}.
+International Journal of Game Theory, 15(4):237--250, 1986.
+
+\bibitem{AliprantisBorder2006}
+Charalambos D.\ Aliprantis and Kim C.\ Border.
+\emph{Infinite Dimensional Analysis: A Hitchhiker's Guide}.
+Springer, 3rd edition, 2006.
+(Specifically: Theorems 18.13 (Kuratowski--Ryll-Nardzewski),
+18.19 (measurable maximum), 15.11 (compactness of $\Delta$ on compact metric).)
+
+\bibitem{Bogachev2007}
+Vladimir I.\ Bogachev.
+\emph{Measure Theory}.
+Springer, 2007.
+(Polish-valued Lusin theorem; standard-Borel disintegration.)
+
+\bibitem{Villani2008}
+Cédric Villani.
+\emph{Optimal Transport: Old and New}.
+Springer, 2008.
+(Used for the multi-dimensional Hall/Strassen feasibility background
+in TRE-gen-Hall.)
+
+\end{thebibliography}
+
+\end{document}
