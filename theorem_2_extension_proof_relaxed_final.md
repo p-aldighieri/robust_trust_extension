@@ -85,15 +85,7 @@ read as τ-a.e. per the model's measurability convention).*
   obstruction — both states put mass at the boundary point $s = 0$ in
   $\tau$, but only state $\omega = 0$ does in $\pi(\cdot\mid\omega)$;
   yet topologically, $\{0\}$ is a measure-zero point of the
-  full-mass-supported $[0,1]$ core, so thickness survives.) **Continuity
-  completion of the example.** To certify the full (A5-thick) condition
-  (which also requires $\hat\sigma^*$ continuous on each $K_n$ in the
-  Balder stable topology), specialize this example to a trivial
-  private-strategy environment — e.g., $\Theta$ a singleton and $A$ a
-  singleton (or constant utility $u\equiv 0$) — so that $\hat\sigma^*$
-  is the constant kernel, trivially Balder-continuous on $K_1 = [0,1]$.
-  The strict-inclusion conclusion (A5-thick holds, A5 fails) carries
-  over.
+  full-mass-supported $[0,1]$ core, so thickness survives.)
 
   Implied by primitive conditions weaker than mutual equivalence: e.g.,
   common topologically-thick core; absolutely continuous parts with
@@ -160,8 +152,9 @@ read as τ-a.e. per the model's measurability convention).*
   iff the support-function inequality holds integrated over $E$, by
   duality and a separating countable family of $\phi$.)
 
-  **Equivalent Hall/Strassen calibration inequality for the displayed coupling.**
-  Equivalent to the disintegration condition: for all
+  **Necessary-and-sufficient feasibility (Hall/Strassen).** The transport
+  feasibility for the existence of a coupling $\gamma_\alpha$ as above
+  with the required calibration is the Strassen-type condition: for all
   measurable $E\subseteq M$ and all continuous affine $\phi$,
   $$
   \alpha\int_E \phi(m)\,\tau(dm) + (1-\alpha)\int_{(m^*)^{-1}(E)} \phi(s)\,\tau(ds) \;\le\; \int_E h_{C(m)}(\phi)\,q(dm).
