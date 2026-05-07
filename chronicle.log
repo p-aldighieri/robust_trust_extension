@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.4.7)  7 MAY 2026 15:34
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.4.7)  7 MAY 2026 15:38
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -558,12 +558,12 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.278 supported on $G(s)$ τ
+l.280 supported on $G(s)$ τ
                             -a.e.\ with the disintegration posterior in
 You may provide a definition with
 \DeclareUnicodeCharacter 
 
-[4] [5]
+[4]
 
 ! LaTeX Error: Unicode character τ (U+03C4)
                not set up for use with LaTeX.
@@ -572,25 +572,25 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.367 ...appa(\cdot\mid s)$ supported on $G(s)$ τ
-                                                  -a.e.\ such
+l.373 τ
+        -a.e.\ such that the induced disintegration posterior lies in $B(m)$
 You may provide a definition with
 \DeclareUnicodeCharacter 
 
-[6] [7] (chronicle.aux)
+[5] [6] [7] (chronicle.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `chronicle.out' has not changed.
-(rerunfilecheck)             Checksum: 9FDFA5134336D57F6F23918C28C1D8CE;2156.
+(rerunfilecheck)             Checksum: 216FD1807C300198C2DED0FC6F1C6A05;1946.
  ) 
 Here is how much of TeX's memory you used:
- 13323 strings out of 467867
- 207951 string characters out of 5418335
- 663912 words of memory out of 5000000
+ 13329 strings out of 467867
+ 208015 string characters out of 5418335
+ 663876 words of memory out of 5000000
  41782 multiletter control sequences out of 15000+600000
- 715494 words of font info for 196 fonts, out of 8000000 for 9000
+ 715696 words of font info for 199 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  75i,6n,79p,1008b,599s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pf
@@ -611,7 +611,7 @@ s/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy6.pfb><C:/Users
 /dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users/
 dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.
 pfb>
-Output written on chronicle.pdf (7 pages, 350255 bytes).
+Output written on chronicle.pdf (7 pages, 349017 bytes).
 PDF statistics:
  225 PDF objects out of 1000 (max. 8388607)
  50 named destinations out of 1000 (max. 500000)
