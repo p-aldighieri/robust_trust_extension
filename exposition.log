@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.4.7)  6 MAY 2026 16:14
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.4.7)  6 MAY 2026 19:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -533,11 +533,11 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <6> on input line 48.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 54.
+(Font)              <7> on input line 59.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 54.
+(Font)              <5> on input line 59.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 75.
+(Font)              <10.95> on input line 73.
 
 [1
 
@@ -547,79 +547,54 @@ pData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}{C:/Users/dep89/Ap
 pData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/dep89/AppDat
 a/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Users/dep89/AppDat
 a/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}] [2]
+Overfull \hbox (12.31345pt too wide) in paragraph at lines 198--205
+[]\T1/lmr/bx/n/10.95 (-20) Tier 2. \T1/lmr/m/n/10.95 (-20) Un-der menu-Hall, th
+e support-function form $[][] \OML/lmm/m/it/10.95 ^^^\OT1/lmr/m/n/10.95 (-20) (
+\OML/lmm/m/it/10.95 P[]\OT1/lmr/m/n/10.95 (-20) (\OMS/lmsy/m/n/10.95 ^^A j \OML
+/lmm/m/it/10.95 m\OT1/lmr/m/n/10.95 (-20) ))\OML/lmm/m/it/10.95 q\OT1/lmr/m/n/1
+0.95 (-20) (\OML/lmm/m/it/10.95 dm\OT1/lmr/m/n/10.95 (-20) ) \OMS/lmsy/m/n/10.9
+5 ^^T [][] \OML/lmm/m/it/10.95 h[]\OT1/lmr/m/n/10.95 (-20) (\OML/lmm/m/it/10.95
+ ^^^\OT1/lmr/m/n/10.95 (-20) )\OML/lmm/m/it/10.95 q\OT1/lmr/m/n/10.95 (-20) (\O
+ML/lmm/m/it/10.95 dm\OT1/lmr/m/n/10.95 (-20) )$
+ []
+
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <14.4> on input line 198.
+(Font)              <14.4> on input line 206.
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 206.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 198.
+(hyperref)                removing `\varepsilon' on input line 206.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\sigma' on input line 198.
+(hyperref)                removing `math shift' on input line 206.
 
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 198.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 198.
-
-[3] [4]
-Overfull \hbox (8.48842pt too wide) detected at line 377
-[]\OT1/lmr/m/n/10.95 (\OML/lmm/m/it/10.95 m\OT1/lmr/m/n/10.95 ) \OMS/lmsy/m/n/1
-0.95 2 [] \OML/lmm/m/it/10.95 U\OT1/lmr/m/n/10.95 ([]\OML/lmm/m/it/10.95 ; P[]\
-OT1/lmr/m/n/10.95 (\OMS/lmsy/m/n/10.95 ^^A j \OML/lmm/m/it/10.95 m\OT1/lmr/m/n/
-10.95 )) []
- []
-
-[5]
-
-! LaTeX Error: Unicode character τ (U+03C4)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.456 ...isaligned mass at $t_0$ comes from the τ
-                                                  -portion of
-You may provide a definition with
-\DeclareUnicodeCharacter 
-
-[6]
-Overfull \hbox (41.63579pt too wide) in paragraph at lines 510--513
-[]\T1/lmr/bx/n/10.95 (-20) Formalization. \T1/lmr/m/n/10.95 (-20) A faith-ful f
-or-mal-iza-tion would need to en-code the con-struc-tive Balder/Mertens/Lusin
- []
-
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 5
-19.
-(C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
-File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+[3]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 2
+80.
+ (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
+File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-Package microtype Info: Loading generic protrusion settings for font family
-(microtype)             `lmtt' (encoding: T1).
-(microtype)             For optimal results, create family-specific settings.
-(microtype)             See the microtype manual for details.
- [7]
-(exposition.aux)
+[4{C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.enc}]
+[5] [6] (exposition.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `exposition.out' has not changed.
-(rerunfilecheck)             Checksum: 19F1664C14799AE314BFF4454F3CF19A;4061.
+(rerunfilecheck)             Checksum: A33D4C920A555B02B88DC7A96246A75C;1914.
  ) 
 Here is how much of TeX's memory you used:
- 13439 strings out of 467867
- 209290 string characters out of 5418335
- 668320 words of memory out of 5000000
- 41843 multiletter control sequences out of 15000+600000
- 743356 words of font info for 236 fonts, out of 8000000 for 9000
+ 13317 strings out of 467867
+ 208098 string characters out of 5418335
+ 668167 words of memory out of 5000000
+ 41809 multiletter control sequences out of 15000+600000
+ 716524 words of font info for 194 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,8n,79p,1009b,604s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,8n,79p,1009b,621s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pf
 b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pf
 b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmex10.pf
@@ -636,14 +611,13 @@ rs/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/Use
 rs/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri12.pfb><C:/Use
 rs/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/Use
 rs/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy6.pfb><C:/User
-s/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy7.pfb><C:/Users
-/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users/
-dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb><C:/Users/
-dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.
-pfb>
-Output written on exposition.pdf (7 pages, 387635 bytes).
+s/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users
+/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10
+.pfb><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/
+symbols/msbm10.pfb>
+Output written on exposition.pdf (6 pages, 345803 bytes).
 PDF statistics:
- 267 PDF objects out of 1000 (max. 8388607)
- 50 named destinations out of 1000 (max. 500000)
- 60025 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 219 PDF objects out of 1000 (max. 8388607)
+ 37 named destinations out of 1000 (max. 500000)
+ 47185 words of extra memory for PDF output out of 51595 (max. 10000000)
 
