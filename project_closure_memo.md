@@ -1,8 +1,8 @@
 # Project closure memo — Robust Trust Theorem 2 infinite extension
 
-**Status:** terminal at v8. Gatekeeper-blessed (three passes; final verdict `OBJECTIVE_NARROWED` with explicit STOP-AND-COMMIT recommendation).
+**Status:** terminal at v8. Gatekeeper-blessed (five passes; final verdict `OBJECTIVE_NARROWED` with explicit STOP recommendation; `search_status: structural_search_exhausted`).
 
-**Date closed:** 2026-05-07.
+**Date closed:** 2026-05-07 (initial); 2026-05-08 (post-Routes-1+2 audit added).
 
 ## What v8 is
 
@@ -39,9 +39,55 @@ Classification of the witness:
 | 4. Finite RR equilibria → joint-law limits | Not pursued; searcher ranked low (close to prior failed limit/lifting routes). |
 | 5. Trust-region geometry general | Not pursued; positive cases already in paper. |
 
-## The single most consequential open question
+## Post-v8 terminal route audit: Routes 1+2
 
-A **deletion-compatible Hall duality theorem.** Existing Hall-style constraints are messagewise (Bayes calibration imposed at received m); deletion arguments are sourcewise (best retained minimizer for s). The missing theorem would need a dual certificate that prices deletion by source while enforcing calibration by message. It would also need to handle the Borel→compact gap: deleting a τ-positive Borel set need not shrink the closure of the labeling image.
+After the initial closure, a fresh gatekeeper pass identified two genuinely-new routes that were not proposable from v7-state. Per user authorization, full pipelines were run for both. Both routes are now **structurally blocked** at the same missing object.
+
+### Route 1 — Deletion-compatible Hall duality (exact theorem target)
+
+- **Literature pass: BUILD verdict.** No off-the-shelf theorem applies. Closest tools: Strassen/Kellerer + Beiglböck-Nutz-Touzi weak/martingale OT + Doval-Skreta/Dworczak-Kolotilin constrained persuasion duality.
+- **Formalizer:** target $T(C^*, w^*)$ pinned with primitive hypothesis (H_del) — sourcewise deletion-stability $\forall D \in \text{Del}(w^*, \tau)\setminus\{C^*\}, F(D) < F(C^*)$. Conclusion: existence of Borel kernel κ supported on $G(s)$ τ-a.e. with $P_{\gamma_\alpha}(\cdot|m) \in B(m)$ q-a.e.
+- **Searcher:** R6 (finite-partition capacitary Hall + projective limit) ranked top.
+- **Breakdown:** 8-step lemma chain, Lemma 2.1 (the collapse lemma) identified as critical.
+- **Prover (twice):**
+  - First pass: DISPROVED with concrete binary counterexample. The original LP attached aligned mass to representative cell labels but tested optimality at cell barycenters; coarse mixed cells generated phantom Bayes violations unrelated to any compact deletion.
+  - Sourcewise rewrite: STALLED at four obstructions (continuum-mass label fibers, Borel→compact gap, F-comparison gap, **(H_del) pointwise-strict ≠ uniform**).
+- **Reviewer (twice):** both stalls confirmed structural. **Decisive obstruction (O4):** $D_n \to C^*$ with $F(D_n) \uparrow F(C^*)$ is consistent with (H_del). Therefore an LP conclusion $F(D_E) \ge F(C^*) - K\eps$ does not contradict (H_del). *"The tiny hinge that swings the whole castle gate."*
+
+### Route 2 — Calibration-defect quantitative bound
+
+- **Literature pass: BUILD verdict.** Ingredients available (Burke-Tseng error bounds + Beiglböck-Nutz-Touzi + Fukushima/Auchmuty gap functions + Balseiro-Besbes-Castro approximate-IC), no direct import.
+- **Formalizer:** target $BR \le \Phi(\Delta_\text{del}^{cp})$ with primitive defect (D1: compact-patch dual deletion residual). Crucial: the (H_del) tiny-hinge obstruction is **dodged by quantitative softness** — positive Δ produces positive regret rather than requiring contradiction. But the **same Hall bottleneck reappears in defect form**.
+- **Searcher:** R6 (finite-net entropy bootstrap) ranked top, with linear Φ for polytope W and Hölder $\Phi(\delta) \asymp \delta^{1/(d+1)}$ for curved W.
+- **Breakdown:** 8-step lemma chain, Lemma 2.1 identified as critical ("the smaller dragon").
+- **Prover:** STALLED at three obstructions:
+  - **(O1) Borel→compact deletion gap.** Signed integrand $s\cdot(v_i - w^*(m))$ makes $\inf_{m \in G(s)}$ non-monotone in $E_i$; ordinary inner regularity does not bridge $E_i$ to compact $K_i$.
+  - **(O2) Cell-flow lift gap.** Cell-flow LP solutions average over source cells; lifting to Borel kernels supported on $R_0$ requires fiber-thickness or splitability not in standing hypotheses.
+  - **(O3) Slack discipline.** $n(\eps)\,\rho_\eps \to 0$ requires uniformity standing doesn't supply for curved W.
+- **Reviewer:** stall confirmed. *"Route 2 found a different scorch pattern. Route 1 died on the pointwise-strict versus uniform-strict gap. Route 2 avoids that exact wound by using quantitative softness, so it is not literally Route 1 in disguise. But the remaining failures are recognizably from the same family."*
+
+### Convergent diagnosis
+
+Strategy 3 (canonical/minimal menu, Lemma A.2), Route 1 R6 (collapse lemma), Route 2 R6 (finite-net bound) all reach the same locked gate. The closure memo's named open theorem is now triple-confirmed.
+
+## The single most consequential open question (sharpened)
+
+A **deletion-compatible Hall duality theorem.**
+
+> Take an optimal compact menu/labeling pair $(C^*, w^*)$, a rowwise-minimizer correspondence $G(s) := \{m : s\cdot w^*(m) = \min_{z \in C^*} s\cdot z\}$, and Bayes-optimality cones $B(m) := \{\mu : \hat\sigma^*(m) \in \arg\max U(\hat\sigma', \mu)\}$. Give **necessary and sufficient conditions in primitive terms** (using only $F$, $w^*$, $\tau$, $\alpha$, compact source patches, raw payoff comparisons) under which there exists a Borel kernel $\kappa(\cdot|s)$ supported on $G(s)$ τ-a.e. such that the induced disintegration posterior lies in $B(m)$ for $q$-a.e. $m$.
+>
+> The theorem must be compatible with **sourcewise deletion certificates** (the dual character) and **messagewise calibration constraints** (the primal character) **simultaneously**, AND must explicitly handle:
+> - **Borel→compact non-monotonicity:** signed deletion integrands prevent compact-patch tests from controlling Borel violations.
+> - **Label-fiber lift:** cell-flow LP solutions to Borel kernels on $R_0$.
+> - **Slack discipline in curved W:** $n(\eps)\,\rho_\eps \to 0$ uniformly across the dual class generated by an ε-net $V_\eps \subset W$.
+
+If such a theorem exists, Routes 1 and 2 both reopen, and Tier 2 could become unconditional or replace menu-Hall by a primitive defect.
+
+## Separate research target: (U-Borel) variant
+
+A distinct future paper target: a **Borel-residual** version of Route 2's quantitative bound. Replace $\Delta_\text{del}^{cp}$ (compact-patch defect) with a Borel-patch residual. The Route 2 reviewer flagged this as *"viable as a different theorem, not a small repair"*: Borel patches restore the natural separation (the dual $A_E$ is Borel-natural), avoiding O1's non-monotonicity, but the cell-flow lift gap (O2) likely still bites.
+
+This is **not** part of the current project's closure. It is logged here as a separate handoff, not as a route worth restarting inside this project's scope.
 
 If such a theorem exists, Strategy 3 may reopen with real force and Tier 2 could become unconditional for behaviorally minimal canonical menus. Until then, **do not restart canonical pruning without it.**
 
@@ -62,7 +108,8 @@ The cleanest framing for an exposition or paper: *"Three-tier infinite-extension
 - **External engine:** ChatGPT Extended Pro.
 - **Project URL:** https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957/project
 - **Active CDP port:** 9224 (chrome-debug-profile-npiv).
-- **Pipeline phases used:** formalizer (reread), searcher, breakdown, prover, reviewer, consolidator (manual local), gatekeeper (3 passes — first-ever runs of the gatekeeper role on any project).
+- **Pipeline phases used:** formalizer (reread + Route 1 + Route 2), literature (Route 1 + Route 2), searcher (Route 1 + Route 2), breakdown (Strategy 3 + Route 1 + Route 2), prover (multiple cycles), reviewer (matching), consolidator (manual local), gatekeeper (5 passes — the role's first project, all five passes returned NARROWED with progressively sharper diagnosis).
+- **Final search status:** structural_search_exhausted. The gatekeeper-blessed search space has converged on the deletion-compatible Hall duality theorem as the single open object.
 
 ## Durable sources at closure
 
