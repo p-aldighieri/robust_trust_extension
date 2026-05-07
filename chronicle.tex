@@ -1,0 +1,455 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black, urlcolor=blue!50!black}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}
+\renewcommand{\theassumption}{A\arabic{assumption}}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\Om}{\Omega}
+\newcommand{\Th}{\Theta}
+\newcommand{\Si}{\Sigma}
+\newcommand{\suppset}{\operatorname{supp}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\E}{\mathbb{E}}
+
+\title{
+  Robust Trust Theorem~2 infinite extension:\\
+  \large A chronicle of attempted routes
+}
+\author{Pedro Aldighieri}
+\date{8 May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This is a research log of the routes attempted to extend the
+existence direction of Theorem~2 (``Robustly Rationalizable
+Solution'') in Dworczak \& Smolin's \emph{Robust Trust} (2026) to
+infinite~$M$ and~$\Th$. It documents what was tried, what worked,
+what failed, and where the failures share a common structural cause.
+The companion document \emph{exposition.pdf} states the resulting
+three-tier theorem and its sharpness; this chronicle exists so that
+future contributors do not redo failed work and so that the central
+remaining open problem is precisely posed. Section~\ref{sec:reny}
+records the route based on Phil Reny's restricted-game suggestion in
+detail; subsequent sections record the menu-engine pivot and the
+post-v8 strategic search.
+\end{abstract}
+
+\section{The question and the gap}\label{sec:gap}
+
+The paper's Theorem~2 has two parts. \emph{Optimality direction:} every
+robustly rationalizable strategy is optimal. \emph{Existence direction:}
+when $M = \suppset(\tau)$ and $\Th$ are finite, a robustly
+rationalizable strategy exists. The optimality direction is
+finiteness-free; the existence direction uses Sion's minimax on
+products of finite-dimensional simplices and the paper notes that
+extending Sion's conditions to infinite cheap-talk-like spaces is
+technically difficult.
+
+The project asked: can existence be established in infinite~$M$ and
+compact metric~$\Th$, under the model's standing Borel/compact
+hypotheses? The answer reached over the course of the routes below
+is that a clean three-tier conditional theorem can, but the
+unrestricted existence direction remains structurally open at a
+single named obstacle: a deletion-compatible Hall duality theorem
+(see \S\ref{sec:diagnosis}).
+
+\section{The Phil Reny route}\label{sec:reny}
+
+The first sustained attempt followed Phil Reny's suggestion: split
+the proof into a value-securing existence step and an attainment
+step, restrict the misaligned adviser to $\tau$-dominated kernels in
+the first step, then lift the restricted maximizer back to the
+unrestricted game via Lusin regularization.
+
+\paragraph{Stage 1 --- restricted-game maximizer.}
+Restrict $B$ to the convex set $F$ of $\tau$-dominated densities
+$\beta_\varphi(dm\mid s) = \varphi(m\mid s)\tau(dm)$ with
+$\varphi$ jointly Borel and normalized. On the restricted game, two
+ingredients combine cleanly:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Balder constant-marginal continuity.} For every fixed
+$\varphi\in F$, the map $\sigma\mapsto U_F(\sigma,\varphi) :=
+U(\beta_\varphi,\sigma)$ is continuous in the Balder weak topology
+$T_\lambda$ (Balder 1988, Theorem~2.2), where $\lambda := \tau\otimes\bar f$
+with $\bar f := \sum_\omega\mu_0(\omega)f(\cdot\mid\omega)$.
+\item \textbf{Compactness of $\Si$ in $T_\lambda$.} Modulo the
+$\lambda$-a.e.\ equivalence (Balder quotient), $\Si$ is compact convex
+Hausdorff (Balder 1988, Theorem~2.3(a)).
+\end{itemize}
+Mertens's asymmetric minmax theorem (Mertens 1986, Corollary~B) then
+gives a restricted-game maximizer $\sigma^*\in\Si$ with
+$\max_\sigma\inf_F U_F = \inf_F\max_\sigma U_F$. Both mixed-strategy
+sides collapse to pure by affineness and the standard barycenter
+argument.
+
+\paragraph{Stage 2 --- Lusin lift.}
+For each $\beta\in B$ and $\eps>0$, smooth $\beta$ to a
+$\tau$-dominated $\varphi_\eps\in F$ losing at most $\eps$ at
+$\sigma^*$. The smoothing is built shell-by-shell on a Lusin compact
+core $K^* = \bigcup_n K_n$ with full $\pi(\cdot\mid\omega)$-measure
+for every~$\omega$, where $\hat\sigma^*$ is continuous on each $K_n$
+in the Balder stable topology and every relative open in $K_n$ has
+positive $\pi(\cdot\mid\omega)$-mass.
+
+\paragraph{Hypotheses required.}
+Three hypotheses entered:
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{(A5-thick)} the Lusin-thickness condition just stated.
+The original (A5) demanded $\pi(\cdot\mid\omega)\sim\tau$ for every
+$\omega$; (A5-thick) is strictly weaker.
+\item \textbf{(A8c-attain)} the rowwise infimum of the misaligned
+payoff $\ell_{\sigma^*}(m,s) := \sum_\omega s(\omega) p_\omega(m)$ is
+attained at a measurable selector. This converts the value-securing
+$\eps$-adversary into an exact $\beta^*$.
+\item \textbf{(TRE-gen-Hall)} a deterministic version of the
+posterior-calibration condition needed for full robust
+rationalizability: the joint coupling
+$\gamma_\alpha = \alpha(\mathrm{id},\mathrm{id})_\#\tau + (1-\alpha)(\mathrm{id},m^*)_\#\tau$
+disintegrates with posteriors landing in the per-message Bayes cones
+$C(m)$ for $q$-a.e.\ $m$, where $m^*$ is the deterministic worst-message map.
+\end{enumerate}
+
+\paragraph{Result and limitation.}
+This delivered a two-tier conditional theorem (Tier~1: optimal
+$\sigma^*$ and adversarial $\beta^*$ with $U(\sigma^*) = U^* =
+U(\beta^*,\sigma^*)$; Tier~2: full robust rationalizability under
+the third hypothesis). Each of the three added conditions was shown
+\emph{tight for the route}: a perfect-revelation finite example
+obstructs the Lusin-smoothing mechanism behind A5-thick, an
+upward-spike row obstructs A8c-attain, and a ternary non-radial
+witness exhibits an explicit Hall violation showing TRE-gen-Hall is
+not derivable from the weaker hypotheses.
+
+The route was real, but the engine was heavy. (A5-thick) was
+imposed on a representative of a maximizer of an abstract
+infinite-dimensional optimization, and (A8c-attain) inherited that
+representative-dependence. The witness for (TRE-gen-Hall) hinted at
+something more fundamental than a deterministic-vs-randomized issue,
+but the route's deterministic kernel architecture made that hard to
+disentangle.
+
+\section{The pivot to the menu engine}\label{sec:pivot}
+
+The architectural change came from observing that the misaligned
+payoff at fixed $\sigma$ depends on the agent's strategy only through
+its image in the \emph{payoff-profile space}
+\[
+  W \;:=\; \{w\in\R^{|\Om|} : w(\omega) = \E_{\hat\sigma}[u(a,\omega,\theta)\mid\omega]\text{ for some }\hat\sigma\in\hat\Si\},
+\]
+which is a compact convex subset of finite-dimensional $\R^{|\Om|}$
+(boundedness of $u$ + compact $A$ + continuity of $u$ in $a$). An
+agent strategy is a Borel labeling $w: M\to W$, and the value of the
+game depends on $w$ only through the compact menu $C := \overline{w(M)}\subseteq W$.
+The space $\mathcal K(W)$ of nonempty compact subsets of $W$ is itself
+compact under the Hausdorff metric.
+
+This delivered a strictly stronger three-tier theorem (the v8 result,
+stated in the companion exposition):
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Tier~1a} (standing alone): existence of value-optimal
+$\sigma^*$ and $\eps$-adversaries. \textbf{No added hypotheses.}
+\item \textbf{Tier~1b} (+ exact-contact): exact $\beta^*$ via Borel
+selector on the rowwise contact set $G(s) := \{m : s\cdot w^*(m) =
+\min_{C^\dagger}\,s\cdot z\}$ where $C^\dagger := \overline{w^*(M)}\subseteq C^*$.
+\item \textbf{Tier~2} (+ menu-Hall): full robust rationalizability
+$q_\beta$-a.e.\ via a set-valued kernel $\kappa$ supported on $G(s)$
+with calibrated posterior membership in the Bayes cones $B(m)$.
+\end{itemize}
+
+The pivot eliminated A5-thick (Tier~1 became unconditional),
+endogenized A8c-attain (now exact-contact, checkable from the chosen
+labeling rather than from a representative of an abstract maximizer),
+and weakened TRE-gen-Hall to set-valued menu-Hall.
+
+\section{Sharpness}\label{sec:sharpness}
+
+Two strengthenings of the v7 ternary non-radial witness were proved
+in v8:
+
+\begin{lemma}[Cone intersection]
+For every nonempty $I\subseteq\{0,1,2\}$ and every Borel probability
+$\rho$ on $\Delta(\Om)$ supported on $K_I^- := \{s : s_i\le s_k\,\forall i\in I,\,\forall k\}$
+with barycenter in $B_I := \{p : p_i\ge p_k\,\forall i\in I,\,\forall k\}$:
+$\rho = \delta_{\mu_0}$ where $\mu_0 = (1/3, 1/3, 1/3)$.
+\end{lemma}
+
+\begin{theorem}[No-free-dust]
+Under atomless $\tau$ in WTA ternary, no Borel $\tau$-null dust set
+$N\subseteq M$, no Borel labeling $w_N$, and no adversarial kernel
+$\kappa$ supported on rowwise minimizers can simultaneously satisfy
+positive $q_\beta(N)$ and Bayes-cone calibration $q_N$-a.e.\ on $N$.
+\end{theorem}
+
+The cone intersection lemma upgrades sharpness from a single boundary
+point ($I = \{0\}$, $t_0 = (0.4, 0.3, 0.3)$) to a uniform statement
+across all support patterns. The no-free-dust theorem closes the
+escape that the $q_\beta$-a.e.\ reading of Definition~2 (which allows
+adversaries to use $\tau$-null messages) might suggest.
+
+\paragraph{Classification.} Separately, the witness's trust region
+$T = \{\mu : \mu(0)\le 0.4\}$ was shown not primitive: its induced
+payoff-profile menu is the full vertex set $\{v_0, v_1, v_2\}$,
+behaviorally equivalent to $T = \Delta(\Om)$. Hence the witness
+exhibits a menu-engine artefact, not a counterexample to unrestricted
+Theorem~2.
+
+\section{Post-v8 strategic search: what we tried}\label{sec:routes}
+
+After v8, three further routes were attempted to remove menu-Hall as
+an added hypothesis. All three reached defensible terminal endpoints
+without succeeding.
+
+\subsection{Strategy~3: canonical/minimal menu route}\label{sec:strategy3}
+
+Idea: enforce a primitive minimality condition on the optimal
+labeled menu and ask whether menu-Hall is then derivable. Four
+candidate canonicality conditions were evaluated against a
+\emph{renaming test}: a candidate is alive only if its primitive
+hypothesis does not implicitly require the existence of a kernel on
+$G(s)$, posterior membership in $B(m)$, or any direct Bayes-cone
+inclusion at messages.
+\begin{enumerate}[leftmargin=2em]
+\item[(C1)] \emph{Behavioral minimality.} $C^*$ is $F$-optimal and
+no proper compact $D \subsetneq C^*$ is $F$-optimal.
+\item[(C2)] \emph{Exposed-extreme canonicality.} $C^*$ is the closed
+convex hull of its primitive aligned-best labeling.
+\item[(C3)] \emph{Primitive trust-region minimality.} $T^*$ is
+minimal among Theorem-1-equivalent trust regions; $C^* = \bigcup_{\mu\in T^*} R(\mu)$
+where $R(\mu)$ is the primitive Bayes-profile correspondence.
+\item[(C4)] \emph{Radial / orbit symmetry.} A compact group acts
+preserving $\tau$, $u$, $W$; the quotient is one-dimensional with a
+scalar primitive maximizer.
+\end{enumerate}
+
+The critical lemma was \emph{Lemma A.2 (uncalibrated minimal menu
+pruning):} under (C1) and (exact-contact), if menu-Hall fails, then
+there exists a proper compact $D \subsetneq C^*$ with $F(D) \ge F(C^*)$,
+contradicting (C1). The contrapositive form would say: under (C1) +
+(exact-contact), menu-Hall holds.
+
+\paragraph{Outcome.} Lemma A.2 stalled at three named structural
+gaps under standing + (exact-contact):
+\begin{enumerate}[leftmargin=2em]
+\item \emph{Label-saturation gap.} Exact-contact gives nonempty
+$G(s)$ but not that touching one $C^*$-minimizer for source $s$
+removes all of them.
+\item \emph{Replacement-index mismatch.} Hall's separating
+certificate uses $z(m)$ indexed by message; deletion improvement
+$\ell_D(s) - \ell_{C^*}(s)$ is indexed by source.
+\item \emph{Borel-to-compact gap.} $\overline{w^*(M\setminus E)} = C^*$
+can hold for $\tau$-positive Borel $E$ (fat-Cantor type example).
+\end{enumerate}
+
+\subsection{Route~1: deletion-compatible Hall duality (exact theorem)}\label{sec:route1}
+
+After Strategy~3 named the structural gaps, a fresh search identified
+the underlying missing object: a duality theorem that prices
+sourcewise deletion while enforcing messagewise calibration. The
+target theorem was formalized in primitive terms:
+
+\paragraph{Hypothesis (H\textsubscript{del}).} For every Borel
+$E\subseteq M$ with $\tau(E)>0$, if $D_E := \overline{w^*(M\setminus E)}$
+is a proper compact subset of $C^*$, then $F(D_E) < F(C^*)$.
+
+\paragraph{Conclusion.} There exists a Borel kernel $\kappa: M\to\Delta(M)$
+supported on $G(s)$ τ-a.e.\ with the disintegration posterior in
+$B(m)$ q-a.e.
+
+A literature search across Strassen/Kellerer, weak optimal transport
+(Gozlan-Roberto-Samson-Tetali; Backhoff-Veraguas-Beigl\-böck-Pammer),
+martingale OT, capacity-constrained OT, adapted/causal OT, cyclic
+monotonicity, and persuasion duality (Doval-Skreta;
+Dworczak-Martini; Dworczak-Kolotilin) returned a \emph{Build}
+verdict: no off-the-shelf theorem applies under primitive-equivalent
+hypotheses. The closest tools provide ingredients but not the
+finished bridge.
+
+The natural attack was a finite-partition LP with $\tau$-aligned
+mass charged sourcewise, finite Farkas duality, and a collapse lemma
+converting infeasibility to a positive-mass deletion certificate. The
+LP was attempted twice (representative-label form + sourcewise rewrite).
+
+\paragraph{Outcome.} The first attempt was disproved by a concrete
+binary counterexample: representative-label LPs generate phantom
+infeasibilities from coarse mixed cells unrelated to any sourcewise
+deletion. The sourcewise rewrite cleared that bug but stalled at
+four structural walls:
+\begin{enumerate}[leftmargin=2em]
+\item Continuum-mass label fibers can be $\tau$-null, leaving the
+LP's aligned attribution empty.
+\item The Borel-to-compact gap survives.
+\item Finite $V_0 \subset W$ doesn't control compact max-min over $W$
+without uniform Lipschitz mesh.
+\item \emph{(H\textsubscript{del}) is pointwise strict, not
+uniformly strict.} Proper $D_n \to C^*$ in Hausdorff with
+$F(D_n) \uparrow F(C^*)$ are consistent with (H\textsubscript{del}),
+so any LP conclusion of the form $F(D_E) \ge F(C^*) - K\eps$ does
+not contradict it.
+\end{enumerate}
+
+The fourth obstruction is decisive: (H\textsubscript{del}) is too
+weak as a primitive hypothesis to generate an LP contradiction.
+
+\subsection{Route~2: calibration-defect (quantitative bound)}\label{sec:route2}
+
+The fourth obstruction in Route~1 motivated a different deliverable:
+instead of an exact existence theorem, prove a quantitative bound
+\[
+  BR(C^*, w^*) \;\le\; \Phi(\Delta_\text{del}(C^*, w^*))
+\]
+where $BR$ is a primitive payoff-profile Bayes-regret functional and
+$\Delta_\text{del}$ is a primitive deletion-defect functional. Under
+this framing, a positive defect produces positive regret rather than
+requiring contradiction --- the (H\textsubscript{del}) tiny-hinge
+obstruction is dodged by quantitative softness.
+
+After three candidate defect functionals were evaluated (the chosen
+one, $\Delta_\text{del}^{cp}$, is the compact-patch dual deletion
+residual --- primitive, non-tautological), the proof route reduced
+to a finite-net entropy-bootstrap with linear $\Phi$ for polytope
+$W$ and Hölder $\Phi(\delta) \asymp \delta^{1/(d+1)}$ for curved $W$.
+
+\paragraph{Outcome.} The critical finite-family compact-patch
+separation lemma stalled at three obstructions: (i) Borel-to-compact
+non-monotonicity --- the signed integrand $s\cdot(v_i - w^*(m))$
+makes the inner $\inf_{m\in G(s)}$ non-monotone in $E$, so ordinary
+inner regularity does not bridge $E_i$ to compact $K_i$; (ii)
+cell-flow lift gap --- LP solutions averaging over source cells
+cannot in general lift to Borel kernels supported on $R_0$ without
+fiber-thickness or splitability hypotheses outside the standing set;
+(iii) slack discipline failure --- the entropy bootstrap requires
+$n(\eps)\,\rho_\eps \to 0$ uniformly across the dual class generated
+by the finite net, which standing hypotheses don't supply for curved $W$.
+
+The diagnosis: Route~2 found a different scorch pattern. Route~1
+died on the pointwise-strict-vs-uniform-strict gap; Route~2 dodges
+that wound but the remaining failures are recognizably from the same
+family --- Borel certificates do not automatically compactify, and
+sourcewise deletion does not automatically lift to messagewise
+calibrated fibers.
+
+\section{Convergent diagnosis}\label{sec:diagnosis}
+
+Strategy~3 (Lemma A.2), Route~1 (LP collapse + sourcewise rewrite),
+and Route~2 (finite-net forward bound) reach the same locked gate.
+The single missing object is what we will call a
+\emph{deletion-compatible Hall duality theorem}:
+\begin{quote}
+Take an optimal labeled menu $(C^*, w^*)$, a rowwise-minimizer
+correspondence $G(s) := \{m : s\cdot w^*(m) = \min_{z\in C^*}\,s\cdot z\}$,
+and Bayes-optimality cones $B(m) := \{\mu : \hat\sigma^*(m)\in\argmax\,U(\hat\sigma',\mu)\}$.
+Give necessary and sufficient conditions \emph{in primitive terms}
+(using only $F$, $w^*$, $\tau$, $\alpha$, compact source patches, raw
+payoff comparisons $s\cdot v$ for $v\in W$) under which there exists
+a Borel kernel $\kappa(\cdot\mid s)$ supported on $G(s)$ τ-a.e.\ such
+that the induced disintegration posterior lies in $B(m)$ for q-a.e.~$m$.
+\end{quote}
+The theorem must price sourcewise deletion (the dual character) and
+enforce messagewise calibration (the primal character)
+simultaneously, and it must explicitly handle:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Borel-to-compact non-monotonicity.} Signed deletion
+integrands prevent compact-patch tests from controlling Borel
+violations.
+\item \textbf{Label-fiber lift.} Cell-flow LP solutions to Borel
+kernels on the contact relation $R_0$.
+\item \textbf{Slack discipline.} $n(\eps)\,\rho_\eps \to 0$ uniform
+across the dual class generated by an $\eps$-net $V_\eps \subset W$.
+\end{itemize}
+
+If such a theorem exists, Strategy~3, Route~1, and Route~2 all
+reopen with real force; Tier~2 may become unconditional or replace
+menu-Hall by a primitive defect.
+
+\section{What is banked, what is open}\label{sec:status}
+
+\paragraph{Banked.}
+\begin{itemize}[leftmargin=2em]
+\item The three-tier theorem (v8 in the companion exposition):
+unconditional Tier~1a, exact-contact Tier~1b, set-valued menu-Hall
+Tier~2 in the $q_\beta$-a.e.\ reading of Definition~2.
+\item The sharpness package: cone intersection lemma + no-free-dust
+theorem.
+\item The classification of the ternary witness as a menu-engine
+artefact, not a counterexample to unrestricted Theorem~2.
+\end{itemize}
+
+\paragraph{Closed routes (not to be revisited under standing alone).}
+\begin{itemize}[leftmargin=2em]
+\item The Phil Reny two-stage restricted-game-plus-Lusin-lift route:
+superseded by the menu engine, which is strictly stronger.
+\item Strategy~3 canonical/minimal menu (under (H\textsubscript{del})
+or (C1) alone): blocked at three structural gaps.
+\item Route~1 deletion-compatible Hall as an exact theorem under
+(H\textsubscript{del}): blocked by pointwise-strict-vs-uniform-strict.
+\item Route~2 calibration-defect quantitative bound under
+(H\textsubscript{del}) with compact-patch defect: blocked at
+Borel-to-compact non-monotonicity, label-fiber lift, slack discipline.
+\end{itemize}
+
+\paragraph{Separate research target.}
+A Borel-residual variant of Route~2 (replace the compact-patch
+defect with a Borel-patch defect): the natural separation lives in
+the Borel world, but the cell-flow lift gap likely still bites and
+$\Phi$ degrades. Worth its own pipeline if pursued, not part of this
+project's closure.
+
+\paragraph{Open.}
+The deletion-compatible Hall duality theorem of \S\ref{sec:diagnosis}.
+This is the single object whose existence (or impossibility under
+some primitive obstruction) would resolve the unrestricted infinite
+extension of Theorem~2 in either direction.
+
+\begin{thebibliography}{9}
+
+\bibitem{DworczakSmolin2026}
+Piotr Dworczak and Alex Smolin.
+\emph{Robust Trust}.
+\href{https://arxiv.org/abs/2602.09490}{arXiv:2602.09490}, 2026.
+
+\bibitem{Balder1988}
+Erik J.\ Balder.
+\emph{Generalized equilibrium results for games with incomplete information}.
+Mathematics of Operations Research, 13(2):265--276, 1988.
+
+\bibitem{Mertens1986}
+Jean-François Mertens.
+\emph{The minmax theorem for u.s.c.--l.s.c.\ payoff functions}.
+International Journal of Game Theory, 15(4):237--250, 1986.
+
+\bibitem{AliprantisBorder2006}
+Charalambos D.\ Aliprantis and Kim C.\ Border.
+\emph{Infinite Dimensional Analysis: A Hitchhiker's Guide}.
+Springer, 3rd edition, 2006.
+
+\bibitem{Bogachev2007}
+Vladimir I.\ Bogachev.
+\emph{Measure Theory}.
+Springer, 2007.
+
+\end{thebibliography}
+
+\end{document}

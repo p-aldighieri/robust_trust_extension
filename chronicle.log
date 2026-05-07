@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.4.7)  7 MAY 2026 15:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.4.7)  7 MAY 2026 15:34
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**./exposition.tex
-(exposition.tex
+**./chronicle.tex
+(chronicle.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/base\article.cls
@@ -373,7 +373,7 @@ Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
 Package hyperref Info: Option `colorlinks' set `true' on input line 12.
 \c@theorem=\count314
 \c@assumption=\count315
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 46
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 42
 .
  (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
@@ -382,27 +382,27 @@ File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 tex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count316
-) (exposition.aux)
-\openout1 = `exposition.aux'.
+) (chronicle.aux)
+\openout1 = `chronicle.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 46.
-LaTeX Font Info:    ... okay on input line 46.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -438,13 +438,13 @@ LaTeX Font Info:    ... okay on input line 46.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-LaTeX Info: Redefining \microtypecontext on input line 46.
-Package microtype Info: Applying patch `item' on input line 46.
-Package microtype Info: Applying patch `toc' on input line 46.
-Package microtype Info: Applying patch `eqnum' on input line 46.
-Package microtype Info: Applying patch `footnote' on input line 46.
-Package microtype Info: Applying patch `verbatim' on input line 46.
-LaTeX Info: Redefining \microtypesetup on input line 46.
+LaTeX Info: Redefining \microtypecontext on input line 42.
+Package microtype Info: Applying patch `item' on input line 42.
+Package microtype Info: Applying patch `toc' on input line 42.
+Package microtype Info: Applying patch `eqnum' on input line 42.
+Package microtype Info: Applying patch `footnote' on input line 42.
+Package microtype Info: Applying patch `verbatim' on input line 42.
+LaTeX Info: Redefining \microtypesetup on input line 42.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -459,11 +459,11 @@ Package microtype Info: No adjustment of character kerning.
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
 (RS)
 )
-Package hyperref Info: Link coloring ON on input line 46.
+Package hyperref Info: Link coloring ON on input line 42.
 
-(exposition.out) (exposition.out)
+(chronicle.out) (chronicle.out)
 \@outlinefile=\write3
-\openout3 = `exposition.out'.
+\openout3 = `chronicle.out'.
 
 
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mk
@@ -482,35 +482,35 @@ ii
 \everyMPtoPDFconversion=\toks34
 )
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 4
-8.
+4.
  (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 4
-8.
+4.
 
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-48.
+44.
 
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-48.
+44.
 
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <17.28> on input line 48.
+(Font)              <12> on input line 44.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 48.
+(Font)              <8> on input line 44.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 48.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 48.
+(Font)              <6> on input line 44.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 44.
 
 
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
@@ -519,7 +519,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 48.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 44.
 
 
 (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
@@ -529,189 +529,91 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 48.
+(Font)              <10> on input line 49.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 48.
+(Font)              <7> on input line 49.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 59.
+(Font)              <5> on input line 49.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 59.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 79.
+(Font)              <10.95> on input line 64.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 9
+3.
 
-[1
+(C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
+File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+) [1
 
 {C:/Users/dep89/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/dep8
 9/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc}{C:/Users/dep89/Ap
 pData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}{C:/Users/dep89/Ap
 pData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/dep89/AppDat
 a/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Users/dep89/AppDat
-a/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}] [2]
-Overfull \hbox (12.31345pt too wide) in paragraph at lines 226--233
-[]\T1/lmr/bx/n/10.95 (-20) Tier 2. \T1/lmr/m/n/10.95 (-20) Un-der menu-Hall, th
-e support-function form $[][] \OML/lmm/m/it/10.95 ^^^\OT1/lmr/m/n/10.95 (-20) (
-\OML/lmm/m/it/10.95 P[]\OT1/lmr/m/n/10.95 (-20) (\OMS/lmsy/m/n/10.95 ^^A j \OML
-/lmm/m/it/10.95 m\OT1/lmr/m/n/10.95 (-20) ))\OML/lmm/m/it/10.95 q\OT1/lmr/m/n/1
-0.95 (-20) (\OML/lmm/m/it/10.95 dm\OT1/lmr/m/n/10.95 (-20) ) \OMS/lmsy/m/n/10.9
-5 ^^T [][] \OML/lmm/m/it/10.95 h[]\OT1/lmr/m/n/10.95 (-20) (\OML/lmm/m/it/10.95
- ^^^\OT1/lmr/m/n/10.95 (-20) )\OML/lmm/m/it/10.95 q\OT1/lmr/m/n/10.95 (-20) (\O
-ML/lmm/m/it/10.95 dm\OT1/lmr/m/n/10.95 (-20) )$
- []
+a/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.enc}{C:/Users/dep89/AppData/L
+ocal/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}] [2] [3]
 
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <14.4> on input line 234.
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 234.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\varepsilon' on input line 234.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 234.
-
-[3]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
-08.
- (C:\Users\dep89\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
-File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
-[4{C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.enc}]
-! Missing $ inserted.
-<inserted text> 
-                $
-l.400 Bayes-cone calibration q_
-                               N-a.e.\ on $N$ (where $q_N$ is the dust
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.400 ...e calibration q_N-a.e.\ on $N$ (where $q_
-                                                  N$ is the dust
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-! Missing $ inserted.
-<inserted text> 
-                $
-l.411 ...f{lem:cone}, $\rho_m = \delta_{\mu_0}$ q_
-                                                  N-a.e.
-I've inserted a begin-math/end-math symbol since I think
-you left one out. Proceed, with fingers crossed.
-
-
-! LaTeX Error: Bad math environment delimiter.
+! LaTeX Error: Unicode character τ (U+03C4)
+               not set up for use with LaTeX.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.413 \[
-        
-Your command was ignored.
-Type  I <command> <return>  to replace it with another command,
-or  <return>  to continue without it.
+l.278 supported on $G(s)$ τ
+                            -a.e.\ with the disintegration posterior in
+You may provide a definition with
+\DeclareUnicodeCharacter 
 
-! Missing \endgroup inserted.
-<inserted text> 
-                \endgroup 
-l.415 \]
-        
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
+[4] [5]
 
-
-! LaTeX Error: \begin{proof} on input line 404 ended by \end{equation*}.
+! LaTeX Error: Unicode character τ (U+03C4)
+               not set up for use with LaTeX.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.415 \]
-        
-Your command was ignored.
-Type  I <command> <return>  to replace it with another command,
-or  <return>  to continue without it.
+l.367 ...appa(\cdot\mid s)$ supported on $G(s)$ τ
+                                                  -a.e.\ such
+You may provide a definition with
+\DeclareUnicodeCharacter 
 
-! Missing $ inserted.
-<inserted text> 
-                $
-l.415 \]
-        
-I've inserted something that you may have forgotten.
-(See the <inserted text> above.)
-With luck, this will get me unwedged. But if you
-really didn't forget anything, try typing `2' now; then
-my insertion and my current dilemma will both disappear.
-
-[5]
-
-! LaTeX Error: \begin{document} ended by \end{proof}.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.422 \end{proof}
-                 
-Your command was ignored.
-Type  I <command> <return>  to replace it with another command,
-or  <return>  to continue without it.
-
-! Extra \endgroup.
-\end  ...end#1\endcsname \@checkend {#1}\endgroup 
-                                                  \UseHook {env/#1/after}\if...
-l.422 \end{proof}
-                 
-Things are pretty mixed up, but I think the worst is over.
-
-[6] [7] [8] (exposition.aux)
+[6] [7] (chronicle.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-Package rerunfilecheck Info: File `exposition.out' has not changed.
-(rerunfilecheck)             Checksum: DCC377ABB21C1614DC6447B55C00D9BB;1812.
+Package rerunfilecheck Info: File `chronicle.out' has not changed.
+(rerunfilecheck)             Checksum: 9FDFA5134336D57F6F23918C28C1D8CE;2156.
  ) 
 Here is how much of TeX's memory you used:
- 13362 strings out of 467867
- 208624 string characters out of 5418335
- 667224 words of memory out of 5000000
- 41813 multiletter control sequences out of 15000+600000
- 718109 words of font info for 211 fonts, out of 8000000 for 9000
+ 13323 strings out of 467867
+ 207951 string characters out of 5418335
+ 663912 words of memory out of 5000000
+ 41782 multiletter control sequences out of 15000+600000
+ 715494 words of font info for 196 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,8n,79p,1009b,584s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,6n,79p,1008b,599s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pf
 b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pf
-b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmex10.pf
-b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pf
-b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi12.pf
-b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi6.pfb
-><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi7.pfb>
-<C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi8.pfb><
-C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C
-:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C:
-/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr17.pfb><C:/
-Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr6.pfb><C:/Us
-ers/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/User
-s/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/User
-s/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri12.pfb><C:/User
+b><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx8.pfb
+><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmex10.pfb
+><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pfb
+><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi8.pfb>
+<C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><
+C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C
+:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr17.pfb><C:
+/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr6.pfb><C:/U
+sers/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/Use
+rs/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/Use
+rs/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri8.pfb><C:/User
 s/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/User
 s/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy6.pfb><C:/Users
 /dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users/
-dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.
-pfb><C:/Users/dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/s
-ymbols/msbm10.pfb>
-Output written on exposition.pdf (8 pages, 366944 bytes).
+dep89/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.
+pfb>
+Output written on chronicle.pdf (7 pages, 350255 bytes).
 PDF statistics:
- 251 PDF objects out of 1000 (max. 8388607)
- 44 named destinations out of 1000 (max. 500000)
+ 225 PDF objects out of 1000 (max. 8388607)
+ 50 named destinations out of 1000 (max. 500000)
  47185 words of extra memory for PDF output out of 51595 (max. 10000000)
 

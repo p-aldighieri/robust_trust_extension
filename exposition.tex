@@ -41,31 +41,37 @@
   \large A three-tier theorem via the payoff-profile menu engine
 }
 \author{Pedro Aldighieri}
-\date{7 May 2026}
+\date{8 May 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This note reports on a proof, drafted over the past week, of a
-three-tier infinite-dimensional extension of Theorem~2 (``Robustly
-Rationalizable Solution'') from Dworczak \& Smolin's \emph{Robust
-Trust} (2026). The earlier Phil-Reny restricted-game-plus-Lusin-lift
-route, which required three additional hypotheses
-(\textbf{A5-thick}, \textbf{A8c-attain}, \textbf{TRE-gen-Hall})
-even for value optimality, has been replaced by a finite-dimensional
-\emph{payoff-profile menu engine}. The reformulation is strictly
-stronger in three respects. (i) \textbf{Tier~1a} (existence of a
-value-optimal agent strategy plus $\eps$-adversaries) holds under
-the paper's standing hypotheses alone; A5-thick and A8c-attain are
-no longer needed. (ii) \textbf{Tier~1b} (exact adversary attainment)
-is now isolated behind a clean \emph{exact-contact} condition
-endogenous to the chosen optimal labeling. (iii) \textbf{Tier~2}
-(full robust rationalizability) replaces deterministic TRE-gen-Hall
-with a set-valued \emph{menu-Hall} calibration. A ternary
-non-radial witness shows menu-Hall is genuinely needed in
-$|\Om|\ge 3$: the obstruction is intrinsic multi-dimensional vector
-balance, not a deterministic-versus-randomized artefact.
+This note reports a three-tier infinite-dimensional extension of
+Theorem~2 (``Robustly Rationalizable Solution'') from Dworczak \&
+Smolin's \emph{Robust Trust} (2026). The earlier
+restricted-game-plus-Lusin-lift route, which required three
+additional hypotheses (\textbf{A5-thick}, \textbf{A8c-attain},
+\textbf{TRE-gen-Hall}) even for value optimality, has been replaced
+by a finite-dimensional \emph{payoff-profile menu engine}. The
+reformulation is strictly stronger in three respects. (i)
+\textbf{Tier~1a} (existence of a value-optimal agent strategy plus
+$\eps$-adversaries) holds under the paper's standing hypotheses
+alone; A5-thick and A8c-attain are no longer needed. (ii)
+\textbf{Tier~1b} (exact adversary attainment) is now isolated behind
+a clean \emph{exact-contact} condition endogenous to the chosen
+optimal labeling. (iii) \textbf{Tier~2} (full robust
+rationalizability) replaces deterministic TRE-gen-Hall with a
+set-valued \emph{menu-Hall} calibration, with the conclusion read
+$q_\beta$-almost-everywhere in the sense made precise below. A
+sharpness package (cone intersection lemma + no-free-dust theorem)
+shows menu-Hall is genuinely needed inside the engine: the
+obstruction is intrinsic multi-dimensional vector balance, uniform
+across all support patterns, and impervious to null-message dust
+under atomless~$\tau$. A separate classification result shows the
+witness's trust region is not primitive, so the witness exhibits a
+menu-engine artefact rather than a counterexample to the unrestricted
+infinite Theorem~2.
 \end{abstract}
 
 \section{The setting and the question}\label{sec:setting}
@@ -95,6 +101,28 @@ $P_{\beta^*}(\cdot\mid m)$. The paper's Theorem~2 establishes
 existence under the assumption that $M$ and $\Th$ are \emph{finite},
 via a finite Sion saddle. The question addressed here is whether
 existence can be extended when $M$ and~$\Th$ are infinite.
+
+\paragraph{The right reading of ``for all $m$'' in the infinite setting.}
+Section~2 of \emph{Robust Trust} states that, in infinite spaces,
+``statements involving `for all' should be interpreted as `for almost
+all' with respect to the underlying distributions.'' Definition~2
+itself does not name the underlying distribution. The natural choice
+is the actual mixture message marginal under $\beta^*$,
+\[
+  q_{\beta^*} \;:=\; \alpha\,\tau \;+\; (1-\alpha)\!\int_M\!\beta^*(\cdot\mid s)\,\tau(ds),
+\]
+because $P_{\beta^*}(\cdot\mid m)$ is itself a regular conditional
+probability defined $q_{\beta^*}$-a.e. Two consequences. First, the
+right reading of Definition~2 in the infinite setting is
+$q_{\beta^*}$-a.e., not literal-all and not merely $\tau$-a.e. Second,
+the adversary is \emph{not} required to be $\tau$-absolutely
+continuous: $\beta^*$ may place positive mass on a $\tau$-null Borel
+set $N\subseteq M$, in which case $q_{\beta^*}(N)>0$ and those
+messages are on-path for the mixture law. In the paper's finite
+proof, $\alpha>0$ ensures every $m\in M$ has positive mixture mass,
+so all three readings coincide; in infinite~$M$, $\tau$-null but
+$q_{\beta^*}$-positive messages must satisfy the Bayes-optimality
+condition if the adversary uses them.
 
 \section{The engine}\label{sec:engine}
 
@@ -322,56 +350,155 @@ $\Delta(\Om)$.
 This is exactly the per-message Bayes-optimality requirement of
 Definition~2. Tier 2 follows.
 
-\section{Why menu-Hall is needed (sharp witness)}\label{sec:tight}
+\section{Sharpness of menu-Hall}\label{sec:tight}
 
-The condition is genuinely needed in $|\Om|\ge 3$. Take $\Om = \{0,1,2\}$,
-$A = \{a_0,a_1,a_2\}$ with $u(a_\omega,\omega) = 1$ and $u(a_i,\omega) = -1$
-for $i\ne\omega$, prior $\mu_0 = (1/3,1/3,1/3)$, atomless full-support
-$\tau$ on $\Delta(\Om)$, and a non-radial trust region
-$T := \{\mu : \mu(0)\le 0.4\}$ with $\hat\sigma^*(m)$ the plurality
-vertex of $P_T(m)$.
+Menu-Hall is genuinely needed inside the engine. The witness is
+ternary winner-takes-all: $\Om = \{0,1,2\}$, $A = \{a_0,a_1,a_2\}$
+with $u(a_\omega,\omega) = 1$ and $u(a_i,\omega) = -1$ for
+$i\ne\omega$, prior $\mu_0 = (1/3,1/3,1/3)$, atomless full-support
+$\tau$ on $\Delta(\Om)$, and trust region
+$T := \{\mu : \mu(0)\le 0.4\}$. The induced payoff-profile menu under
+any plurality continuation is the full vertex set $C^\dagger = \{v_0,
+v_1, v_2\}$ with $v_\omega(\omega) = 1$ and $v_\omega(\omega') = -1$
+for $\omega'\ne\omega$.
 
-The payoff profiles are the three vertices $v_0,v_1,v_2$ with
-$v_\omega(\omega) = 1$ and $v_\omega(\omega') = -1$ for $\omega'\ne\omega$.
-At the boundary message $t_0 := (0.4,0.3,0.3)$, the rowwise
-minimizer set is
+For each nonempty $I \subseteq \{0,1,2\}$, define the rowwise
+minimizer cone and Bayes-optimality cone of the mixed profile
+$w_\lambda := \sum_{i\in I}\lambda_i v_i$ (with $\mathrm{supp}\,\lambda = I$):
 \[
-  R(t_0) \;=\; \argmin_{w\in\{v_0,v_1,v_2\}} t_0\cdot w \;=\; \{v_1,v_2\}
+  K_I^- \;:=\; \{s\in\Delta(\Om) : s_i\le s_k\,\,\forall i\in I,\,\forall k\in\{0,1,2\}\},
 \]
-(check: $t_0\cdot v_0 = -0.2$, $t_0\cdot v_1 = t_0\cdot v_2 = -0.4$).
-The Bayes cone for the prescribed action $\hat\sigma^*(t_0) = a_0$ is
-$B(t_0) = \{p : p_0\ge p_1, p_0\ge p_2\}$. The source beliefs that
-can adversarially route mass into the $t_0$-label satisfy
-$K_0^- := \{s : s_0\le s_1, s_0\le s_2\}$.
+\[
+  B_I \;:=\; \{p\in\Delta(\Om) : p_i\ge p_k\,\,\forall i\in I,\,\forall k\in\{0,1,2\}\}.
+\]
+($K_I^-$ uses the identity $s\cdot w_\lambda = 2\sum_i\lambda_i s_i - 1$
+to identify rowwise minimizers; $B_I$ similarly identifies the labels
+making $w_\lambda$ Bayes-optimal at posterior $p$.)
 
-\textbf{Barycenter argument.} Any conditional barycenter $\bar s$ of
-positive $\tau$-mass from $K_0^-$ inherits the pointwise inequalities
-$s_1 - s_0\ge 0$ and $s_2 - s_0\ge 0$, so $\bar s_1\ge \bar s_0$ and
-$\bar s_2\ge \bar s_0$. To calibrate into $B(t_0)$, the reverse
-inequalities are required: $\bar s_0\ge \bar s_1$ and $\bar s_0\ge \bar s_2$.
-Together with $\sum\bar s_i = 1$, this forces $\bar s = (1/3,1/3,1/3)$.
-Pointwise nonneg differences plus equality of barycenter then force
-the source belief to equal $(1/3,1/3,1/3)$ a.s.\ on the transported
-mass set. With atomless $\tau$ no such concentration is possible.
-Hence menu-Hall fails.
+\begin{lemma}[Cone intersection]\label{lem:cone}
+For every nonempty $I\subseteq\{0,1,2\}$, if $\rho$ is a Borel
+probability on $\Delta(\Om)$ with $\rho(K_I^-) = 1$ and barycenter
+$\bar s\in B_I$, then $\rho = \delta_{\mu_0}$ where $\mu_0 = (1/3,
+1/3, 1/3)$.
+\end{lemma}
 
-The diagnosis is sharp: the obstruction is intrinsic
-multi-dimensional vector balance, not the deterministic-vs-set-valued
-dichotomy. Set-valued mixing over $R(t_0) = \{v_1,v_2\}$ does not
-help, because the source-side calibration depends on $\bar s$, not on
-the menu-side selection. Tier 2 therefore requires either
-menu-Hall as stated or an additional structural hypothesis on the
-trust region (radial symmetry, zonotopal alignment, separable cones).
-The ternary radial case (Section 5.2 plus Appendix A.10 of
-\emph{Robust Trust}) does verify menu-Hall via per-direction
-1-dimensional transports.
+\begin{proof}[Sketch]
+Fix $i\in I$. $\rho$-a.s., $s_k - s_i \ge 0$ for every $k$. Since
+$\bar s\in B_I$, $\bar s_i\ge \bar s_k$, so $\int(s_k - s_i)\,d\rho
+\le 0$. A bounded nonnegative Borel random variable with nonpositive
+expectation is zero a.s., hence $s_k = s_i$ $\rho$-a.s. for every
+$k$. Coordinates summing to one force $s = (1/3, 1/3, 1/3)$
+$\rho$-a.s.
+\end{proof}
 
-\section{Comparison to the earlier Phil-Reny route}\label{sec:comparison}
+\begin{theorem}[No-free-dust]\label{thm:nofreedust}
+Under atomless $\tau$ in the ternary winner-takes-all setting, no
+Borel $\tau$-null set $N\subseteq M$, no Borel labeling $w_N: N\to W$,
+and no adversarial kernel $\kappa$ supported on rowwise minimizers
+can simultaneously satisfy: $q_\beta(N) > 0$ where
+$q_\beta = \alpha\tau + (1-\alpha)(\tau\otimes\kappa)_2$, AND
+Bayes-cone calibration q_N-a.e.\ on $N$ (where $q_N$ is the dust
+message marginal).
+\end{theorem}
+
+\begin{proof}[Sketch]
+Define $\nu(ds, dm) := \tau(ds)\,\kappa(dm\mid s)$ on
+$\Delta(\Om)\times M$, and let $\nu_N := \nu\!\restriction_{\Delta(\Om)\times N}$.
+Disintegrate $\nu_N$ over its second marginal $q_N$: $\nu_N(A\times E) =
+\int_E\rho_m(A)\,q_N(dm)$ for Borel kernels $\rho_m$, $q_N$-a.e.\ $m\in N$.
+The rowwise-minimizer support gives $\rho_m(K_{I(m)}^-) = 1$ $q_N$-a.e.
+The Bayes-cone calibration gives the barycenter of $\rho_m$ in
+$B_{I(m)}$. By Lemma~\ref{lem:cone}, $\rho_m = \delta_{\mu_0}$ q_N-a.e.
+Hence
+\[
+  \nu(\{\mu_0\}\times N) \;=\; \int_N\rho_m(\{\mu_0\})\,q_N(dm) \;=\; q_N(N).
+\]
+Now $\tau(N) = 0$, so $q_\beta(N) = (1-\alpha)\,q_N(N)$; assumption
+$q_\beta(N) > 0$ gives $q_N(N) > 0$ (assuming $\alpha < 1$; $\alpha = 1$
+rules out adversarial dust trivially). On the other hand, $\nu$ has
+first marginal $\tau$, so
+$\nu(\{\mu_0\}\times N) \le \nu(\{\mu_0\}\times\Delta(\Om)) = \tau(\{\mu_0\}) = 0$
+(atomlessness). Contradiction.
+\end{proof}
+
+\paragraph{What this buys.} Lemma~\ref{lem:cone} strengthens the
+sharpness from one boundary point ($I = \{0\}$, $t_0 =
+(0.4,0.3,0.3)$, recovering $K_0^- \cap B_0 = \{\mu_0\}$) to a uniform
+statement covering all support patterns. Theorem~\ref{thm:nofreedust}
+then closes the most plausible escape: an infinite-setting reading of
+Definition~2 ($q_\beta$-a.e., \S\ref{sec:setting}) explicitly allows
+adversaries to use $\tau$-null messages, and one might hope to repair
+calibration by routing extra labels through such ``null-message
+dust.'' The proof never counts messages: it works for finite,
+countable, or continuum dust. The obstruction is invariant to
+deterministic vs.\ mixed kernels, pure vs.\ mixed dust labels, and
+atomic vs.\ diffuse dust.
+
+\paragraph{Sharpness for the boundary witness.} Setting $I = \{0\}$
+in Lemma~\ref{lem:cone} recovers the pointwise sharpness at
+$t_0 = (0.4, 0.3, 0.3)$: the source cone is $K_0^- = \{s : s_0\le s_1,
+s_0\le s_2\}$, the Bayes cone for action $a_0$ is $B(t_0) = \{p :
+p_0\ge p_1, p_0\ge p_2\}$, and $K_0^- \cap B(t_0) = \{\mu_0\}$. With
+atomless $\tau$, no positive source mass concentrates at $\mu_0$.
+Theorem~\ref{thm:nofreedust} then shows no null-message dust
+construction can repair this. menu-Hall is therefore genuinely
+required for Tier~2 in this geometry.
+
+\section{Classification of the witness}\label{sec:classification}
+
+Lemma~\ref{lem:cone} and Theorem~\ref{thm:nofreedust} establish that
+menu-Hall is needed inside the menu engine. They do \emph{not}
+falsify unrestricted Theorem~2.
+
+\paragraph{The trust region $T$ used in \S\ref{sec:tight} is not
+primitive.} Concretely, $T = \{\mu : \mu(0)\le 0.4\}$ contains beliefs
+with each plurality label: $(0.4, 0.3, 0.3)\mapsto a_0$, $(0.1, 0.8,
+0.1)\mapsto a_1$, $(0.1, 0.1, 0.8)\mapsto a_2$. Any plurality-vertex
+continuation on $T$ produces all three pure profiles $v_0, v_1, v_2$,
+so the induced effective menu is the full vertex menu. The off-$T$
+Bregman/TRS projection chooses an interior point of $T$ whose induced
+profile maximizes $m\cdot w$ over the in-$T$ menu, but since the
+in-$T$ menu is already the full vertex set, the projection collapses
+to ordinary plurality at $m$. Thus every $m\in\Delta(\Om)$, inside or
+outside $T$, induces the same Bayes-optimal WTA vertex, identically
+to $T = \Delta(\Om)$.
+
+\paragraph{Consequence.} If the full menu $\{v_0, v_1, v_2\}$ is
+optimal under some primitive $(\alpha, \tau, \Theta, f, u, A)$, then
+the same behavior is representable as $T = \Delta(\Om)$. If the full
+menu is not optimal, neither is the halfspace. Either way, the
+boundary number $0.4$ and the boundary point $t_0$ are
+\emph{representational scenery, not load-bearing beams}. The witness
+demonstrates menu-Hall is genuinely needed inside the
+$F$-functional optimization (i.e., choosing among compact menus in
+$\mathcal K(W)$), but it does \emph{not} certify that every primitive
+optimal solution must hit the same obstruction. To recover the
+obstruction, the strategy would need to label a $\tau$-null boundary
+point by $v_0$ while sourcing it from $K_0^-$, but the same trust
+region already contains all three vertices, so the primitive induced
+menu is full.
+
+\section{Comparison to the earlier route}\label{sec:comparison}
+
+The earlier route worked in the agent's strategy space with the
+Balder weak topology, used Mertens's asymmetric minmax theorem on a
+$\tau$-dominated restricted game, and lifted the restricted maximizer
+back to the unrestricted game by a Lusin regularization. It required
+three additional hypotheses:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{(A5-thick)} an endogenous Lusin-thickness condition on
+the maximizer's representative;
+\item \textbf{(A8c-attain)} attainment of the rowwise infimum at a
+measurable selector;
+\item \textbf{(TRE-gen-Hall)} a deterministic version of the present
+menu-Hall calibration.
+\end{itemize}
+The comparison to the current route is summarised below.
 
 \begin{center}
 \begin{tabular}{lll}
 \hline
-\textbf{Conclusion} & \textbf{Earlier route (Phil-Reny)} & \textbf{Current route (menu engine)}\\
+\textbf{Conclusion} & \textbf{Earlier route} & \textbf{Current route}\\
 \hline
 $\sigma^*$ optimal & standing $+$ A5-thick & standing alone\\
 $\eps$-adversary    & standing $+$ A5-thick & standing alone\\
@@ -381,11 +508,17 @@ robust rat'lity   & ditto $+$ TRE-gen-Hall (deterministic) & ditto $+$ menu-Hall
 \textbf{Engine}    & Balder weak topology on $\Si$, & compactness of $\mathcal K(W)$ in\\
                    & Mertens minmax, Lusin lift     & finite-dim $\R^{|\Om|}$\\
 \hline
+\textbf{Sharpness} & pointwise ternary witness     & cone intersection (uniform) +\\
+                   &                               & no-free-dust theorem\\
+\hline
+\textbf{Witness} & possible Th.~2 obstruction     & menu-engine artefact, classified\\
+                 & (then unclassified)            & not a Th.~2 counterexample\\
+\hline
 \end{tabular}
 \end{center}
 
 The architectural shift is moving from infinite-dimensional strategy
-compactness to finite-dimensional payoff-profile compactness. Three
+compactness to finite-dimensional payoff-profile compactness. Four
 substantive consequences:
 
 \begin{enumerate}[leftmargin=2em]
@@ -402,33 +535,13 @@ instantiable by primitive choices.
 the calibration condition a transparent integrated separation
 inequality. This is strictly weaker than deterministic TRE-gen-Hall
 (every deterministic $m^*$ kernel is a degenerate $\kappa$).
-\end{enumerate}
-
-The ternary witness in \S\ref{sec:tight} shows menu-Hall cannot be
-dropped without further structural conditions on $T$, but the witness
-also clarifies the geometric obstruction: it is multi-dimensional
-vector balance, not stochastic-vs-deterministic. This sharpens what
-needs to change to push past Tier 2.
-
-\section{Remaining directions}\label{sec:open}
-
-\begin{enumerate}[leftmargin=2em]
-\item \textbf{When does exact-contact hold automatically?} The
-sufficient routes listed in \S\ref{sec:tier1b} cover most natural
-specifications, but a constructive procedure that always builds a
-closed-image labeling out of an arbitrary optimal $w^*$ would close
-Tier 1b unconditionally.
-
-\item \textbf{Structural conditions for menu-Hall.} The largest class
-of trust regions for which menu-Hall holds without further conditions
-is open. Candidates: separable trust regions, zonotopal $T$, trust
-regions invariant under a transitive group action.
-
-\item \textbf{Formalization.} A faithful formalization would now
-encode the menu engine: compactness of $\mathcal K(W)$, the
-menu-value functional, closure-pruning, exact-contact selection,
-and menu-Hall as a set-valued calibration. This is a substantially
-lighter formalization target than the Balder/Mertens/Lusin route.
+\item The sharpness package is uniform: Lemma~\ref{lem:cone} covers
+all support patterns, and Theorem~\ref{thm:nofreedust} closes
+null-message dust escapes that the $q_\beta$-a.e.\ reading of
+Definition~2 (\S\ref{sec:setting}) explicitly allows. The witness's
+trust region is classified (\S\ref{sec:classification}) as a
+menu-engine artefact, not a counterexample to unrestricted
+Theorem~2.
 \end{enumerate}
 
 \begin{thebibliography}{9}
