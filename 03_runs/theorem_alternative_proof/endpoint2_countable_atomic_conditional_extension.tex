@@ -1,0 +1,332 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{definition}[theorem]{Definition}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\argmin}{\operatorname{arg\,min}}
+\newcommand{\ol}{\overline}
+
+\title{Endpoint 2 Beyond Finite $M$:\\
+Countable-Atomic Conditional Extension}
+\author{Formalization note prepared for Piotr Dworczak}
+\date{March 17, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note records the endpoint reached on the countable-atomic attainment route for extending the existence direction of Theorem~2 beyond finite message spaces.
+The unconditional attainment theorem is false on this route because of escape of mass.
+The surviving positive result is conditional:
+if one near-optimal sublevel set is rowwise uniformly tight and the reduced value functional is lower semicontinuous in product-$\ell^1$, then the adversary problem attains a minimizer.
+At that minimizer, the already-banked selector/subgradient argument yields rowwise equal-payoff-on-support, conditional on the explicit Bayes-side subgradient-realization caveat.
+\end{abstract}
+
+\tableofcontents
+
+%% =====================================================================
+\section{Summary}
+%% =====================================================================
+
+This endpoint has four parts.
+
+\begin{enumerate}
+\item We changed architectures. Instead of trying to recover exact recurring message fibers, we lifted the finite alternative proof to
+\[
+X := \prod_{\mu \in I} \ell^1(M),
+\qquad
+X^* := \prod_{\mu \in I} \ell^\infty(M),
+\qquad
+K := \prod_{\mu \in I} \Delta(M) \subset X,
+\]
+with $M$ countable and $I$ finite.
+
+\item We proved that the unconditional attainment claim on this route is false.
+There is a genuine escape-of-mass counterexample: minimizing sequences can run down an infinite message tail without converging in product-$\ell^1$.
+
+\item We then identified the exact positive replacement.
+If there exists $\eta > 0$ such that
+\[
+A_\eta := \{ \beta \in K : V(\beta) \le \inf_K V + \eta \}
+\]
+is rowwise uniformly tight, and if $V$ is lower semicontinuous, then $V$ attains its infimum on $K$.
+
+\item Once a minimizer $\beta^*$ exists, the finite alternative-proof selector/subgradient mechanism survives on this branch.
+With the explicit Bayes-side subgradient-realization caveat, one gets
+\[
+g^* \in \partial V(\beta^*),
+\qquad
+-g^* \in N_K(\beta^*),
+\]
+hence rowwise equal-payoff-on-support.
+\end{enumerate}
+
+The honest endpoint is therefore conditional.
+We did not find a genuinely earlier model-side primitive that forces this tightness package.
+
+%% =====================================================================
+\section{Hand-Wavy Overview}
+%% =====================================================================
+
+In the finite proof, the hard step is not the first-order calculation itself.
+The hard step is that the adversary actually has an optimizer.
+When $M$ is finite, that is free because the strategy space is a compact finite-dimensional product of simplices.
+
+When $M$ is countable, this breaks.
+Mass can leak farther and farther into the message tail while the objective keeps improving.
+So the first thing we proved is that unconditional attainment is simply false on this branch.
+
+The right repair is compactness by tightness.
+If all near-minimizers keep almost all of their mass on a common finite core of messages, then one recovers the missing precompactness in product-$\ell^1$.
+That gives an actual minimizer.
+Once the minimizer exists, the finite alternative proof becomes portable again:
+subgradients plus the simplex normal cone produce the rowwise equal-payoff-on-support condition.
+
+So the theorem does survive beyond finite $M$ on this route, but only conditionally:
+we must explicitly forbid escape of mass.
+
+%% =====================================================================
+\section{Formal Setup}
+%% =====================================================================
+
+Fix a countable message space $M$ and a finite row index set $I$.
+Write
+\[
+X := \prod_{\mu \in I} \ell^1(M),
+\qquad
+\|\beta\|_X := \sum_{\mu \in I} \|\beta_\mu\|_1,
+\qquad
+K := \prod_{\mu \in I} \Delta(M) \subset X.
+\]
+
+Let
+\[
+V : K \to \R
+\]
+be the reduced value functional on the countable-atomic attainment route.
+Set
+\[
+c := \inf_{\beta \in K} V(\beta).
+\]
+
+For $\eta > 0$, define the near-optimal sublevel set
+\[
+A_\eta := \{ \beta \in K : V(\beta) \le c + \eta \}.
+\]
+
+\begin{definition}[Rowwise uniform tightness]
+We say that a set $A \subset K$ is rowwise uniformly tight if for every $\varepsilon > 0$ and every row $\mu \in I$ there exists a finite set $F_{\mu,\varepsilon} \subset M$ such that
+\[
+\sup_{\beta \in A} \beta_\mu(M \setminus F_{\mu,\varepsilon}) \le \varepsilon .
+\]
+\end{definition}
+
+%% =====================================================================
+\section{Negative Result}
+%% =====================================================================
+
+\begin{proposition}[Unconditional attainment fails]
+\label{prop:escape}
+Under the standing hypotheses alone, the statement
+\[
+\inf_{\beta \in K} V(\beta)
+\quad \text{is attained on } K
+\]
+is false on this route.
+\end{proposition}
+
+\begin{proof}
+Take $M = \N$, let $I$ be any nonempty finite set, and define coefficients
+\[
+a_m := \frac{1}{m}.
+\]
+Consider the linear reduced functional
+\[
+V(\beta) := \sum_{\mu \in I} \sum_{m \ge 1} a_m \beta_\mu(m)
+=
+\sum_{\mu \in I} \sum_{m \ge 1} \frac{\beta_\mu(m)}{m}.
+\]
+This functional is bounded, convex, and continuous on $X$.
+
+For each $n \ge 1$, define $\beta^n \in K$ by
+\[
+\beta^n_\mu := \delta_n
+\qquad \text{for every } \mu \in I.
+\]
+Then
+\[
+V(\beta^n) = \frac{|I|}{n} \to 0,
+\]
+so $\inf_K V = 0$.
+But for every $\beta \in K$, each row $\beta_\mu$ is a probability distribution and every coefficient $1/m$ is strictly positive, hence
+\[
+V(\beta) > 0.
+\]
+So the infimum is not attained.
+
+This is exactly escape of mass: the sequence $(\beta^n)$ sends all mass to messages farther and farther out in the tail, and has no convergent subsequence in product-$\ell^1$.
+\end{proof}
+
+\begin{remark}
+Proposition~\ref{prop:escape} is why endpoint 2 cannot be unconditional on the present record.
+Any positive theorem on this branch must explicitly rule out this tail escape mechanism.
+\end{remark}
+
+%% =====================================================================
+\section{Conditional Theorem}
+%% =====================================================================
+
+\begin{theorem}[Conditional attainment from one tight near-optimal sublevel]
+\label{thm:attainment}
+Assume $V$ is lower semicontinuous for the $X$-norm.
+Suppose there exists $\eta > 0$ such that the near-optimal set
+\[
+A_\eta = \{ \beta \in K : V(\beta) \le c + \eta \}
+\]
+is rowwise uniformly tight.
+Then there exists $\beta^* \in K$ such that
+\[
+V(\beta^*) = c = \inf_{\beta \in K} V(\beta).
+\]
+\end{theorem}
+
+\begin{proof}
+Choose a minimizing sequence $(\beta^n) \subset K$ satisfying
+\[
+V(\beta^n) \le c + \min\{\eta, 1/n\}.
+\]
+Then $\beta^n \in A_\eta$ for all $n$.
+
+Because $I$ is finite, rowwise tightness can be merged into one product-tail bound:
+for every $\varepsilon > 0$ there exists a finite set $F_\varepsilon \subset M$ such that
+\[
+\sup_{\beta \in A_\eta} \sum_{\mu \in I} \beta_\mu(M \setminus F_\varepsilon) \le \varepsilon.
+\]
+Indeed, choose finite rowwise truncation sets $F_{\mu,\varepsilon/|I|}$ and take their union.
+
+Fix $\varepsilon_k = 2^{-k}$ and choose finite sets
+\[
+F_k \uparrow M
+\]
+such that
+\[
+\sup_{\beta \in A_\eta} \sum_{\mu \in I} \beta_\mu(M \setminus F_k) \le 2^{-k}.
+\]
+
+For each fixed $k$, the coordinate block
+\[
+\big(\beta_\mu(m)\big)_{(\mu,m)\in I\times F_k}
+\]
+ranges in a compact finite-dimensional box.
+By diagonal extraction, after passing to a subsequence we may assume that for every $(\mu,m) \in I \times M$,
+\[
+\beta^n_\mu(m) \to \beta^*_\mu(m)
+\]
+for some nonnegative array $\beta^* = (\beta^*_\mu)_{\mu \in I}$.
+
+We now upgrade coordinatewise convergence to convergence in $X$.
+Fix $k$.
+On the finite set $I \times F_k$,
+\[
+\sum_{\mu \in I}\sum_{m \in F_k} |\beta^n_\mu(m)-\beta^*_\mu(m)| \to 0.
+\]
+Also, by the choice of $F_k$,
+\[
+\sum_{\mu \in I}\beta^n_\mu(M \setminus F_k) \le 2^{-k}
+\qquad\text{for all } n.
+\]
+Passing to the limit on $F_k$ shows
+\[
+\sum_{\mu \in I}\beta^*_\mu(M \setminus F_k) \le 2^{-k}.
+\]
+Hence
+\[
+\|\beta^n-\beta^*\|_X
+\le
+\sum_{\mu \in I}\sum_{m \in F_k} |\beta^n_\mu(m)-\beta^*_\mu(m)|
+\;+\;
+\sum_{\mu \in I}\beta^n_\mu(M \setminus F_k)
+\;+\;
+\sum_{\mu \in I}\beta^*_\mu(M \setminus F_k).
+\]
+First let $n \to \infty$, then let $k \to \infty$.
+This yields
+\[
+\beta^n \to \beta^* \quad \text{in } X.
+\]
+
+In particular $\beta^* \in K$: each row is nonnegative, and the uniform tail bounds prevent loss of total mass.
+
+Now use lower semicontinuity:
+\[
+V(\beta^*) \le \liminf_{n\to\infty} V(\beta^n) \le c.
+\]
+Since $c = \inf_K V$, we must have $V(\beta^*) = c$.
+So the infimum is attained.
+\end{proof}
+
+%% =====================================================================
+\section{Selector/Subgradient Corollary}
+%% =====================================================================
+
+\begin{corollary}[Endpoint 2]
+\label{cor:endpoint2}
+Assume the hypotheses of Theorem~\ref{thm:attainment}, and let $\beta^*$ be an attained minimizer.
+Assume in addition the following Bayes-side realization property at $\beta^*$:
+
+\medskip
+\emph{every relevant subgradient $d \in \partial V(\beta^*)$ can be realized as the payoff array of a messagewise Bayes-optimal selector family.}
+
+\medskip
+Then there exists a messagewise Bayes-optimal selector family $g^* \in X^*$ such that
+\[
+g^* \in \partial V(\beta^*),
+\qquad
+-g^* \in N_K(\beta^*).
+\]
+Consequently, for every row $\mu \in I$, all messages in $\supp \beta^*(\cdot \mid \mu)$ yield the same selected payoff, and every off-support message yields a weakly higher selected payoff.
+\end{corollary}
+
+\begin{proof}
+This is exactly the already-banked selector/subgradient proposition on the countable-atomic attainment route.
+Theorem~\ref{thm:attainment} provides the missing minimizer $\beta^*$.
+Once $\beta^*$ exists, the finite alternative-proof argument carries over in the Banach pair
+\[
+X = \prod_{\mu \in I} \ell^1(M),
+\qquad
+X^* = \prod_{\mu \in I} \ell^\infty(M).
+\]
+The normal cone to the countable simplex gives rowwise equal-payoff-on-support exactly as in the finite case.
+\end{proof}
+
+%% =====================================================================
+\section{Frontier Status}
+%% =====================================================================
+
+The honest endpoint of this branch is now:
+
+\begin{enumerate}
+\item unconditional negative theorem:
+generic attainment fails by escape of mass;
+\item conditional positive theorem:
+one tight near-optimal sublevel set plus lower semicontinuity implies attainment;
+\item downstream conditional corollary:
+attainment plus Bayes-side subgradient realization implies rowwise equal-payoff-on-support.
+\end{enumerate}
+
+What remains open is not another hidden gap inside this theorem package.
+What remains open is whether one can derive the tightness hypothesis from a genuinely earlier
+model-side primitive.
+On the present proof record, no such earlier primitive has been found.
+
+\end{document}

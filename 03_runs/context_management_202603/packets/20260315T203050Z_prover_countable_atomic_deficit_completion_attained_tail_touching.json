@@ -1,0 +1,28 @@
+{
+  "branch": "countable_atomic_direct",
+  "durable_project_sources": [
+    "objective_statement.md",
+    "Robust_trust_Dworczak_Smolin.pdf"
+  ],
+  "durable_source_refresh_files": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/countable_atomic_direct_route.md"
+  ],
+  "embedded_context": [],
+  "excluded_context": [],
+  "expected_next_step_signal": "Suggested next local action:",
+  "goal": "Attack only the deficit-completion lemma on the countable-atomic direct route for the attained tail-touching rows T_infty union T_near. Starting from the reviewer-cleared corrected supporting-kernel proposition, determine whether the deficits r_i = 1 - sum_j lambda_ij can be completed to full row mass on J_i while preserving all column normal-cone conditions, or isolate the exact irreducible obstruction if not.",
+  "hard_constraints": [
+    "Stay on the countable-atomic direct branch. Use the reviewer-cleared corrected supporting-kernel proposition as a hard input. Do not reopen the exhausted exact-route branch.",
+    "Scope only T_infty union T_near. Do not spend effort on unattained rows T_emptyset except to note they remain separate."
+  ],
+  "proof_state_update_target": "Context Management/source_notes/proof_state.md and Context Management/source_notes/countable_atomic_direct_route.md",
+  "required_output": "Return only substantive markdown for the prover role. Either prove the deficit-completion lemma on T_infty union T_near, or isolate the exact irreducible obstruction with as concrete a mechanism as possible. Do not address unattained rows except to bracket them off. End with one line beginning Suggested next local action:.",
+  "role": "prover",
+  "scope": "Countable atomic direct route: deficit-completion lemma on attained tail-touching rows",
+  "temporary_attachments": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260315T194206Z_prover_countable_atomic_tail_touching_derivative_repair_response.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260315T201411Z_reviewer_countable_atomic_tail_touching_derivative_repair_response.md"
+  ],
+  "timestamp": "20260315T203050Z"
+}

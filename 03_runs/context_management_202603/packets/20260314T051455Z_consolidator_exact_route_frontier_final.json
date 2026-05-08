@@ -1,0 +1,34 @@
+{
+  "branch": "exact_route_1",
+  "durable_project_sources": [
+    "objective_statement.md",
+    "Robust_trust_Dworczak_Smolin.pdf",
+    "proof_state.md",
+    "exact_route1_strategy.md"
+  ],
+  "durable_source_refresh_files": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/exact_route1_strategy.md"
+  ],
+  "embedded_context": [],
+  "excluded_context": [
+    "Old compact-topology route and raw atomic truncation-limit route are settled obstructions and should not be reopened.",
+    "Do not import exploratory atomic notes beyond the already-banked route comparisons."
+  ],
+  "expected_next_step_signal": "End with a final line of the form: Suggested next local action: <one sentence>.",
+  "goal": "Produce a concise, technically accurate frontier summary of the beyond-finite-M exact route. Separate clearly: (i) unconditional reduced-side inputs already proved, (ii) the explicit Needed assumption on the main least-strengthened route, (iii) the resulting conditional exact theorem, and (iv) the injective-fiber lemma as a reviewer-cleared strengthened sufficient condition. Do not reopen any dead route and do not speculate beyond the already-banked results.",
+  "hard_constraints": [
+    "Do not broaden the theorem statement beyond what has already been reviewer-cleared.",
+    "Do not present injective-fiber as the preferred general hypothesis.",
+    "Do not repeat full proofs; summarize only the logically trusted frontier."
+  ],
+  "proof_state_update_target": "Update the durable proof-state so the main beyond-finite-M route is recorded as a conditional theorem with the Needed assumption explicit, and the injective-fiber lemma is recorded only as a stronger corollary.",
+  "required_output": "Return only substantive markdown with four sections: Unconditional Inputs, Needed Assumption, Conditional Exact Theorem, Strengthened Sufficient Condition. End with one short paragraph titled Current Frontier that states exactly what remains open.",
+  "role": "consolidator",
+  "scope": "Write one compact exact-route frontier summary after the reviewer-cleared injective-fiber lemma. The summary must keep the main route anchored at the explicit Needed assumption and record injective-fiber only as a stronger optional sufficient condition.",
+  "temporary_attachments": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260313T203949Z_reviewer_conditional_exact_patching_response.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260313T233824Z_reviewer_injective_fiber_lemma_response.md"
+  ],
+  "timestamp": "20260314T051455Z"
+}

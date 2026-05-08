@@ -1,0 +1,50 @@
+# Prompt Packet: breakdown
+
+Branch: `atomic_route_repair`
+
+## Scope Of This Move
+
+Repair the infinite-M route after the atomic truncation counterexample
+
+## Goal
+
+Given the accepted obstruction to the old compact-topology route and the new moving-tail counterexample to the raw atomic truncation-limit passage, identify the next repaired theorem-producing route beyond finite M.
+
+## Hard Constraints
+
+- Treat the old compact-topology route as false.
+- Treat the raw atomic truncation-limit passage as false.
+- Do not restart from finite-M work.
+- Do not attempt a global proof. Output only repaired route design plus first local lemma.
+
+## Durable Project Sources Already In ChatGPT
+
+- `objective_statement.md`
+- `Robust_trust_Dworczak_Smolin.pdf`
+
+## Project Sources To Refresh Before This Chat
+
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/atomic_truncation_strategy.md`
+
+## Temporary Files To Attach In This Chat
+
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260312T191259Z_breakdown_infinite_M_route_repair_response.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260312T214211Z_prover_atomic_truncation_limit_decision_slim_response.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/atomic_truncation_counterexample.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/atomic_fallback_progress.md`
+
+## Deliberately Excluded Context
+
+
+## Required Output
+
+A narrow markdown breakdown with at most 3 viable repaired routes, ranked best to worst, and a first local lemma or decision for the top route. The answer must not try to prove the whole theorem.
+
+## Proof-State Update Target
+
+Context Management/source_notes/proof_state.md
+
+## Expected Next-Step Signal
+
+Suggested next local action:

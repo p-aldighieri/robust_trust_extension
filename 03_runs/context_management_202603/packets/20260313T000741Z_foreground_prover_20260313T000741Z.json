@@ -1,0 +1,28 @@
+{
+  "branch": "foreground_chain",
+  "durable_project_sources": [
+    "objective_statement.md",
+    "Robust_trust_Dworczak_Smolin.pdf"
+  ],
+  "durable_source_refresh_files": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/exact_route1_strategy.md"
+  ],
+  "embedded_context": [],
+  "excluded_context": [],
+  "expected_next_step_signal": "Suggested next local action:",
+  "goal": "Use the attached prior response as the controlling route memo and execute only its suggested next local action: prove or disprove an exact no-gap/measurable-lifting lemma from the fixed-\u03b3\\gamma\u03b3 compactified lower envelope back to raw adviser kernels.",
+  "hard_constraints": [
+    "Use the attached prior response as the controlling route memo.",
+    "Do not restart from settled finite-M work.",
+    "Do not broaden to a global proof attempt."
+  ],
+  "proof_state_update_target": "Context Management/source_notes/proof_state.md",
+  "required_output": "Return only substantive markdown for the single local lemma or decision named in the attached prior response. If it fails, give a precise obstruction or counterexample. Do not attempt the whole theorem.",
+  "role": "prover",
+  "scope": "Execute only the single next local lemma or decision named in the attached prior response.",
+  "temporary_attachments": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260312T231155Z_prover_adviser_induced_law_compactness_response.md"
+  ],
+  "timestamp": "20260313T000741Z"
+}

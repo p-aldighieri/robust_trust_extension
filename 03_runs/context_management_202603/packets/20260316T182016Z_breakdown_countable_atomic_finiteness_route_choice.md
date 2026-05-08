@@ -1,0 +1,48 @@
+# Prompt Packet: breakdown
+
+Branch: `countable_atomic_direct`
+
+## Scope Of This Move
+
+Countable atomic direct route: finiteness-level route choice after reviewer-cleared open diagnosis
+
+## Goal
+
+Choose only between the two live continuations at the finiteness hinge for the canonical obstruction-ray tail S_{ray}: either a genuine branch-compatible counterexample hunt for U union C finite, or a search for a new primitive condition forcing eventual movement and eventual single-ray collapse. Rank the routes, state which one should be tried next, and explain why the other should wait.
+
+## Hard Constraints
+
+- Stay on the countable-atomic direct branch and treat the finiteness-open reviewer result as trusted. Do not reopen later CTR clauses, admissibility/slice/support geometry, or the exhausted exact-route branch before choosing one finiteness-level route.
+- Do not broaden into a full theorem claim. The only decision here is which finiteness-level continuation is strongest on the current banked record.
+
+## Durable Project Sources Already In ChatGPT
+
+- `objective_statement.md`
+- `Robust_trust_Dworczak_Smolin.pdf`
+
+## Project Sources To Refresh Before This Chat
+
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/countable_atomic_direct_route.md`
+
+## Temporary Files To Attach In This Chat
+
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260316T172007Z_prover_countable_atomic_finiteness_lemma_response.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260316T174932Z_reviewer_countable_atomic_finiteness_open_diagnosis_retry1_response.md`
+
+## Deliberately Excluded Context
+
+- `Any return to later CTR clauses, K_{S,epsilon}, support-gap work, or downstream slice geometry before the finiteness route choice is made.`
+- `Any attempt to reopen the exact-route branch or claim a beyond-finite-M theorem from the present local finiteness record.`
+
+## Required Output
+
+Return only substantive markdown for the breakdown role. Rank the two finiteness-level continuations from strongest to weakest, state which one should be tried next and why, and end with one line beginning Suggested next local action:.
+
+## Proof-State Update Target
+
+Context Management/source_notes/proof_state.md and Context Management/source_notes/countable_atomic_direct_route.md
+
+## Expected Next-Step Signal
+
+Suggested next local action:

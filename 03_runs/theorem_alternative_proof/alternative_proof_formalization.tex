@@ -1,0 +1,398 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{assumption}{Assumption}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\argmax}{\operatorname{arg\,max}}
+\newcommand{\argmin}{\operatorname{arg\,min}}
+
+\title{Alternative Proof of Theorem~2 (Robust Trust):\\
+Formalization via First-Order Conditions and the Envelope Theorem}
+\author{Formalization report prepared for Piotr Dworczak\thanks{%
+This document formalizes and verifies the alternative proof sketch
+for Theorem~2 of Dworczak \& Smolin (2026), ``Robust Trust.''
+The formalization was carried out using the MathPipeProver
+soft-scaffolding pipeline (Claude Code orchestrating ChatGPT~5.4 Pro Extended).}}
+\date{March 15, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We formalize the alternative proof of Theorem~2 (Robustly Rationalizable Solution) from Dworczak \& Smolin (2026). The original sketch proposes replacing the paper's Sion-based minimax argument with a first-order-conditions (FOC) plus envelope-theorem approach.
+Our formalization confirms that this alternative route is \textbf{correct for the finite case} ($M$ and $\Theta$ finite), with three qualifications:
+(i)~the envelope theorem must be applied via one-sided directional derivatives and a jointly chosen Bayes-optimal selector family, not via ordinary derivatives at an arbitrary optimizer;
+(ii)~no new assumptions beyond the paper's finite-case setup are needed;
+(iii)~the extension to infinite message spaces remains open.
+The key technical insight beyond the sketch is a convex-analytic argument that extracts the selector family from a subgradient of the value function at the adversary's optimum.
+\end{abstract}
+
+\tableofcontents
+
+%% =====================================================================
+\section{Executive Summary}
+%% =====================================================================
+
+The sketch proposes a finite-case proof of Theorem~2 structured as follows:
+\begin{enumerate}
+\item Write down the agent's payoff under Bayes-optimal response to the adversary's strategy.
+\item Derive the first-order conditions (FOCs) for the adversary's optimization problem.
+\item Use an envelope theorem to eliminate the indirect effect (the dependence of the agent's optimal action on the perturbation of the adversary's strategy).
+\item Show that the resulting FOCs imply the adversary's strategy remains optimal under agent commitment.
+\item Conclude the minimax / saddle-point property.
+\end{enumerate}
+
+\paragraph{What was correct in the sketch.}
+The posterior formula, the payoff decomposition, the derivative computation, and the commitment-game argument are all algebraically correct after notation alignment. (We use ``agent'' for the paper's decision maker throughout; the sketch calls this role ``DM.'')
+
+\paragraph{What required repair.}
+\begin{itemize}
+\item \textbf{Envelope theorem precision.} The sketch invokes the envelope theorem informally. The correct tool is Milgrom--Segal (2002, \textit{Econometrica}), Theorem~3 (local equidifferentiability). This theorem gives \emph{one-sided} directional derivatives, not ordinary derivatives at an arbitrary optimizer. When multiple Bayes-optimal private strategies coexist, the sketch's claimed ordinary derivative $V'(0)$ is too strong.
+\item \textbf{Selector family.} The fix (our key contribution beyond the sketch) uses a convex-analytic argument: at the adversary's optimum $\beta^*$, the subdifferential $\partial V(\beta^*)$ is nonempty by convex optimization on a compact polyhedron. A subgradient of $V$ at $\beta^*$ yields a \emph{jointly} chosen Bayes-optimal selector family $(\hat\sigma^*_m)_{m \in M}$ that satisfies the equal-payoff-on-support condition for all $\mu$ simultaneously. No uniqueness assumption is needed.
+\item \textbf{Boundary cases.} The sketch differentiates as if the simplex constraint were absent. The correct treatment uses either a variational inequality on $\Delta(M)$ or KKT complementary slackness.
+\end{itemize}
+
+\paragraph{What remains open.} The extension to infinite $M$ (Block~G in the sketch) is explicitly left open by the author and remains unresolved.
+
+%% =====================================================================
+\section{Notation}
+\label{sec:notation}
+%% =====================================================================
+
+We use the paper's notation throughout. The sketch uses different symbols for several objects; we record the correspondence here.
+
+\medskip
+\begin{center}
+\begin{tabular}{lll}
+\hline
+\textbf{Sketch} & \textbf{Paper (canonical)} & \textbf{Object} \\
+\hline
+$\pi(m|\mu)$ & $\beta(m|\mu)$ & Misaligned adviser's reporting rule \\
+$P(m)$ [sketch] & $q_\beta(m)$ & Marginal probability of message $m$ \\
+$\gamma_m$ & $P_\beta(\cdot|m)$ & Agent's posterior given message $m$ \\
+$a^*(\mu)$ & $\hat\sigma^*(\mu)$ & Bayes-optimal response at belief $\mu$ \\
+$U(\pi, \sigma)$ & $U(\beta, \sigma)$ & Stage-game payoff \\
+bad AI & misaligned adviser & Strategic adviser (prob.\ $1-\alpha$) \\
+DM & agent & Decision maker / receiver \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{remark}[Notation collision]
+The sketch writes $P(m)$ for the marginal message probability. In the paper, $P(m)$ already denotes the trust-region projection map (Definition~1 in the paper). We write $q_\beta(m)$ throughout to avoid collision.
+\end{remark}
+
+\begin{remark}[Suppressed objects]
+The sketch suppresses the agent's private type $\theta$, the type-signal function $f$, the truthful strategy, and the paper's private-strategy notation $\hat\sigma$. We work in the simplified setting $u(a,\omega)$ with $|\Theta|=1$ for the main derivation, and note where $\theta$-dependence would require modification (see Remark~\ref{rem:theta}).
+\end{remark}
+
+%% =====================================================================
+\section{Setup (Finite Case)}
+\label{sec:setup}
+%% =====================================================================
+
+Fix a finite state space $\Omega = \{\omega_1, \ldots, \omega_N\}$ with full-support prior $\mu_0 \in \Delta(\Omega)$. Let $\tau \in \Delta(\Delta(\Omega))$ be the unconditional distribution of the adviser's posteriors, with finite support $M = \supp(\tau)$, $|M| = K < \infty$. Let $\alpha \in (0,1)$ be the alignment probability.\footnote{The restriction $\alpha > 0$ is used throughout to ensure $q_\beta(m) > 0$ for all $m \in M$. The case $\alpha = 0$ would require restricting to on-path messages and is excluded from this analysis.}
+
+Let $A$ denote the agent's action set (compact metric) and $\Theta$ the finite set of private types, both as in the paper.
+
+The misaligned adviser's strategy is $\beta : M \to \Delta(M)$, mapping each true posterior $\mu \in M$ to a distribution over reported messages. By the paper's WLOG argument (the adviser can always be taken to use only messages in $M$), we restrict to messages in $M$. Write $\mathcal{B} \coloneqq \prod_{\mu \in M} \Delta(M)$ for the adversary's strategy space and $\Sigma$ for the agent's strategy space (as defined in the paper).
+
+\begin{proposition}[Posterior formula --- verified]
+\label{prop:posterior}
+For any $\beta$ and $m \in M$, the agent's posterior is
+\begin{equation}
+\label{eq:posterior}
+P_\beta(\omega | m) = \frac{\alpha\, \tau(m)\, m(\omega) + (1-\alpha) \sum_{\mu \in M} \tau(\mu)\, \beta(m|\mu)\, \mu(\omega)}{q_\beta(m)},
+\end{equation}
+where
+\begin{equation}
+\label{eq:qbeta}
+q_\beta(m) = \alpha\, \tau(m) + (1-\alpha) \sum_{\mu \in M} \tau(\mu)\, \beta(m|\mu).
+\end{equation}
+Since $\alpha > 0$ and $m \in M = \supp(\tau)$, we have $q_\beta(m) \geq \alpha\,\tau(m) > 0$ for all $m \in M$.
+\end{proposition}
+
+\begin{proof}
+By Bayes' rule, $P_\beta(\omega|m) = \Pr_\beta(\omega,m) / \sum_{\omega'} \Pr_\beta(\omega',m)$. We decompose the joint probability $\Pr_\beta(\omega,m)$ into aligned and misaligned contributions.
+
+\emph{Aligned contribution.} With probability $\alpha$, the adviser is aligned and reports truthfully. The joint probability that the state is $\omega$ and the aligned adviser sends message $m$ is $\alpha\,\tau(m)\,m(\omega)$, using the identity $\mu_0(\omega)\Pr(s=m|\omega) = \tau(m)\,m(\omega)$ (a standard consequence of the definition of posteriors).
+
+\emph{Misaligned contribution.} With probability $1-\alpha$, the adviser is misaligned. Conditional on the adviser's true posterior being $\mu$, the probability of reporting $m$ is $\beta(m|\mu)$, and the probability of state $\omega$ given posterior $\mu$ is $\mu(\omega)$. Averaging over $\mu \sim \tau$ gives $(1-\alpha)\sum_{\mu \in M} \tau(\mu)\,\beta(m|\mu)\,\mu(\omega)$.
+
+Adding the two contributions gives $\Pr_\beta(\omega,m) = \alpha\,\tau(m)\,m(\omega) + (1-\alpha)\sum_\mu \tau(\mu)\,\beta(m|\mu)\,\mu(\omega)$, which is the numerator in \eqref{eq:posterior}. Summing over $\omega$ gives $q_\beta(m)$.
+\end{proof}
+
+%% =====================================================================
+\section{DM Payoff and First-Order Conditions}
+\label{sec:foc}
+%% =====================================================================
+
+\subsection{The adversary's problem}
+
+Throughout Sections~4--8, we write the derivation in the paper's private-strategy notation: $\bar{u}(\hat\sigma,\omega) \coloneqq \E[u(a,\omega,\theta) \mid \omega, \hat\sigma]$ denotes the state-contingent expected payoff from private strategy $\hat\sigma$, and $U(\hat\sigma,\nu) \coloneqq \sum_\omega \bar{u}(\hat\sigma,\omega)\,\nu(\omega)$ is the agent's payoff from $\hat\sigma$ at belief $\nu$. When $|\Theta|=1$, this reduces to the sketch's $u(a,\omega)$ notation.
+
+For a fixed strategy $\beta$ of the misaligned adviser, the agent's expected payoff under Bayes-optimal response is
+\begin{equation}
+\label{eq:value}
+V(\beta) = \sum_{m \in M} q_\beta(m)\, W\!\left(P_\beta(\cdot|m)\right),
+\end{equation}
+where $W(\nu) \coloneqq \max_{\hat\sigma} \sum_\omega \bar{u}(\hat\sigma, \omega)\,\nu(\omega)$ is the indirect utility at belief $\nu$, and $\bar{u}(\hat\sigma, \omega) \coloneqq \E[u(a,\omega,\theta) \mid \omega, \hat\sigma]$.
+
+The adversary solves
+\[
+\min_{\beta \in \prod_{\mu \in M} \Delta(M)} V(\beta).
+\]
+
+\subsection{Perturbation and derivative}
+
+Fix $\mu^* \in M$ and $m_1, m_2 \in M$. Define the simplex-preserving perturbation
+\[
+\beta_\varepsilon(m|\mu) = \begin{cases}
+\beta(m|\mu^*) + \varepsilon\,[\delta_{m_1}(m) - \delta_{m_2}(m)] & \text{if } \mu = \mu^*, \\
+\beta(m|\mu) & \text{otherwise},
+\end{cases}
+\]
+which is feasible for $\varepsilon \in [-\beta(m_1|\mu^*),\, \beta(m_2|\mu^*)]$.
+
+Define the unnormalized numerator $N_{\beta}(m,\omega) \coloneqq q_\beta(m)\,P_\beta(\omega|m)$. Under $\beta_\varepsilon$, only $N_{\beta_\varepsilon}(m_1,\omega)$ and $N_{\beta_\varepsilon}(m_2,\omega)$ change, and they change \emph{affinely} in $\varepsilon$:
+\begin{align}
+\frac{d}{d\varepsilon} N_{\beta_\varepsilon}(m_1,\omega)\Big|_{\varepsilon=0}
+&= (1-\alpha)\,\tau(\mu^*)\,\mu^*(\omega), \label{eq:dN1} \\
+\frac{d}{d\varepsilon} N_{\beta_\varepsilon}(m_2,\omega)\Big|_{\varepsilon=0}
+&= -(1-\alpha)\,\tau(\mu^*)\,\mu^*(\omega). \label{eq:dN2}
+\end{align}
+
+Similarly, $q_{\beta_\varepsilon}(m_1)$ and $q_{\beta_\varepsilon}(m_2)$ are affine in $\varepsilon$ with slopes $\pm(1-\alpha)\tau(\mu^*)$.
+
+\subsection{Direct and indirect effects}
+
+Write $V(\beta) = \sum_m \Phi_m(\beta)$ where
+\[
+\Phi_m(\varepsilon) \coloneqq q_{\beta_\varepsilon}(m)\, W\!\left(P_{\beta_\varepsilon}(\cdot|m)\right)
+= \max_{\hat\sigma} \sum_\omega \bar{u}(\hat\sigma,\omega)\, N_{\beta_\varepsilon}(m,\omega).
+\]
+
+For $m \notin \{m_1, m_2\}$, neither $N_{\beta_\varepsilon}(m,\omega)$ nor $q_{\beta_\varepsilon}(m)$ depends on $\varepsilon$, so $\Phi_m$ is constant.
+
+For $m \in \{m_1, m_2\}$, $\Phi_m(\varepsilon) = \max_{\hat\sigma} \sum_\omega \bar{u}(\hat\sigma,\omega)\, N_{\beta_\varepsilon}(m,\omega)$ is the pointwise maximum of a family of affine functions of $\varepsilon$, hence \emph{convex} in $\varepsilon$.
+
+The \textbf{direct effect} at each message $m \in \{m_1,m_2\}$ is the contribution holding the optimizer $\hat\sigma$ fixed. The \textbf{indirect effect} is the change in payoff due to the optimizer adjusting.
+
+%% =====================================================================
+\section{Envelope Theorem Application}
+\label{sec:envelope}
+%% =====================================================================
+
+\begin{proposition}[Envelope theorem --- Milgrom--Segal (2002), Theorem~3]
+\label{prop:envelope}
+Let $f(\varepsilon, x) = \sum_\omega \bar{u}(x, \omega)\, N_{\beta_\varepsilon}(m, \omega)$ where $x$ ranges over a compact set $X$ (the set of private strategies $\hat\sigma$), and define $\Phi_m(\varepsilon) = \max_{x \in X} f(\varepsilon, x)$.
+
+Then $\Phi_m$ has left and right derivatives at $\varepsilon = 0$, given by
+\begin{align}
+\Phi_m'(0^+) &= \max_{x \in X^*(0)} f_\varepsilon(0, x), \label{eq:env_right}\\
+\Phi_m'(0^-) &= \min_{x \in X^*(0)} f_\varepsilon(0, x), \label{eq:env_left}
+\end{align}
+where $X^*(0) = \argmax_{x \in X} f(0,x)$ is the set of optimizers at $\varepsilon = 0$.
+\end{proposition}
+
+\begin{proof}[Verification of hypotheses]
+\leavevmode
+\begin{enumerate}
+\item \textbf{Nonempty argmax:} $X = \Delta(A)^{|\Theta|}$ is compact, $f(0,\cdot)$ is continuous, so $X^*(0) \neq \emptyset$.
+\item \textbf{Differentiability in $\varepsilon$:} For each fixed $x$, $\varepsilon \mapsto f(\varepsilon,x)$ is \emph{affine} (because $N_{\beta_\varepsilon}(m,\omega)$ is affine in $\varepsilon$), hence differentiable everywhere.
+\item \textbf{Equidifferentiability:} The derivative $f_\varepsilon(\varepsilon, x) = \sum_\omega \bar{u}(x,\omega) \cdot (\pm(1-\alpha)\tau(\mu^*)\mu^*(\omega))$ is \emph{independent of $\varepsilon$} and bounded uniformly in $x$ (because $\bar{u}$ is bounded). Hence the family $\{f(\cdot, x)\}_{x \in X}$ is trivially equidifferentiable.
+\end{enumerate}
+\end{proof}
+
+\begin{remark}
+$\Phi_m(\varepsilon)$ is the pointwise supremum of a family of affine functions of $\varepsilon$, hence convex. (If the action set $A$ is finite, the family is finite and $\Phi_m$ is piecewise linear; for general compact $A$, $\Phi_m$ is still convex and the one-sided derivatives exist by Proposition~\ref{prop:envelope}.) The one-sided derivatives \eqref{eq:env_right}--\eqref{eq:env_left} give the extremal slopes over the argmax set $X^*_m(\beta^*) \coloneqq \argmax_{\hat\sigma \in X} \sum_\omega \bar{u}(\hat\sigma,\omega)\, N_{\beta^*}(m,\omega)$.
+
+When $X^*_m(\beta^*)$ is a singleton (unique Bayes-optimal response), $\Phi_m'(0^+) = \Phi_m'(0^-)$ and $\Phi_m$ is differentiable at $0$. The sketch implicitly assumes this case.
+\end{remark}
+
+%% =====================================================================
+\section{Selector Family and Corrected FOC}
+\label{sec:selector}
+%% =====================================================================
+
+This section contains the key repair beyond the original sketch.
+
+\begin{proposition}[Jointly chosen selector family]
+\label{prop:selector}
+Let $\beta^*$ be a minimizer of $V$ over $\prod_{\mu \in M} \Delta(M)$. Then there exists a Bayes-optimal selector family $(\hat\sigma^*_m)_{m \in M}$ such that for every $\mu \in M$:
+\begin{equation}
+\label{eq:foc_equal}
+\sum_\omega \bar{u}(\hat\sigma^*_{m_1}, \omega)\,\mu(\omega) = \sum_\omega \bar{u}(\hat\sigma^*_{m_2}, \omega)\,\mu(\omega) \quad \forall\, m_1, m_2 \in \supp\,\beta^*(\cdot|\mu),
+\end{equation}
+and
+\begin{equation}
+\label{eq:foc_ineq}
+\sum_\omega \bar{u}(\hat\sigma^*_m, \omega)\,\mu(\omega) \geq \sum_\omega \bar{u}(\hat\sigma^*_{m'}, \omega)\,\mu(\omega) \quad \forall\, m \in M,\; m' \in \supp\,\beta^*(\cdot|\mu).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+We proceed in three steps.
+
+\medskip\noindent
+\textbf{Step 1: Convexity and subdifferential optimality.}
+By \eqref{eq:value} and the definition of $\Phi_m$, $V(\beta) = \sum_m \Phi_m(\beta)$ where each $\Phi_m$ is convex in $\beta$ (being the pointwise maximum of affine functions, as shown in Section~\ref{sec:foc}). Hence $V$ is convex on the compact polyhedron $\prod_\mu \Delta(M)$. Since $\beta^*$ is a minimizer, the subdifferential optimality condition gives
+\begin{equation}
+\label{eq:subdiff}
+0 \in \partial V(\beta^*) + N_{\prod_\mu \Delta(M)}(\beta^*),
+\end{equation}
+where $N_{\prod_\mu \Delta(M)}(\beta^*)$ is the normal cone to $\prod_\mu \Delta(M)$ at $\beta^*$.
+
+\medskip\noindent
+\textbf{Step 2: Subgradient representation.}
+Since $V = \sum_m \Phi_m$ and each $\Phi_m(\beta) = \max_{\hat\sigma \in X} \sum_\omega \bar{u}(\hat\sigma,\omega)\, N_\beta(m,\omega)$ is the supremum of affine functions of $\beta$, the subdifferential of $V$ at $\beta^*$ satisfies
+\[
+\partial V(\beta^*) = \sum_{m \in M} \partial \Phi_m(\beta^*).
+\]
+For each $m$, the subdifferential of $\Phi_m$ at $\beta^*$ is given by the standard max-of-affine formula (see, e.g., Rockafellar, \textit{Convex Analysis}, Theorem~23.8): it is the convex hull of the gradients of active affine pieces. Concretely, for any $\hat\sigma^*_m \in X^*_m(\beta^*) \coloneqq \argmax_{\hat\sigma} \sum_\omega \bar{u}(\hat\sigma,\omega)\, N_{\beta^*}(m,\omega)$, the vector
+\[
+g_m(\mu, m') \coloneqq \frac{\partial}{\partial \beta(m'|\mu)} \sum_\omega \bar{u}(\hat\sigma^*_m, \omega)\, N_\beta(m,\omega) \Big|_{\beta = \beta^*}
+\]
+belongs to $\partial \Phi_m(\beta^*)$. (Here we use the fact that $X$ is convex and $\bar{u}$ is linear in $\hat\sigma$, so any convex combination of active gradients is itself generated by a single mixed strategy in $X^*_m(\beta^*)$.)
+
+Evaluating the partial derivative:
+\[
+g_m(\mu, m') = \mathbf{1}\{m' = m\} \cdot (1-\alpha)\,\tau(\mu) \sum_\omega \bar{u}(\hat\sigma^*_m, \omega)\,\mu(\omega),
+\]
+because $N_\beta(m,\omega)$ depends on $\beta(m'|\mu)$ only when $m' = m$ (via the misaligned contribution $(1-\alpha)\tau(\mu)\beta(m|\mu)\mu(\omega)$), and is zero otherwise.
+
+Summing over $m$ produces the subgradient $g \in \partial V(\beta^*)$ with components
+\begin{equation}
+\label{eq:subgrad_component}
+g(\mu, m') = (1-\alpha)\,\tau(\mu) \sum_\omega \bar{u}(\hat\sigma^*_{m'}, \omega)\,\mu(\omega),
+\end{equation}
+built from the \emph{joint} selector family $(\hat\sigma^*_m)_{m \in M}$. Each $\hat\sigma^*_m$ is Bayes-optimal at $P_{\beta^*}(\cdot|m)$.
+
+\medskip\noindent
+\textbf{Step 3: Normal cone condition on $\Delta(M)$.}
+The normal cone to $\prod_\mu \Delta(M)$ at $\beta^*$ decomposes row by row. For each $\mu$, the normal cone condition on $\Delta(M)$ at $\beta^*(\cdot|\mu)$ states: there exists $\lambda_\mu \in \R$ such that
+\begin{align*}
+g_\mu(m) &= \lambda_\mu && \text{if } m \in \supp\,\beta^*(\cdot|\mu), \\
+g_\mu(m) &\geq \lambda_\mu && \text{if } m \notin \supp\,\beta^*(\cdot|\mu),
+\end{align*}
+where $g_\mu(m)$ is the $(\mu,m)$-component of $g$. Unwinding the definition of $g_\mu(m)$ in terms of the selector family, this is exactly the equal-payoff-on-support condition \eqref{eq:foc_equal} (on-support messages achieve the same $\mu$-payoff) and the inequality \eqref{eq:foc_ineq} (off-support messages achieve weakly higher $\mu$-payoff).
+\end{proof}
+
+\begin{remark}
+The crucial point is that the selector family $(\hat\sigma^*_m)_{m \in M}$ is chosen \emph{jointly} from the subdifferential, not independently at each message. Independent selection would not guarantee the equal-payoff-on-support condition \eqref{eq:foc_equal} for all $\mu$ simultaneously.
+\end{remark}
+
+%% =====================================================================
+\section{Commitment Game (Block E)}
+\label{sec:commitment}
+%% =====================================================================
+
+Define the committed agent strategy $\sigma^*$ by $\hat\sigma^*(m) \coloneqq \hat\sigma^*_m$ for each $m \in M$, using the selector family from Proposition~\ref{prop:selector}.
+
+\begin{proposition}[Optimality preservation]
+\label{prop:commitment}
+$\beta^*$ remains optimal for the adversary in the commitment game where the agent commits to $\sigma^*$.
+\end{proposition}
+
+\begin{proof}
+Under commitment to $\sigma^*$, the adversary's row problem for each $\mu \in M$ is:
+\[
+\min_{b \in \Delta(M)} \sum_{m \in M} b(m) \underbrace{\left[\sum_\omega \bar{u}(\hat\sigma^*_m, \omega)\,\mu(\omega)\right]}_{\eqqcolon\, c_m(\mu)}.
+\]
+This is a linear program over $\Delta(M)$. Its minimizers are precisely the distributions supported on $\argmin_{m \in M} c_m(\mu)$.
+
+By \eqref{eq:foc_equal}, all $m \in \supp\,\beta^*(\cdot|\mu)$ achieve the same value $\kappa_\mu$. By \eqref{eq:foc_ineq}, all $m \notin \supp\,\beta^*(\cdot|\mu)$ achieve $c_m(\mu) \geq \kappa_\mu$. Hence $\supp\,\beta^*(\cdot|\mu) \subseteq \argmin_{m} c_m(\mu)$, so $\beta^*(\cdot|\mu)$ is a minimizer of the row problem. Since the adversary's full objective is the $\tau(\mu)$-weighted sum of row problems, $\beta^*$ minimizes the commitment-game payoff.
+\end{proof}
+
+%% =====================================================================
+\section{Minimax Conclusion (Block F)}
+\label{sec:minimax}
+%% =====================================================================
+
+\begin{theorem}[Finite-case alternative proof of Theorem~2]
+\label{thm:main}
+Suppose $\Omega$, $M = \supp(\tau)$, and $\Theta$ are finite, and $\alpha \in (0,1)$.
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{(Existence.)} There exist $\sigma^* \in \Sigma$ and $\beta^* \in \mathcal{B}$ such that $(\sigma^*, \beta^*)$ is a saddle point of $U(\beta, \sigma)$:
+\[
+U(\beta^*, \sigma) \leq U(\beta^*, \sigma^*) \leq U(\beta, \sigma^*) \qquad \forall\, \beta \in \mathcal{B},\; \forall\, \sigma \in \Sigma.
+\]
+In particular, $\sigma^*$ is robustly rationalizable and optimal, and $\sup_\sigma \inf_\beta U(\beta, \sigma) = \inf_\beta \sup_\sigma U(\beta, \sigma)$.
+\item \textbf{(Optimality of any robustly rationalizable strategy.)} If $\sigma$ is any robustly rationalizable strategy, then $\sigma$ is optimal.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Let $\beta^*$ minimize $V(\beta) = \sup_\sigma U(\beta, \sigma) = \sum_m q_\beta(m)\, W(P_\beta(\cdot|m))$ (the second equality holds by message-by-message Bayes-optimality). Existence of $\beta^*$ follows from compactness of $\prod_\mu \Delta(M)$ and continuity of $V$.
+
+Let $(\hat\sigma^*_m)_{m \in M}$ be the selector family from Proposition~\ref{prop:selector}, and define $\sigma^*$ by $\hat\sigma^*(m) = \hat\sigma^*_m$.
+
+\medskip\noindent
+\textbf{Right saddle inequality (F.1):}
+By Proposition~\ref{prop:commitment}, $\beta^*$ minimizes the adversary's payoff given $\sigma^*$:
+\[
+U(\beta^*, \sigma^*) \leq U(\beta, \sigma^*) \qquad \forall\, \beta \in \mathcal{B}.
+\]
+
+\textbf{Left saddle inequality (F.2):}
+Under $\beta^*$, the posterior at message $m$ is $P_{\beta^*}(\cdot|m)$. By construction, $\hat\sigma^*_m \in \argmax_{\hat\sigma} U(\hat\sigma, P_{\beta^*}(\cdot|m))$. Since $q_{\beta^*}(m) \geq \alpha\,\tau(m) > 0$ for all $m$, every message is on-path, and the payoff is the $q_{\beta^*}(m)$-weighted sum of message-level payoffs. Hence no deviation $\sigma'$ can improve:
+\[
+U(\beta^*, \sigma') \leq U(\beta^*, \sigma^*) \qquad \forall\, \sigma' \in \Sigma.
+\]
+
+Combining (F.1) and (F.2) gives the saddle point. The minimax equality follows by the standard saddle-point theorem. Robust rationalizability of $\sigma^*$ follows because $\beta^*$ is adversarial against $\sigma^*$ and $\hat\sigma^*(m) \in \argmax_{\hat\sigma} U(\hat\sigma, P_{\beta^*}(\cdot|m))$ for all $m$, matching Definition~2 in the paper. This proves part~(a).
+
+\medskip\noindent
+\textbf{Part (b): Any robustly rationalizable strategy is optimal.}
+Write $U(\sigma) \coloneqq \inf_{\beta \in \mathcal{B}} U(\beta, \sigma)$ for the agent's worst-case payoff. Let $\sigma$ be any robustly rationalizable strategy with adversarial witness $\tilde\beta$. By Definition~2, $\tilde\beta$ is adversarial against $\sigma$ (i.e., $U(\tilde\beta, \sigma) \leq U(\beta, \sigma)$ for all $\beta$), and $\sigma$ is Bayes-optimal message by message under $P_{\tilde\beta}(\cdot|m)$ (i.e., $U(\tilde\beta, \sigma') \leq U(\tilde\beta, \sigma)$ for all $\sigma'$). Together these give
+\[
+U(\tilde\beta, \sigma') \leq U(\tilde\beta, \sigma) \leq U(\beta, \sigma) \qquad \forall\, \beta,\, \sigma',
+\]
+so $(\sigma, \tilde\beta)$ is a saddle point and $U(\sigma) = U(\tilde\beta, \sigma) = U(\sigma^*)$ (since all saddle points share the same value). Hence $\sigma$ is optimal.
+\end{proof}
+
+%% =====================================================================
+\section{Remaining Open Questions}
+\label{sec:open}
+%% =====================================================================
+
+\begin{enumerate}
+\item \textbf{Infinite message space (Block~G).} The FOC approach is inherently finite-dimensional: the perturbation $\beta_\varepsilon(m|\mu^*) = \beta(m|\mu^*) + \varepsilon[\delta_{m_1}(m) - \delta_{m_2}(m)]$ and the subdifferential argument both rely on finite $M$. The author explicitly states: ``I have no idea how to extend the argument.'' This remains open.
+
+\item \textbf{Subdifferential step presentation.} The proof of Proposition~\ref{prop:selector} provides the full convex-analytic argument, but a final manuscript version may benefit from a more streamlined presentation that integrates the subgradient computation with the envelope-theorem output from Proposition~\ref{prop:envelope} more tightly.
+
+\item \textbf{Private types $\theta$.} The proof is written in the simplified setting $u(a,\omega)$ with $|\Theta|=1$. Extension to $|\Theta| > 1$ requires replacing $a^*(\mu)$ with $\hat\sigma^*(\mu)$ and $u(a,\omega)$ with $\bar{u}(\hat\sigma,\omega)$ throughout. The argument goes through unchanged because the envelope theorem applies to the indirect utility $W(\nu) = \max_{\hat\sigma} \sum_\omega \bar{u}(\hat\sigma,\omega)\nu(\omega)$ regardless of how $\hat\sigma$ is parameterized.
+\end{enumerate}
+
+\begin{remark}\label{rem:theta}
+In the paper's full framework with private types, the Bayes-optimal response is a private strategy $\hat\sigma^*(\mu) \in \Delta(A)^{|\Theta|}$, not a pure action. The envelope theorem still applies because Proposition~\ref{prop:envelope} only requires compactness of the strategy set and affine dependence of the objective on $\varepsilon$, both of which hold for $\hat\sigma$ just as for $a$.
+\end{remark}
+
+%% =====================================================================
+\section*{Acknowledgments}
+%% =====================================================================
+
+This formalization was carried out using the MathPipeProver soft-scaffolding pipeline, with Claude Code (Anthropic) as orchestrator and ChatGPT~5.4 Pro Extended (OpenAI) as the proving engine. Six ChatGPT sessions were used: formalizer (Blocks A--B), prover (Blocks C--D), reviewer (Blocks C--D), prover repair (selector fix), prover (Blocks E--F).
+
+\begin{thebibliography}{99}
+\bibitem{DS26} P.~Dworczak and A.~Smolin (2026), ``Robust Trust,'' working paper.
+\bibitem{MS02} P.~Milgrom and I.~Segal (2002), ``Envelope Theorems for Arbitrary Choice Sets,'' \textit{Econometrica}, 70(2), 583--601.
+\bibitem{Rock70} R.~T.~Rockafellar (1970), \textit{Convex Analysis}, Princeton University Press.
+\bibitem{Sion58} M.~Sion (1958), ``On General Minimax Theorems,'' \textit{Pacific Journal of Mathematics}, 8, 171--176.
+\end{thebibliography}
+
+\end{document}

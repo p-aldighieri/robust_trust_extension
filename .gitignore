@@ -1,0 +1,23 @@
+.DS_Store
+tmp/
+
+# LaTeX build byproducts. Track source .tex files and final PDFs instead.
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Local interpreter caches.
+__pycache__/
+*.pyc
+
+# Browser/pipeline watcher sidecars. Keep Markdown prompts/responses instead.
+03_runs/**/logs/*_heartbeat.json
+03_runs/**/logs/*_session.json
+03_runs/**/logs/*_poll.json
+03_runs/**/logs/*_ready.json
+03_runs/**/logs/*_watch.out
+03_runs/**/logs/*_poller.out

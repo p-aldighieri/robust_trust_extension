@@ -1,0 +1,38 @@
+{
+  "branch": "post_route2_exact_route1",
+  "chat_url": "https://chatgpt.com/g/g-p-6992190183fc8191aec8b0c2fad5c017-robust-trust-proof/c/69b200f6-1740-8326-9920-7ffe075c5065",
+  "context_updates": {
+    "keep_temporary": [],
+    "promote_to_durable_sources": [],
+    "remove_from_durable_sources": []
+  },
+  "decision": {
+    "next_role": "prover",
+    "next_step": "prover",
+    "notes": "Next open block is the reduced-game upstream side: kernel-topology saddle existence, posterior representation, and barycentric collapse."
+  },
+  "inputs": {
+    "durable_project_sources": [
+      "objective_statement.md",
+      "Robust_trust_Dworczak_Smolin.pdf",
+      "proof_state.md",
+      "exact_route1_strategy.md"
+    ],
+    "local_context_files": [],
+    "temporary_attachments": [
+      "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260311T223130Z_breakdown_exact_route1_patching_response.md",
+      "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260311T232119Z_prover_exact_route1_patch_lemma_clean_response.md"
+    ]
+  },
+  "packet": {
+    "packet_json": "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/packets/20260311T235517Z_reviewer_exact_route1_patch_lemma_clean.json",
+    "packet_markdown": "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/packets/20260311T235517Z_reviewer_exact_route1_patch_lemma_clean.md"
+  },
+  "response": {
+    "raw_text": "## 1. Verdict\n\n**PASS.** Conditional exactly on the imported reduced-game Lemmas 1 to 4 and the Appendix A.1 facts about (W) and (W^P), the scoped prover draft soundly proves the selector package and the exact version-and-patching saddle lemma.\n\n## 2. Trusted proved pieces\n\n* **Lemma 5a (dominating-frontier selector):** The draft correctly shows that (W^P) is closed, that\n  [\n  \\operatorname{Gr}(F)={(w,v)\\in W\\times W^P: v\\ge w}\n  ]\n  is closed, and that each section (F(w)) is nonempty and compact. Given the stated measurable-selection fact, this is enough to obtain a Borel selector (D:W\\to W^P) with (D(w)\\ge w) coordinatewise.\n\n* **Lemma 5b (supporting-belief selector):** The draft correctly defines\n  [\n  h_W(\\mu)=\\max_{u\\in W}\\mu\\cdot u\n  ]\n  and verifies continuity of (h_W) on (\\Delta(\\Omega)). Hence\n  [\n  \\operatorname{Gr}(S)={(v,\\mu)\\in W^P\\times\\Delta(\\Omega): \\mu\\cdot v=h_W(\\mu)}\n  ]\n  is closed, sections are nonempty and compact by the imported Appendix A.1 fact, and the same selection fact yields a Borel selector (\\pi).\n\n* **Lemma 6 (exact version-and-patching saddle lemma):** The proof is locally sound. The bad set\n  [\n  N={m: p_0(m)\\cdot \\bar w(m)<h_W(p_0(m))}\n  ]\n  is Borel and (q^*(N)=0). The patched maps (w^*) and (p^*) are Borel. By construction, (w^*(m)) is Bayes-optimal for (p^*(m)) at every message, while (w^*(m)\\ge \\bar w(m)) coordinatewise everywhere. The left saddle inequality survives because the patch is (q^*)-null under (\\beta^*); the right saddle inequality survives because for every (\\beta),\n  [\n  \\mathcal G(\\beta,w^*)-\\mathcal G(\\beta,\\bar w)\n  ==============================================\n\n  \\int q_\\beta(dm), p_\\beta(m)\\cdot (w^*(m)-\\bar w(m))\\ge 0.\n  ]\n  That is exactly the needed monotone-patching argument.\n\nI do not see assumption smuggling inside this scoped package. The only external theorem used is the explicitly stated measurable-selection fact, and its hypotheses are checked in the draft.\n\n## 3. Exact broken or missing step, with lemma reference\n\nNo substantive broken step. I do not see a local logical gap in **Lemma 5a**, **Lemma 5b**, or **Lemma 6** under the scoped assumptions.\n\nThere are only minor display/typing blemishes in the writeup of Lemma 5a and the quantifier line in Lemma 6 item 4, but those are cosmetic rather than proof defects.\n\n## 4. Minimal next prover delta or breakdown amendment\n\nNo substantive prover patch is needed for this package.\n\nThe only worthwhile delta is editorial cleanup:\n\n* fix the malformed displays in Lemma 5a and Lemma 6;\n* optionally simplify the proof of\n  [\n  \\mathcal G(\\beta,w^*)\\ge \\mathcal G(\\beta,\\bar w)\n  ]\n  by using the original formula for (\\mathcal G) and the fact that every source belief (s\\in M\\subseteq \\Delta(\\Omega)) has nonnegative coordinates.\n\nFor `proof_state.md`, record that the **selector package on (W)** and the **exact version-and-patching saddle lemma** are now trustworthy, conditional on the imported reduced-game Lemmas 1 to 4 and the Appendix A.1 facts. The remaining live issues stay upstream/downstream of this scoped review.\n\nSuggested next local action: reviewer follow-up.\n",
+    "status": "captured",
+    "summary": "Scoped reviewer pass returned PASS on the selector package and exact version-and-patching saddle lemma."
+  },
+  "role": "reviewer",
+  "timestamp": "20260312T002535Z"
+}

@@ -1,0 +1,35 @@
+{
+  "branch": "post_route2_exact_route1",
+  "durable_project_sources": [
+    "objective_statement.md",
+    "Robust_trust_Dworczak_Smolin.pdf",
+    "proof_state.md",
+    "exact_route1_strategy.md"
+  ],
+  "durable_source_refresh_files": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/exact_route1_strategy.md"
+  ],
+  "embedded_context": [],
+  "excluded_context": [
+    "Hung reviewer preambles and stale browser sessions.",
+    "Any route that silently adds continuity of messagewise selectors without labeling it."
+  ],
+  "expected_next_step_signal": "End with one line: Suggested next local action: prover, planner, or fallback branch.",
+  "goal": "Produce a new narrow breakdown for the full extension target after the old upstream saddle-existence plan failed.",
+  "hard_constraints": [
+    "Do not propose the old compactness-plus-continuity lemma on the full measurable kernel space again.",
+    "Do not terminate the exact branch just because one upstream lemma failed.",
+    "Any weaker theorem or extra assumption must be labeled explicitly."
+  ],
+  "proof_state_update_target": "If accepted, update proof_state.md and exact_route1_strategy.md to replace the old upstream compactness lemma with the new recommended continuation route.",
+  "required_output": "Return markdown with: 1. One paragraph stating the accepted obstruction and its exact local consequence. 2. A ranked list of at most three viable continuation routes, each with its target statement, what new ingredient it needs, and the first local lemma to attack. 3. A recommended route with a concrete next role and a tightly scoped next packet goal. 4. A short section called Avoid listing routes that are now ruled out by the obstruction. 5. End with one line: Suggested next local action: prover, planner, or fallback branch.",
+  "role": "breakdown",
+  "scope": "Revise exact Route 1 after the accepted obstruction to the old measurable-kernel compactness lemma. Do not re-argue the obstruction. Use it as a fixed constraint and propose the next coherent route beyond finite M.",
+  "temporary_attachments": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/exact_route1_obstruction.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260312T012451Z_reviewer_exact_route1_obstruction_lean_response.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260312T002523Z_prover_exact_route1_reduced_game_upstream_response.md"
+  ],
+  "timestamp": "20260312T015434Z"
+}

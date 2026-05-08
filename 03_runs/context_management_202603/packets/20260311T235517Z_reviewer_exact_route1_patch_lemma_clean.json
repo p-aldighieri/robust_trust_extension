@@ -1,0 +1,35 @@
+{
+  "branch": "post_route2_exact_route1",
+  "durable_project_sources": [
+    "objective_statement.md",
+    "Robust_trust_Dworczak_Smolin.pdf",
+    "proof_state.md",
+    "exact_route1_strategy.md"
+  ],
+  "durable_source_refresh_files": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/exact_route1_strategy.md"
+  ],
+  "embedded_context": [],
+  "excluded_context": [
+    "Broad beyond-finite-M route brainstorming outside exact Route 1.",
+    "Older truncated or corrupted captures.",
+    "Full historical branch bundles not needed for this scoped review."
+  ],
+  "expected_next_step_signal": "End with one line: Suggested next local action: prover patch, reviewer follow-up, or breakdown revisit.",
+  "goal": "Determine whether the scoped prover draft soundly proves the dominating-frontier selector, the supporting-belief selector, and the exact version-and-patching saddle lemma under the stated assumptions, and if not identify the smallest exact repair.",
+  "hard_constraints": [
+    "Review only this scoped prover draft and the exact-route breakdown. Do not reopen broad route-selection questions.",
+    "Assume Lemmas 1 to 4 of the exact-route breakdown as given context for this review.",
+    "Report local proof status and repair needs only; Codex decides branch continuation."
+  ],
+  "proof_state_update_target": "If accepted, update proof_state.md to record whether the selector package and patching lemma are now trustworthy or what exact repair remains.",
+  "required_output": "Return short markdown sections: 1. Verdict (PASS, PATCH_SMALL, PATCH_BIG, or REDO). 2. Trusted proved pieces. 3. Exact broken or missing step, with lemma reference. 4. Minimal next prover delta or breakdown amendment. 5. End with one line: Suggested next local action: prover patch, reviewer follow-up, or breakdown revisit.",
+  "role": "reviewer",
+  "scope": "Review only the scoped prover draft for the selector package on W and the exact version-and-patching saddle lemma, assuming the reduced-game Lemmas 1 to 4 as established context.",
+  "temporary_attachments": [
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260311T223130Z_breakdown_exact_route1_patching_response.md",
+    "/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260311T232119Z_prover_exact_route1_patch_lemma_clean_response.md"
+  ],
+  "timestamp": "20260311T235517Z"
+}

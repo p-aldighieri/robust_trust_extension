@@ -1,0 +1,52 @@
+# Prompt Packet: prover
+
+Branch: `exact_route_1`
+
+## Scope Of This Move
+
+Prove or refute the raw-message posterior-lifting lemma on the main least-strengthened exact route. Work only on whether the explicit Needed assumption can be derived directly from the already-banked reduced-side inputs, without using injective-fiber or any other strong fiber-rigidity condition.
+
+## Goal
+
+Determine whether the chosen raw lift can be equipped with a raw-message Borel posterior version certifying q*-a.e. Bayes optimality of bar w* using only the already-banked reduced-side inputs on the main route. If yes, give the cleanest lemma and proof. If no, isolate the first precise obstruction and explain why the Needed assumption cannot be removed on this route without an extra condition.
+
+## Hard Constraints
+
+- Do not use injective-fiber or any equivalent fiber-rigidity hypothesis.
+- Do not re-prove settled finite-M or reduced-side lemmas.
+- If the route fails, isolate the first precise obstruction instead of broad speculation.
+
+## Durable Project Sources Already In ChatGPT
+
+- `objective_statement.md`
+- `Robust_trust_Dworczak_Smolin.pdf`
+- `proof_state.md`
+- `exact_route1_strategy.md`
+
+## Project Sources To Refresh Before This Chat
+
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/proof_state.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/source_notes/exact_route1_strategy.md`
+
+## Temporary Files To Attach In This Chat
+
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260313T195653Z_reviewer_strengthened_lift_obstruction_response.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260313T203949Z_reviewer_conditional_exact_patching_response.md`
+- `/Users/p-aldighieri/Library/CloudStorage/OneDrive-Personal/Economia/RA Piotr/robust_trust_extension/Context Management/logs/20260314T051455Z_consolidator_exact_route_frontier_final_response.md`
+
+## Deliberately Excluded Context
+
+- `Do not rely on the injective-fiber lemma; that is only a stronger corollary and is excluded from this move.`
+- `Do not reopen the old compact-topology route or the raw atomic truncation-limit route.`
+
+## Required Output
+
+Return only substantive markdown. Start with either Verdict: POSITIVE or Verdict: OBSTRUCTION. Then give: Statement, Proof idea or obstruction mechanism, and Exact dependency on already-banked inputs. End with one short section titled Next local consequence.
+
+## Proof-State Update Target
+
+Update the durable proof-state so the main route either loses the explicit Needed assumption or records the first precise obstruction to deriving it from the banked reduced-side inputs alone.
+
+## Expected Next-Step Signal
+
+End with a final line of the form: Suggested next local action: <one sentence>.
