@@ -198,9 +198,11 @@ $B(m) := \{\mu\in\Delta(\Om) : \hat\sigma^*(m)\in\argmax_{\hat\sigma'} U(\hat\si
 is the Bayes cone for the agent's continuation at message~$m$.
 
 \paragraph{Tier 2 (+ menu-Hall).}
-When $\alpha>0$, $\hat\sigma^*(m)\in\argmax_{\hat\sigma'}U(\hat\sigma',P_{\gamma_\alpha}(\cdot\mid m))$
-for $\tau$-a.e.~$m$. Hence $\sigma^*$ is robustly rationalizable in
-the paper's a.e./on-path sense.
+With $\beta^* := \kappa$,
+$\hat\sigma^*(m)\in\argmax_{\hat\sigma'}U(\hat\sigma',P_{\gamma_\alpha}(\cdot\mid m))$
+for $q$-a.e.~$m$. Hence $\sigma^*$ is robustly rationalizable in
+the paper's a.e./on-path sense. When $\alpha>0$, $q\ge\alpha\tau$,
+so the conclusion also holds $\tau$-a.e.
 
 \section{Proof strategy in one paragraph}\label{sec:strategy}
 
@@ -397,7 +399,7 @@ Borel $\tau$-null set $N\subseteq M$, no Borel labeling $w_N: N\to W$,
 and no adversarial kernel $\kappa$ supported on rowwise minimizers
 can simultaneously satisfy: $q_\beta(N) > 0$ where
 $q_\beta = \alpha\tau + (1-\alpha)(\tau\otimes\kappa)_2$, AND
-Bayes-cone calibration q_N-a.e.\ on $N$ (where $q_N$ is the dust
+Bayes-cone calibration $q_N$-a.e.\ on $N$ (where $q_N$ is the dust
 message marginal).
 \end{theorem}
 
@@ -408,7 +410,7 @@ Disintegrate $\nu_N$ over its second marginal $q_N$: $\nu_N(A\times E) =
 \int_E\rho_m(A)\,q_N(dm)$ for Borel kernels $\rho_m$, $q_N$-a.e.\ $m\in N$.
 The rowwise-minimizer support gives $\rho_m(K_{I(m)}^-) = 1$ $q_N$-a.e.
 The Bayes-cone calibration gives the barycenter of $\rho_m$ in
-$B_{I(m)}$. By Lemma~\ref{lem:cone}, $\rho_m = \delta_{\mu_0}$ q_N-a.e.
+$B_{I(m)}$. By Lemma~\ref{lem:cone}, $\rho_m = \delta_{\mu_0}$ $q_N$-a.e.
 Hence
 \[
   \nu(\{\mu_0\}\times N) \;=\; \int_N\rho_m(\{\mu_0\})\,q_N(dm) \;=\; q_N(N).
