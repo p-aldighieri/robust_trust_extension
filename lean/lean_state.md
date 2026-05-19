@@ -36,9 +36,9 @@ _(populated by /lean-structure; populated 2026-05-19 from pass-3 PASS decomposit
 | Slug | declared | proved | reviewed | merged | permanent_stub |
 |---|---|---|---|---|---|
 | posterior-law-barycenter-identities | ✓ | ✓ | ✓ (in-thread) | ✓ | |
-| strategy-restriction-to-M | ⧗ | | | | |
-| restricted-agent-strategy-extends-to-full | ⧗ | | | | |
-| outside-M-messages-irrelevant | ⧗ | | | | |
+| strategy-restriction-to-M | ✓ | ✓ | ✓ (in-thread) | ✓ | |
+| restricted-agent-strategy-extends-to-full | ✓ | ✓ | ✓ (in-thread) | ✓ | |
+| outside-M-messages-irrelevant | ✓ | ✓ | ✓ (in-thread) | ✓ | |
 | adversary-kernels-restrict-to-M | ⧗ | | | | |
 | full-restricted-Ustar-equivalence | ⧗ | | | | |
 | q-dominates-tau-when-alpha-pos | ⧗ | | | | |

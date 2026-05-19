@@ -942,8 +942,8 @@ theorem strategy_restriction_to_M
     (model : RobustTrustModel)
     (σFull : AgentStrategyFull model) :
     ∃ σM : AgentStrategyM model,
-      ∀ m : model.M, σM.sectionM m = σFull.sectionFull (model.inclM m) := by
-  sorry
+      ∀ m : model.M, σM.sectionM m = σFull.sectionFull (model.inclM m) :=
+  ⟨restrictFullToM model σFull, fun _ => rfl⟩
 
 theorem restricted_agent_strategy_extends_to_full
     (model : RobustTrustModel)
@@ -951,8 +951,8 @@ theorem restricted_agent_strategy_extends_to_full
     (bridge : MessageRestrictionBridge model msupp)
     (σM : AgentStrategyM model) :
     ∃ σFull : AgentStrategyFull model,
-      ∀ m : model.M, σFull.sectionFull (model.inclM m) = σM.sectionM m := by
-  sorry
+      ∀ m : model.M, σFull.sectionFull (model.inclM m) = σM.sectionM m :=
+  ⟨bridge.extendRestricted σM, bridge.extendRestricted_eq σM⟩
 
 theorem outside_M_messages_irrelevant
     (model : RobustTrustModel)
@@ -964,7 +964,22 @@ theorem outside_M_messages_irrelevant
       MisalignedPayoffFull model β σ₁ = MisalignedPayoffFull model β σ₂ ∧
       MixturePayoffFull model β σ₁ = MixturePayoffFull model β σ₂ ∧
       RobustPayoffFull model σ₁ = RobustPayoffFull model σ₂ := by
-  sorry
+  -- The restricted strategies agree, so all four payoffs agree by unfolding to M-payoffs.
+  have hrestrict :
+      restrictFullToM model σ₁ = restrictFullToM model σ₂ := by
+    unfold restrictFullToM
+    congr 1
+    funext m
+    exact hagree m
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · unfold AlignedPayoffFull; rw [hrestrict]
+  · unfold MisalignedPayoffFull; rw [hrestrict]
+  · unfold MixturePayoffFull AlignedPayoffFull MisalignedPayoffFull; rw [hrestrict]
+  · unfold RobustPayoffFull
+    congr 1
+    ext _
+    unfold MixturePayoffFull AlignedPayoffFull MisalignedPayoffFull
+    rw [hrestrict]
 
 theorem adversary_kernels_restrict_to_M
     (model : RobustTrustModel)
