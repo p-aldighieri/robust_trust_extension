@@ -6,7 +6,7 @@
 - Source provenance: hand-consolidated v8 — three-tier infinite extension of Dworczak–Smolin Robust Trust Theorem 2 (existence direction), terminal per project README and `01_deliverables/closure/project_closure_memo.md`. This proof repo predates the MathPipeProver consolidator workflow, so the source proof is selected directly rather than picked up from `runs/<id>/branches/<branch>/context/final_report.md`.
 - Provenance slug: robust-trust-v8 (use for stable codex thread ids in /lean-verify-deps)
 - Initialized: 2026-05-19T03:00:01Z
-- Current phase: formalizing
+- Current phase: proving_lemmas
 - Target Lean toolchain: lean-4.29.0
 - AXLE log: lean/axle_log.jsonl
 
@@ -138,5 +138,17 @@ Legend: ⧗ = declared in decomposition (not yet formalized). Will be populated 
 - 2026-05-19T20:00Z  /lean-formalize PASS 3 RESPONSE harvested (59k chars).  metadata: lemma_count=59, sorry_count=69, signature_concerns=0. main.lean extracted (1538 lines). First AXLE check: 1 error (Tier1bResult declared as Prop but has data field βstar). Fixed in-thread: dropped `: Prop` and wrapped Tier1bResult existence sites with Nonempty(...). Second AXLE check: okay=true, 0 errors, 72 sorry warnings. main.lean v3 is structurally clean.
 - 2026-05-19T21:00Z  /lean-formalize gate 1/3 (formalizer-reviewer) PASS (pass 3).  verdict: PASS, signature_issues_count: 0, object_definition_issues: 0, ready_for_axle_skeleton_verify: true. All pass-2 issues addressed (PosteriorDisintegration disintegration identities, Pγα κ-indexing, offSupportIrrelevant removed). No regressions. No new axioms/native_decide/unsafe.
 - 2026-05-19T21:05Z  /lean-formalize gate 3/3 (AXLE verify_proof) PASS.  okay=true, failed_declarations=[], lean_messages.errors=[]. permitted_sorries listed all 70 theorem names. main.lean structurally satisfies the formal-statement target.
-- 2026-05-19T21:10Z  /lean-formalize gate 2/3 (meaning_check) submitted (bg send).  Submission has been re-attempted multiple times due to cdp_submit fill-timeout pattern interacting with page-state checks; latest bg click in flight (byqczxkar). Once gate 2 lands and PASSes (or returns a non-blocking auditor verdict), phase advances to proving_lemmas.
+- 2026-05-19T21:10Z  /lean-formalize gate 2/3 (meaning_check) submitted.  Chat URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0ca54e-878c-83ea-95b0-6edbdad55218. Generating on Extended Pro. Once meaning_check returns (it is an auditor role, no PASS/FAIL — output is per-item assessment with categorical labels matches/weakened/strengthened/vacuous_risk/wrong), phase advances to proving_lemmas (assuming wrong=0 and vacuous_risk=0).
+- 2026-05-19T21:35Z  /lean-formalize gate 2/3 (meaning_check) PASS.  total_items: 70, matches: 62, weakened: 6, strengthened: 2, vacuous_risk: 0, wrong: 0. **wrong=0 + vacuous_risk=0** → effectively PASS per skill spec. 8 flagged items (non-blocking, documentation):
+   * STRENGTHENED (2):
+     - `measurable_argmax_selector` (INVENTORY stub): Lean has fewer hypotheses than English (no StandardBorelSpace X / countable-generation). Safe at skeleton (stub body is sorry); if later proved, weaken signature.
+     - `sigma_star_robust_optimal`: Lean lifts any σM with RobustPayoffM = UStarM; English only promises lift for the w*-implemented σM. Reviewer notes "safe if intended" — the lift construction is general.
+   * WEAKENED (6):
+     - `profile_geometry_import`: Lean concludes IsCompact W ∧ Convex ℝ W from abstract Φ + hconvex_realization; English asserts the project-specific geometry import directly.
+     - `strategy_value_le_menu_sup`, `menu_value_le_strategy_sup`: both depend on full ProfileRealizationSetup/Map hypotheses; Lean has the setup but cite hypotheses are mildly weaker than English.
+     - `epsilon_adversary_realization`: Lean covers all ε > 0 with a single existential; English is "for every ε > 0 there is a Borel kernel". Cosmetically weaker, semantically equivalent.
+     - `support_function_pointwise_membership_equivalence`: Lean takes pointwise hypotheses; English takes a.e. — Lean is a stronger hypothesis bundle, making the conclusion weaker.
+     - `dust_disintegration_over_subtype_N`: Lean states the swapped-coordinate equality; English uses the projection-marginal phrasing. Equivalent under standard disintegration; Lean is slightly weaker conventionally.
+
+All three formalize gates are now green: **Gate 1 PASS, Gate 2 PASS, Gate 3 PASS**. Phase formalizing → proving_lemmas. The 58 lemma rows in Lemma Status are all declared=✓ as of the structurer pass.
 - 2026-05-19T20:15Z  /lean-formalize step 6 PASS 2: formalizer-reviewer pass 2 submitted.  Reviewer prompt 149k chars: pass-1 verdict summary + group A-K change manifest + new main.lean + decomposition. Reviewer to confirm 17 fix items addressed and check for new regressions. Chat URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0c9e6d-2100-83ea-8f30-8bb40c8b9a71. Generating on Extended Pro.  Patch prompt 181k chars with 17 explicit fix items in groups A-K addressing every flagged issue. PRESERVES the architecture that passed (Tier split, payoff split, κ identity, atomlessness scope, INVENTORY stubs, posterior_disintegration_menuHall_kernel_coincides). Chat URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0c941b-1ab8-83ea-bf8e-372c50c6ffac. Generating on Extended Pro. After pass-3 lands, re-AXLE-check, then re-submit formalizer-reviewer.
