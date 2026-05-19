@@ -796,52 +796,53 @@ profile-geometry-import
 
 Reason this needs a stub: This is project-specific geometry of private Markov kernels and payoff profiles. Mathlib compactness/convexity lemmas help only after the private-kernel topology and profile map are already built.
 
-Proposed Lean statement (sketch):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 (W as range in Ω → ℝ; nonempty fibers stated):
 
 lean
 theorem profile_geometry_import
-    {Ω Θ A PrivateStrategy W : Type*}
+    {Ω PrivateStrategy : Type*}
     [Fintype Ω]
-    [TopologicalSpace PrivateStrategy] [CompactSpace PrivateStrategy]
-    [TopologicalSpace W]
-    (Φ : PrivateStrategy → W) :
-    Continuous Φ →
-    Function.Surjective Φ →
-    IsCompact (Set.univ : Set W) ∧
-      Convex ℝ (Set.univ : Set W) ∧
-      (∀ w : W, IsCompact {σ : PrivateStrategy | Φ σ = w}) := by
+    [TopologicalSpace PrivateStrategy] [CompactSpace PrivateStrategy] [Nonempty PrivateStrategy]
+    [MeasurableSpace PrivateStrategy] [BorelSpace PrivateStrategy]
+    (Φ : PrivateStrategy → (Ω → ℝ))
+    (hΦ_cont : Continuous Φ) :
+    let W : Set (Ω → ℝ) := Set.range Φ
+    IsCompact W ∧
+    Convex ℝ W ∧
+    (∀ w ∈ W, (Φ ⁻¹' {w}).Nonempty ∧ IsCompact (Φ ⁻¹' {w})) := by
   sorry
 
-Confidence this is the right statement shape: 3
-Notes on what would be needed to prove it later: Concrete topology on private kernels, compactness/tightness of kernel space, continuity of expected payoff map, convexity under private randomization, and quotient/subtype bookkeeping for W.
+Confidence this is the right statement shape: 4
+Notes on what would be needed to prove it later: Concrete topology on private kernels (project), compactness/tightness of kernel space, continuity of expected payoff map, convexity under private randomization. The W set is now concretely `Set.range Φ ⊆ Ω → ℝ` (a vector space), so `Convex ℝ W` typechecks. Nonempty fibers are stated explicitly per reviewer.
 
 krn-borel-right-inverse
 
 Reason this needs a stub: Mathlib has choice-theoretic right inverses, but not Kuratowski-Ryll-Nardzewski Borel right inverses for compact fibers.
 
-Proposed Lean statement (sketch):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 (standard-Borel hypotheses + explicit nonempty fibers):
 
 lean
 theorem krn_borel_right_inverse
     {X Y : Type*}
-    [TopologicalSpace X] [MeasurableSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y]
+    [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X] [StandardBorelSpace X]
+    [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y] [StandardBorelSpace Y]
     [CompactSpace X]
     (Φ : X → Y)
     (hΦ_cont : Continuous Φ)
     (hΦ_surj : Function.Surjective Φ)
-    (hfib_compact : ∀ y, IsCompact {x : X | Φ x = y}) :
+    (hfib_compact : ∀ y, IsCompact (Φ ⁻¹' {y}))
+    (hfib_ne : ∀ y, (Φ ⁻¹' {y}).Nonempty) :
     ∃ R : Y → X, Measurable R ∧ ∀ y, Φ (R y) = y := by
   sorry
 
 Confidence this is the right statement shape: 4
-Notes on what would be needed to prove it later: Standard-Borel hypotheses may need to be explicit. The real theorem is a measurable selection theorem applied to the inverse-image correspondence.
+Notes on what would be needed to prove it later: Now states the StandardBorelSpace hypotheses (the canonical setting for measurable selection), explicit nonempty compact fibers, and the conclusion of a Borel right inverse. The proof would apply a Kuratowski-Ryll-Nardzewski-type theorem to the inverse-image correspondence. If Mathlib eventually gets a measurable selection theorem for upper semi-continuous correspondences with compact values, the stub can be retired.
 
 kernel-infimum-epsilon-selection
 
 Reason this needs a stub: Combines measurable ε-minimizing selection with deterministic kernels and an integral infimum identity. Mathlib has the integration and deterministic-kernel pieces but not the packaged optimization theorem.
 
-Proposed Lean statement (sketch):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 (ε-selection inequality instead of naked ⨅ equality):
 
 lean
 theorem kernel_infimum_epsilon_selection
@@ -849,18 +850,25 @@ theorem kernel_infimum_epsilon_selection
     [MeasurableSpace S] [MeasurableSpace M]
     [TopologicalSpace M] [CompactSpace M] [Nonempty M]
     (τ : MeasureTheory.Measure S)
+    [MeasureTheory.IsFiniteMeasure τ]
     (g : S → M → ℝ)
     (hg_meas : Measurable fun p : S × M => g p.1 p.2)
     (hg_cont : ∀ s, Continuous fun m => g s m)
     (hg_bdd : ∃ C, ∀ s m, |g s m| ≤ C) :
-    (⨅ β : ProbabilityTheory.Kernel S M,
-        ∫ s, ∫ m, g s m ∂β s ∂τ)
-      =
-    ∫ s, sInf ((fun m => g s m) '' Set.univ) ∂τ := by
+    -- For every tolerance ε > 0, there is a Markov kernel that almost minimises
+    -- the iterated integral; the rowwise infimum is the limit as ε ↓ 0.
+    (∀ ε > 0, ∃ β : ProbabilityTheory.Kernel S M,
+        ProbabilityTheory.IsMarkovKernel β ∧
+        ∫ s, ∫ m, g s m ∂(β s) ∂τ
+          ≤ (∫ s, sInf (Set.range (g s)) ∂τ) + ε) ∧
+    -- Lower bound: every kernel's iterated integral is bounded below by rowwise infima.
+    (∀ β : ProbabilityTheory.Kernel S M, ProbabilityTheory.IsMarkovKernel β →
+        (∫ s, sInf (Set.range (g s)) ∂τ)
+          ≤ ∫ s, ∫ m, g s m ∂(β s) ∂τ) := by
   sorry
 
-Confidence this is the right statement shape: 3
-Notes on what would be needed to prove it later: Need precise order-complete target for ⨅, integrability, and a measurable ε-minimizer. In the project, using an ε-version may be easier than exact equality.
+Confidence this is the right statement shape: 4
+Notes on what would be needed to prove it later: The ε-selection conjunction avoids lattice complications around `⨅` on kernels (whose order structure in `ℝ` is via the integral, not directly comparable). Proof skeleton: (i) lower bound by pointwise inf swap; (ii) for each ε, construct a measurable ε-minimizer m_ε via measurable selection of `{m : g s m ≤ inf_n g s n + ε}` and lift it to a deterministic kernel. The ε-version is exactly what the project consumes in adversary-infimum-pointwise.
 
 hausdorff-support-function-lipschitz
 
@@ -884,96 +892,134 @@ Notes on what would be needed to prove it later: In finite dimension, take L = �
 
 jankov-von-neumann-universal-selection
 
-Reason this needs a stub: This is descriptive set theory. Mathlib does not appear to expose analytic sets or Jankov-von-Neumann selection in the needed form.
+Reason this needs a stub: This is descriptive set theory. Mathlib exposes `MeasureTheory.AnalyticSet` and related analytic-set infrastructure (per pass-1 reviewer correction), but does NOT supply the Jankov-von-Neumann universally measurable selection theorem in the form needed here.
 
-Proposed Lean statement (sketch):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 (replaces `True` placeholders with real analytic-set + universal-measurability predicates):
 
 lean
+-- Universal measurability of a function w.r.t. a target σ-algebra: f is measurable when X is
+-- equipped with the completion of its Borel σ-algebra by every (σ-finite) Borel measure.
+-- Project-local definition until Mathlib formalises descriptive-set-theoretic universal measurability.
+def UniversallyMeasurable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [MeasurableSpace Y] (f : X → Y) : Prop :=
+  ∀ μ : MeasureTheory.Measure X, MeasureTheory.IsFiniteMeasure μ →
+    MeasureTheory.AEMeasurable f μ
+
 theorem jankov_von_neumann_universal_selection
     {X Y : Type*}
-    [MeasurableSpace X] [MeasurableSpace Y]
-    [TopologicalSpace X] [TopologicalSpace Y]
-    -- StandardBorel/analytic hypotheses should be refined.
-    {G : Set (X × Y)}
-    (hG_analytic : True)
+    [MeasurableSpace X] [TopologicalSpace X] [StandardBorelSpace X]
+    [MeasurableSpace Y] [TopologicalSpace Y] [StandardBorelSpace Y] [Nonempty Y]
+    (G : Set (X × Y))
+    (hG_analytic : MeasureTheory.AnalyticSet G)
     (hsections : ∀ x, ∃ y, (x, y) ∈ G) :
     ∃ f : X → Y,
-      -- Universally measurable placeholder.
-      True ∧ ∀ x, (x, f x) ∈ G := by
+      UniversallyMeasurable f ∧ ∀ x, (x, f x) ∈ G := by
   sorry
 
-Confidence this is the right statement shape: 2
-Notes on what would be needed to prove it later: Would require a Mathlib development of analytic sets and universal measurability, or a project-specific replacement avoiding JvN.
+Confidence this is the right statement shape: 3
+Notes on what would be needed to prove it later: The classical JvN theorem says: every analytic set in a product of standard-Borel spaces with nonempty x-sections admits a universally measurable y-uniformisation. Project may bypass JvN by using `geps_borel_selector_upgrade` (which delivers a Borel selector under stronger regularity) — that path is preferred. This stub is retained for the case where the project later needs the general JvN theorem, e.g., in `Geps-selector-exists` if the regularity upgrade isn't available.
 
 geps-borel-selector-upgrade
 
 Reason this needs a stub: This is the exact patch beyond JvN: the particular ε-contact graph must have enough regularity for a total Borel selector.
 
-Proposed Lean statement (sketch):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 (replaces `hregular : True` with a structured GepsRegularity predicate):
 
 lean
+-- The regularity profile that the ε-contact correspondence Gε enjoys in v8.
+-- Bundles closed-valued, measurable-graph, and section-measurability hypotheses.
+structure GepsRegularity {M : Type*} [TopologicalSpace M] [MeasurableSpace M]
+    (Gε : ℝ → M → Set M) (ε : ℝ) : Prop where
+  closed_valued : ∀ s : M, IsClosed (Gε ε s)
+  graph_measurable : MeasurableSet {p : M × M | p.2 ∈ Gε ε p.1}
+  sections_measurable : ∀ s : M, MeasurableSet (Gε ε s)
+
 theorem geps_borel_selector_upgrade
     {M : Type*}
-    [TopologicalSpace M] [MeasurableSpace M]
+    [TopologicalSpace M] [MeasurableSpace M] [BorelSpace M] [StandardBorelSpace M]
+    [TopologicalSpace.SecondCountableTopology M]
     {Gε : ℝ → M → Set M}
     {ε : ℝ}
     (hε : 0 < ε)
     (hne : ∀ s : M, (Gε ε s).Nonempty)
-    (hgraph : MeasurableSet {p : M × M | p.2 ∈ Gε ε p.1})
-    -- strengthened regularity hypotheses for this correspondence
-    (hregular : True) :
+    (hregular : GepsRegularity Gε ε) :
     ∃ mε : M → M,
       Measurable mε ∧ ∀ s : M, mε s ∈ Gε ε s := by
   sorry
 
 Confidence this is the right statement shape: 4
-Notes on what would be needed to prove it later: Replace hregular : True with the actual closed-valued/σ-compact/standard-Borel regularity used by the ε-contact correspondence.
+Notes on what would be needed to prove it later: With closed-valued sections in a standard-Borel second-countable space and measurable graph, the Kuratowski-Ryll-Nardzewski selection theorem yields a Borel selector. The structure GepsRegularity makes the hypothesis bundle reusable across Gε-uses in the proof (Geps-selector-exists, epsilon-adversary-realization, etc.).
 
 bayes-posterior-as-conditional-barycenter
 
 Reason this needs a stub: This is project glue: it identifies a Bayesian posterior over finite states with the coordinatewise barycenter of a conditional law over source posteriors. Mathlib supplies disintegration and integration, not the posterior-process semantics.
 
-Proposed Lean statement (sketch):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 (adds joint-law + disintegration + posterior-consistency hypotheses; conclusion is the coordinate-barycenter identity):
 
 lean
 theorem bayes_posterior_as_conditional_barycenter
-    {Ω M : Type*}
-    [Fintype Ω] [MeasurableSpace M]
+    {Ω : Type*} [Fintype Ω]
+    {Belief : Type*} [MeasurableSpace Belief]
+    {M : Type*} [MeasurableSpace M]
+    -- Belief is the source-posterior space; coord s ω = s(ω).
+    (coord : Belief → Ω → ℝ)
+    (hcoord_meas : ∀ ω, Measurable (fun s => coord s ω))
+    -- Prior over states.
+    (μ0 : Ω → ℝ) (hμ0_nonneg : ∀ ω, 0 ≤ μ0 ω) (hμ0_sum : ∑ ω, μ0 ω = 1)
+    -- State-conditional source law π(·|ω) and unconditional source law τ;
+    -- standing posterior-law consistency: μ0(ω) • π ω = (fun s ↦ s ω) • τ.
+    (π : Ω → MeasureTheory.Measure Belief)
+    (τ : MeasureTheory.Measure Belief)
+    [MeasureTheory.IsFiniteMeasure τ]
+    (hposterior_consistency :
+      ∀ ω, (μ0 ω) • (π ω) =
+        τ.withDensity (fun s => ENNReal.ofReal (coord s ω)))
+    -- Message-marginal law q (e.g., q = (γ_α)_2 in v8) and conditional
+    -- source-posterior kernel ρ giving the disintegration of the relevant joint law.
     (q : MeasureTheory.Measure M)
-    (ρ : M → MeasureTheory.Measure (Ω → ℝ))
-    (P : M → Ω → ℝ) :
-    -- `ρ m` is the conditional source-posterior law after message `m`.
-    -- `P m` is the Bayesian posterior over states after message `m`.
-    (∀ᵐ m ∂q, ∀ ω : Ω,
-      P m ω = ∫ s, s ω ∂ρ m) := by
+    (ρ : ProbabilityTheory.Kernel M Belief)
+    [ProbabilityTheory.IsMarkovKernel ρ]
+    -- P m : posterior over states after observing message m, defined from the joint law.
+    (P : M → Ω → ℝ)
+    (hP_meas : ∀ ω, Measurable (fun m => P m ω))
+    (hP_post : ∀ ω : Ω, ∀ᵐ m ∂q,
+      P m ω = (∫ s, coord s ω ∂(ρ m)))  -- assumed identity at the joint level
+    :
+    -- Conclusion: q-a.e. message m, the posterior over states is the coordinate-barycenter
+    -- of the conditional source-posterior law ρ m.
+    ∀ᵐ m ∂q, ∀ ω : Ω, P m ω = ∫ s, coord s ω ∂(ρ m) := by
   sorry
 
 Confidence this is the right statement shape: 3
-Notes on what would be needed to prove it later: Need the exact model’s joint law, posterior-law consistency, disintegration identity, and finite-coordinate integration lemmas.
+Notes on what would be needed to prove it later: The statement now bundles the standing posterior-law-consistency identity (μ0(ω) • π ω = (· ω) • τ), the disintegration / conditional kernel ρ, and the joint-law definition of P. The hypothesis hP_post is the project-level posterior-process definition; the conclusion exposes it q-a.e. for downstream use in `definition2-qae-predicate` and Tier 2.
 
 support-function-measurable-integrated-separation
 
-Reason this needs a stub: The pointwise separation theorem is in Mathlib, but the measurable-correspondence/integrated Hall equivalence is specialist and not a standard packaged theorem.
+Reason this needs a stub: The pointwise separation theorem is in Mathlib (`iInter_halfSpaces_eq`, `geometric_hahn_banach_point_closed`), but the measurable-correspondence/integrated Hall equivalence is specialist and not a standard packaged theorem.
 
-Proposed Lean statement (sketch):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 (replaces `True` placeholders with the support-function Hall inequality):
 
 lean
 theorem support_function_measurable_integrated_separation
     {M E : Type*}
     [MeasurableSpace M]
-    [TopologicalSpace E] [AddCommGroup E] [Module ℝ E]
-    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
-    [LocallyConvexSpace ℝ E]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyConvexSpace ℝ E]
     (q : MeasureTheory.Measure M)
+    [MeasureTheory.IsFiniteMeasure q]
     (B : M → Set E)
     (P : M → E)
+    (hP_meas : Measurable P)
     (hB_closed : ∀ m, IsClosed (B m))
     (hB_convex : ∀ m, Convex ℝ (B m))
     (hB_nonempty : ∀ m, (B m).Nonempty)
-    (hmeas : True) :
-    ((∀ᵐ m ∂q, P m ∈ B m) ↔
-      True) := by
+    (hB_bounded : ∀ m, Bornology.IsBounded (B m))
+    (hB_meas_graph : MeasurableSet {p : M × E | p.2 ∈ B p.1}) :
+    -- Equivalence: posterior-membership q-a.e. iff every continuous linear functional
+    -- is dominated q-a.e. by the support function of B m. This is the Hall form
+    -- (measurable / integrated version) used by support-function-integrated-Hall-equivalence.
+    (∀ᵐ m ∂q, P m ∈ B m) ↔
+      (∀ ℓ : E →L[ℝ] ℝ, ∀ᵐ m ∂q, ℓ (P m) ≤ sSup (ℓ '' B m)) := by
   sorry
 
-Confidence this is the right statement shape: 2
-Notes on what would be needed to prove it later: Replace the right side with the project’s exact support-function Hall inequalities over measurable events and continuous affine tests. Requires measurable selection/separation for the violation set.
+Confidence this is the right statement shape: 3
+Notes on what would be needed to prove it later: Forward direction is direct from pointwise separation applied a.e. Reverse direction needs measurable separation: if `P m ∉ B m` on a positive-measure set, the violation set has a measurable selector of a separating functional ℓ_m, integrated over q to produce a witness ℓ for which the inequality fails. The bounded/closed/convex/nonempty hypotheses and the measurable graph of B together support a measurable-selection version of Hahn-Banach. `LocallyConvexSpace ℝ E` ensures the dual separates points.
