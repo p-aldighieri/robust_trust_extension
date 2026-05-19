@@ -1641,7 +1641,35 @@ theorem sharpness_corollary
 
 theorem halfspace_contains_beliefs_inducing_all_vertices :
     ContainsBeliefsForAllVertices HalfspaceTrustRegion := by
-  sorry
+  intro i
+  fin_cases i
+  · refine ⟨⟨![(2 : ℝ) / 5, (2 : ℝ) / 5, (1 : ℝ) / 5], ?_⟩, ?_⟩
+    · constructor
+      · intro ω
+        fin_cases ω <;> simp <;> norm_num
+      · simp [Fin.sum_univ_three] <;> norm_num
+    · constructor
+      · simp [HalfspaceTrustRegion] <;> norm_num
+      · intro k
+        fin_cases k <;> simp <;> norm_num
+  · refine ⟨⟨![(1 : ℝ) / 3, (1 : ℝ) / 3, (1 : ℝ) / 3], ?_⟩, ?_⟩
+    · constructor
+      · intro ω
+        fin_cases ω <;> simp <;> norm_num
+      · simp [Fin.sum_univ_three] <;> norm_num
+    · constructor
+      · simp [HalfspaceTrustRegion] <;> norm_num
+      · intro k
+        fin_cases k <;> simp <;> norm_num
+  · refine ⟨⟨![(0 : ℝ), (0 : ℝ), (1 : ℝ)], ?_⟩, ?_⟩
+    · constructor
+      · intro ω
+        fin_cases ω <;> simp <;> norm_num
+      · simp [Fin.sum_univ_three] <;> norm_num
+    · constructor
+      · simp [HalfspaceTrustRegion] <;> norm_num
+      · intro k
+        fin_cases k <;> simp <;> norm_num
 
 theorem halfspace_induced_effective_menu_equals_full_vertices :
     InducedEffectiveMenu HalfspaceTrustRegion = FullWTAVertexMenu := by
