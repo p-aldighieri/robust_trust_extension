@@ -227,29 +227,29 @@ noncomputable section
 
 /-! ## Finite state simplex and generic model primitives -/
 
-def Belief (Ω : Type*) [Fintype Ω] : Type* :=
+abbrev Belief (Ω : Type) [Fintype Ω] : Type :=
   {s : Ω → ℝ // (∀ ω : Ω, 0 ≤ s ω) ∧ (∑ ω : Ω, s ω) = 1}
 
-def beliefCoord {Ω : Type*} [Fintype Ω] (s : Belief Ω) (ω : Ω) : ℝ :=
+def beliefCoord {Ω : Type} [Fintype Ω] (s : Belief Ω) (ω : Ω) : ℝ :=
   s.val ω
 
-def beliefDot {Ω : Type*} [Fintype Ω] (s : Belief Ω) (w : Ω → ℝ) : ℝ :=
+def beliefDot {Ω : Type} [Fintype Ω] (s : Belief Ω) (w : Ω → ℝ) : ℝ :=
   ∑ ω : Ω, s.val ω * w ω
 
-def beliefAsProfile {Ω : Type*} [Fintype Ω] (s : Belief Ω) : Ω → ℝ :=
+def beliefAsProfile {Ω : Type} [Fintype Ω] (s : Belief Ω) : Ω → ℝ :=
   fun ω => s.val ω
 
-noncomputable def beliefBarycenter {Ω : Type*} [Fintype Ω]
+noncomputable def beliefBarycenter {Ω : Type} [Fintype Ω]
     [MeasurableSpace (Belief Ω)] (ρ : Measure (Belief Ω)) : Ω → ℝ :=
   fun ω => ∫ s, s.val ω ∂ρ
 
 structure RobustTrustModel where
-  Ω : Type*
+  Ω : Type
   [Ω_fintype : Fintype Ω]
   [Ω_measurable : MeasurableSpace Ω]
   [Ω_nonempty : Nonempty Ω]
 
-  Θ : Type*
+  Θ : Type
   [Θ_metric : MetricSpace Θ]
   [Θ_measurable : MeasurableSpace Θ]
   [Θ_borel : BorelSpace Θ]
@@ -258,7 +258,7 @@ structure RobustTrustModel where
   [Θ_compact : CompactSpace Θ]
   [Θ_nonempty : Nonempty Θ]
 
-  A : Type*
+  A : Type
   [A_metric : MetricSpace A]
   [A_measurable : MeasurableSpace A]
   [A_borel : BorelSpace A]
@@ -267,7 +267,7 @@ structure RobustTrustModel where
   [A_compact : CompactSpace A]
   [A_nonempty : Nonempty A]
 
-  M : Type*
+  M : Type
   [M_metric : MetricSpace M]
   [M_measurable : MeasurableSpace M]
   [M_borel : BorelSpace M]
@@ -276,7 +276,7 @@ structure RobustTrustModel where
   [M_compact : CompactSpace M]
   [M_nonempty : Nonempty M]
 
-  PrivateStrategy : Type*
+  PrivateStrategy : Type
   [PrivateStrategy_topological : TopologicalSpace PrivateStrategy]
   [PrivateStrategy_measurable : MeasurableSpace PrivateStrategy]
   [PrivateStrategy_borel : BorelSpace PrivateStrategy]
@@ -346,7 +346,7 @@ attribute [instance]
   RobustTrustModel.PrivateStrategy_compact
   RobustTrustModel.PrivateStrategy_nonempty
 
-abbrev Profile (model : RobustTrustModel) : Type* :=
+abbrev Profile (model : RobustTrustModel) : Type :=
   model.Ω → ℝ
 
 structure PriorAdviserPosteriorLaw (model : RobustTrustModel) where
@@ -514,7 +514,7 @@ def Definition2QAEPredicate (model : RobustTrustModel)
 def PayoffProfileSet (model : RobustTrustModel) : Set (Profile model) :=
   Set.range model.profileOfPrivate
 
-abbrev ProfileInW (model : RobustTrustModel) : Type* :=
+abbrev ProfileInW (model : RobustTrustModel) : Type :=
   {w : Profile model // w ∈ PayoffProfileSet model}
 
 structure ProfileRealizationSetup (model : RobustTrustModel) where
@@ -534,7 +534,7 @@ structure ProfileRealizationMap (model : RobustTrustModel) where
   measurable_R : Measurable R
   right_inverse : ∀ w : ProfileInW model, model.profileOfPrivate (R w) = w.val
 
-abbrev CompactMenu (model : RobustTrustModel) : Type* :=
+abbrev CompactMenu (model : RobustTrustModel) : Type :=
   TopologicalSpace.NonemptyCompacts (ProfileInW model)
 
 noncomputable def maxPayoff (model : RobustTrustModel)
@@ -686,11 +686,11 @@ structure AtomlessTauSharpness (wta : WTATernaryAlgebra) where
 def WTA_vertex (i : WTAΩ) : WTAProfile :=
   fun j => if i = j then 1 else -1
 
-def WTA_mixedLabel (λ : WTAΩ → ℝ) : WTAProfile :=
-  fun j => ∑ i : WTAΩ, λ i * WTA_vertex i j
+def WTA_mixedLabel (lam : WTAΩ → ℝ) : WTAProfile :=
+  fun j => ∑ i : WTAΩ, lam i * WTA_vertex i j
 
-def WTASupport (λ : WTAΩ → ℝ) : Set WTAΩ :=
-  {i : WTAΩ | 0 < λ i}
+def WTASupport (lam : WTAΩ → ℝ) : Set WTAΩ :=
+  {i : WTAΩ | 0 < lam i}
 
 def WTAKminus (I : Set WTAΩ) : Set WTABelief :=
   {s : WTABelief | ∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, s.val i ≤ s.val k}
@@ -701,11 +701,11 @@ def WTABcone (I : Set WTAΩ) : Set WTABelief :=
 def WTABconeProfile (I : Set WTAΩ) : Set WTAProfile :=
   {p : WTAProfile | ∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, p k ≤ p i}
 
-def WTARowwiseMinimizer (I : Set WTAΩ) (λ : WTAΩ → ℝ)
+def WTARowwiseMinimizer (I : Set WTAΩ) (lam : WTAΩ → ℝ)
     (s : WTABelief) : Prop :=
   s ∈ WTAKminus I
 
-def WTABayesOptimalWTA (I : Set WTAΩ) (λ : WTAΩ → ℝ)
+def WTABayesOptimalWTA (I : Set WTAΩ) (lam : WTAΩ → ℝ)
     (p : WTABelief) : Prop :=
   p ∈ WTABcone I
 
@@ -714,16 +714,16 @@ structure NullDustData (wta : WTATernaryAlgebra) where
   measurable_N : MeasurableSet N
   tau_null : wta.τ N = 0
   wN : {m : WTABelief // m ∈ N} → WTAProfile
-  λ : {m : WTABelief // m ∈ N} → WTAΩ → ℝ
+  lam : {m : WTABelief // m ∈ N} → WTAΩ → ℝ
   I : {m : WTABelief // m ∈ N} → Set WTAΩ
-  λ_measurable : True
-  λ_nonneg : ∀ m i, 0 ≤ λ m i
-  λ_sum_one : ∀ m, ∑ i : WTAΩ, λ m i = 1
-  λ_support_nonempty : ∀ m, (I m).Nonempty
-  λ_support_positive : ∀ m i, i ∈ I m ↔ 0 < λ m i
-  wN_eq_mixed_label : ∀ m, wN m = WTA_mixedLabel (λ m)
+  lam_measurable : True
+  lam_nonneg : ∀ m i, 0 ≤ lam m i
+  lam_sum_one : ∀ m, ∑ i : WTAΩ, lam m i = 1
+  lam_support_nonempty : ∀ m, (I m).Nonempty
+  lam_support_positive : ∀ m i, i ∈ I m ↔ 0 < lam m i
+  wN_eq_mixed_label : ∀ m, wN m = WTA_mixedLabel (lam m)
 
-abbrev NDust {wta : WTATernaryAlgebra} (dust : NullDustData wta) : Type* :=
+abbrev NDust {wta : WTATernaryAlgebra} (dust : NullDustData wta) : Type :=
   {m : WTABelief // m ∈ dust.N}
 
 structure AdversarialFlowDisintegrationData
@@ -1280,24 +1280,24 @@ theorem tier2_qae_robust_rationalizability_under_menu_Hall
   sorry
 
 theorem wta_payoff_dot_product_identity
-    (λ : WTAΩ → ℝ)
-    (hλ_nonneg : ∀ i : WTAΩ, 0 ≤ λ i)
-    (hλ_sum : ∑ i : WTAΩ, λ i = 1)
+    (lam : WTAΩ → ℝ)
+    (hlam_nonneg : ∀ i : WTAΩ, 0 ≤ lam i)
+    (hlam_sum : ∑ i : WTAΩ, lam i = 1)
     (s : WTABelief) :
-    beliefDot s (WTA_mixedLabel λ) =
-      2 * (∑ i : WTAΩ, λ i * s.val i) - 1 := by
+    beliefDot s (WTA_mixedLabel lam) =
+      2 * (∑ i : WTAΩ, lam i * s.val i) - 1 := by
   sorry
 
 theorem wta_rowwise_minimizer_and_Bayes_cone_identification
     (I : Set WTAΩ)
-    (λ : WTAΩ → ℝ)
+    (lam : WTAΩ → ℝ)
     (hI : I.Nonempty)
-    (hsupport : ∀ i : WTAΩ, i ∈ I ↔ 0 < λ i)
-    (hλ_nonneg : ∀ i : WTAΩ, 0 ≤ λ i)
-    (hλ_sum : ∑ i : WTAΩ, λ i = 1)
+    (hsupport : ∀ i : WTAΩ, i ∈ I ↔ 0 < lam i)
+    (hlam_nonneg : ∀ i : WTAΩ, 0 ≤ lam i)
+    (hlam_sum : ∑ i : WTAΩ, lam i = 1)
     (s p : WTABelief) :
-    (WTARowwiseMinimizer I λ s ↔ s ∈ WTAKminus I) ∧
-      (WTABayesOptimalWTA I λ p ↔ p ∈ WTABcone I) := by
+    (WTARowwiseMinimizer I lam s ↔ s ∈ WTAKminus I) ∧
+      (WTABayesOptimalWTA I lam p ↔ p ∈ WTABcone I) := by
   sorry
 
 theorem wta_cone_intersection
