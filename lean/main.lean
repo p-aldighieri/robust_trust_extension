@@ -1924,7 +1924,120 @@ theorem wta_cone_intersection
     (hρ_support : ρ (WTAKminus I) = 1)
     (hbary : beliefBarycenter ρ ∈ WTABconeProfile I) :
     ρ = Measure.dirac wta.μ0 := by
-  sorry
+  classical
+
+  obtain ⟨i0, hi0⟩ := hI
+
+  have hcoord_meas (j : WTAΩ) :
+      Measurable (fun s : WTABelief => s.val j) := by
+    exact (measurable_pi_apply j).comp measurable_subtype_coe
+
+  have hcoord_Icc (s : WTABelief) (j : WTAΩ) :
+      s.val j ∈ Set.Icc (0 : ℝ) 1 := by
+    refine ⟨s.property.1 j, ?_⟩
+    have hle : s.val j ≤ ∑ i : WTAΩ, s.val i :=
+      Finset.single_le_sum (f := fun i => s.val i)
+        (fun i _ => s.property.1 i) (Finset.mem_univ j)
+    linarith [s.property.2]
+
+  have hcoord_int (j : WTAΩ) :
+      Integrable (fun s : WTABelief => s.val j) ρ := by
+    refine Integrable.of_mem_Icc (μ := ρ) (a := (0 : ℝ)) (b := 1) ?_ ?_
+    · exact (hcoord_meas j).aemeasurable
+    · exact Filter.Eventually.of_forall (fun s => hcoord_Icc s j)
+
+  have hK_eq :
+      WTAKminus I =
+        ⋂ i : WTAΩ, ⋂ (_ : i ∈ I), ⋂ k : WTAΩ,
+          {s : WTABelief | s.val i ≤ s.val k} := by
+    ext s
+    simp [WTAKminus]
+
+  have hK_meas : MeasurableSet (WTAKminus I) := by
+    rw [hK_eq]
+    refine MeasurableSet.iInter (fun i => ?_)
+    refine MeasurableSet.iInter (fun _ => ?_)
+    refine MeasurableSet.iInter (fun k => ?_)
+    exact measurableSet_le (hcoord_meas i) (hcoord_meas k)
+
+  have hKcomp : ρ (WTAKminus I)ᶜ = 0 := by
+    rw [prob_compl_eq_zero_iff hK_meas]
+    exact hρ_support
+
+  have hKae : ∀ᵐ s ∂ρ, s ∈ WTAKminus I := by
+    rw [ae_iff]
+    change ρ (WTAKminus I)ᶜ = 0
+    exact hKcomp
+
+  have h_coord_eq (k : WTAΩ) : ∀ᵐ s ∂ρ, s.val k = s.val i0 := by
+    have h_nonneg : ∀ᵐ s ∂ρ, 0 ≤ s.val k - s.val i0 := by
+      filter_upwards [hKae] with s hs
+      exact sub_nonneg.mpr (hs i0 hi0 k)
+
+    have h_int_le :
+        (∫ s : WTABelief, (s.val k - s.val i0) ∂ρ) ≤ 0 := by
+      rw [integral_sub (hcoord_int k) (hcoord_int i0)]
+      have hb : beliefBarycenter ρ k ≤ beliefBarycenter ρ i0 :=
+        hbary i0 hi0 k
+      simpa [beliefBarycenter] using sub_nonpos.mpr hb
+
+    have h_int_nonneg :
+        0 ≤ (∫ s : WTABelief, (s.val k - s.val i0) ∂ρ) :=
+      integral_nonneg_of_ae h_nonneg
+
+    have h_int_zero :
+        (∫ s : WTABelief, (s.val k - s.val i0) ∂ρ) = 0 := by
+      exact le_antisymm h_int_le h_int_nonneg
+
+    have hdiff_int :
+        Integrable (fun s : WTABelief => s.val k - s.val i0) ρ :=
+      (hcoord_int k).sub (hcoord_int i0)
+
+    have hzero :
+        (fun s : WTABelief => s.val k - s.val i0) =ᵐ[ρ]
+          (fun _ : WTABelief => (0 : ℝ)) := by
+      exact (integral_eq_zero_iff_of_nonneg_ae h_nonneg hdiff_int).1 h_int_zero
+
+    filter_upwards [hzero] with s hs
+    linarith
+
+  have h_allcoord : ∀ᵐ s ∂ρ, ∀ k : WTAΩ, s.val k = s.val i0 := by
+    filter_upwards
+      [h_coord_eq (0 : WTAΩ), h_coord_eq (1 : WTAΩ), h_coord_eq (2 : WTAΩ)]
+      with s h0 h1 h2 k
+    fin_cases k <;> assumption
+
+  have h_ae_eq : ∀ᵐ s ∂ρ, s = wta.μ0 := by
+    filter_upwards [h_allcoord] with s hs
+    apply Subtype.ext
+    funext k
+
+    have hsum3 :
+        s.val (0 : WTAΩ) + s.val (1 : WTAΩ) + s.val (2 : WTAΩ) = 1 := by
+      simpa [WTAΩ, Fin.sum_univ_three] using s.property.2
+
+    have h0 : s.val (0 : WTAΩ) = s.val i0 := hs 0
+    have h1 : s.val (1 : WTAΩ) = s.val i0 := hs 1
+    have h2 : s.val (2 : WTAΩ) = s.val i0 := hs 2
+
+    have hi0_val : s.val i0 = (1 : ℝ) / 3 := by
+      linarith
+
+    calc
+      s.val k = s.val i0 := hs k
+      _ = (1 : ℝ) / 3 := hi0_val
+      _ = wta.μ0.val k := (wta.μ0_coord k).symm
+
+  have h_fun_ae :
+      (fun s : WTABelief => s) =ᵐ[ρ] (fun _ : WTABelief => wta.μ0) :=
+    h_ae_eq
+
+  have hmap :
+      Measure.map (fun s : WTABelief => s) ρ =
+        Measure.map (fun _ : WTABelief => wta.μ0) ρ := by
+    exact Measure.map_congr h_fun_ae
+
+  simpa [Measure.map_const] using hmap
 
 theorem dust_disintegration_over_subtype_N
     (wta : WTATernaryAlgebra)
@@ -1966,7 +2079,9 @@ theorem dust_conditional_sources_satisfy_cones
     ∀ᵐ m ∂flow.qN,
       flow.ρ m (WTAKminus (dust.I m)) = 1 ∧
         beliefBarycenter (flow.ρ m) ∈ WTABconeProfile (dust.I m) := by
-  sorry
+  filter_upwards [dust_rowwise_support_implies_cone_support wta dust flow hrow,
+                  dust_Bayes_calibration_gives_cone_barycenter wta dust flow hcal] with m hrow_m hcal_m
+  exact ⟨hrow_m, hcal_m⟩
 
 theorem cone_intersection_applied_to_dust
     (wta : WTATernaryAlgebra)
@@ -1975,7 +2090,14 @@ theorem cone_intersection_applied_to_dust
     (hrow : RowwiseSupport wta dust flow)
     (hcal : BayesConeCalibration wta dust flow) :
     ∀ᵐ m ∂flow.qN, flow.ρ m = Measure.dirac wta.μ0 := by
-  sorry
+  filter_upwards [dust_conditional_sources_satisfy_cones wta dust flow hrow hcal] with m ⟨hsupp, hbary⟩
+  haveI : IsProbabilityMeasure (flow.ρ m) := flow.ρ_prob m
+  exact wta_cone_intersection wta (dust.I m) (dust.lam m)
+    (Set.ext fun i => (dust.lam_support_positive m i).symm)
+    (fun i hi => (dust.lam_support_positive m i).mp hi)
+    (dust.lam_sum_one m)
+    (dust.lam_support_nonempty m)
+    (flow.ρ m) hsupp hbary
 
 theorem positive_dust_mass_impossible_when_alpha_one
     (wta : WTATernaryAlgebra)
@@ -2008,7 +2130,17 @@ theorem wta_no_free_dust
         WTAPositiveQMass wta α dust.N flow.κ ∧
         RowwiseSupport wta dust flow ∧
         BayesConeCalibration wta dust flow := by
-  sorry
+  rintro ⟨dust, flow, hα_eq, hpos, hrow, hcal⟩
+  have hpos' : WTAPositiveQMass wta flow.α dust.N flow.κ := hα_eq ▸ hpos
+  have hcone := cone_intersection_applied_to_dust wta dust flow hrow hcal
+  by_cases hα_eq1 : flow.α = 1
+  · exact positive_dust_mass_impossible_when_alpha_one wta dust flow hα_eq1 hpos'
+  · have hα_lt : flow.α < 1 := lt_of_le_of_ne flow.α_le_one hα_eq1
+    have hatom : 0 < wta.τ ({wta.μ0} : Set WTABelief) :=
+      dust_positive_mass_forces_mu0_atom wta dust flow hpos' hα_lt hcone
+    haveI := sharp.noAtoms
+    have hatomless : wta.τ ({wta.μ0} : Set WTABelief) = 0 := measure_singleton wta.μ0
+    exact (lt_irrefl (0 : ℝ≥0∞)) (by rw [hatomless] at hatom; exact hatom)
 
 theorem sharpness_corollary
     (wta : WTATernaryAlgebra)
@@ -2026,7 +2158,23 @@ theorem sharpness_corollary
         WTAPositiveQMass wta α dust.N flow.κ ∧
         RowwiseSupport wta dust flow ∧
         BayesConeCalibration wta dust flow) := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · intro ρ hρprob hρsupp hρbary
+    haveI : IsProbabilityMeasure ρ := hρprob
+    let lam : WTAΩ → ℝ := fun i => if i = (0 : Fin 3) then 1 else 0
+    have hsupp_eq : WTASupport lam = ({(0 : Fin 3)} : Set WTAΩ) := by
+      ext i
+      simp [WTASupport, lam]
+      by_cases h : i = (0 : Fin 3) <;> simp [h]
+    have hpos : ∀ i : WTAΩ, i ∈ ({(0 : Fin 3)} : Set WTAΩ) → 0 < lam i := by
+      intro i hi
+      simp [Set.mem_singleton_iff] at hi
+      simp [lam, hi]
+    have hsum : ∑ i : WTAΩ, lam i = 1 := by
+      simp [lam, Fin.sum_univ_three]
+    have hI_ne : ({(0 : Fin 3)} : Set WTAΩ).Nonempty := ⟨(0 : Fin 3), rfl⟩
+    exact wta_cone_intersection wta ({(0 : Fin 3)} : Set WTAΩ) lam hsupp_eq hpos hsum hI_ne ρ hρsupp hρbary
+  · exact wta_no_free_dust wta sharp α hα0 hα1
 
 theorem halfspace_contains_beliefs_inducing_all_vertices :
     ContainsBeliefsForAllVertices HalfspaceTrustRegion := by
