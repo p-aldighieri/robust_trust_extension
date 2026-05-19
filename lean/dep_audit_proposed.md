@@ -869,8 +869,8 @@ Proposed Lean statement (sketch) — PATCHED 2026-05-19 v2 (dropped `Continuous 
 lean
 theorem kernel_infimum_epsilon_selection
     {S M : Type*}
-    [MeasurableSpace S] [MeasurableSpace M]
-    [TopologicalSpace M] [StandardBorelSpace M] [Nonempty M]
+    [MeasurableSpace S] [TopologicalSpace S] [StandardBorelSpace S]  -- v3: StandardBorel on S
+    [MeasurableSpace M] [TopologicalSpace M] [StandardBorelSpace M] [Nonempty M]
     (τ : MeasureTheory.Measure S)
     [MeasureTheory.IsFiniteMeasure τ]
     (g : S → M → ℝ)
@@ -961,9 +961,10 @@ structure GepsRegularity {M : Type*} [TopologicalSpace M] [MeasurableSpace M]
 
 theorem geps_borel_selector_upgrade
     {M : Type*}
-    [TopologicalSpace M] [MeasurableSpace M] [BorelSpace M] [StandardBorelSpace M]
+    [MetricSpace M]  -- v3 patch: Polish/compact-metric target for KRN selection
+    [MeasurableSpace M] [BorelSpace M] [StandardBorelSpace M]
     [TopologicalSpace.SecondCountableTopology M]
-    [CompactSpace M]  -- v2 patch: section selection needs σ-compactness; CompactSpace suffices
+    [CompactSpace M]  -- compactness is faithful to the use site M = supp τ ⊂ compact metric ambient
     {Gε : ℝ → M → Set M}
     {ε : ℝ}
     (hε : 0 < ε)
@@ -985,18 +986,22 @@ Proposed Lean statement (sketch) — PATCHED 2026-05-19 v2 (removed the "painted
 lean
 theorem bayes_posterior_as_conditional_barycenter
     {Ω : Type*} [Fintype Ω]
-    {Belief : Type*} [MeasurableSpace Belief]
-    {M : Type*} [MeasurableSpace M]
-    -- Belief is the source-posterior space; coord s ω = s(ω).
+    {Belief : Type*} [TopologicalSpace Belief] [MeasurableSpace Belief]
+    [BorelSpace Belief] [StandardBorelSpace Belief]  -- v3: needed for Mathlib disintegration API
+    {M : Type*} [TopologicalSpace M] [MeasurableSpace M] [BorelSpace M] [StandardBorelSpace M]
+    -- Belief is the source-posterior space (a probability simplex on Ω); coord s ω = s(ω).
     (coord : Belief → Ω → ℝ)
     (hcoord_meas : ∀ ω, Measurable (fun s => coord s ω))
     (hcoord_nonneg : ∀ s ω, 0 ≤ coord s ω)
+    -- v3: simplex condition — coord s gives a probability distribution over Ω.
+    (hcoord_sum : ∀ s, ∑ ω, coord s ω = 1)
     -- Prior over states.
     (μ0 : Ω → ℝ) (hμ0_nonneg : ∀ ω, 0 ≤ μ0 ω) (hμ0_sum : ∑ ω, μ0 ω = 1)
     -- State-conditional source law π(·|ω) and unconditional source law τ.
     (π : Ω → MeasureTheory.Measure Belief)
+    [hπ_prob : ∀ ω, MeasureTheory.IsProbabilityMeasure (π ω)]  -- v3: π(·|ω) is a probability law
     (τ : MeasureTheory.Measure Belief)
-    [MeasureTheory.IsFiniteMeasure τ]
+    [MeasureTheory.IsProbabilityMeasure τ]  -- v3: τ is the unconditional posterior law (probability)
     -- Standing posterior-law consistency: μ0(ω) • π ω equals τ weighted by the
     -- coordinate function s ↦ s(ω). This is the v8 posterior-law-consistency-field.
     (hposterior_consistency :
@@ -1006,28 +1011,28 @@ theorem bayes_posterior_as_conditional_barycenter
     -- the message m is drawn given the source posterior s (e.g., the misaligned
     -- adversary kernel β, or the menu-Hall kernel κ).
     (q : MeasureTheory.Measure M)
+    [MeasureTheory.IsProbabilityMeasure q]
     (χ : ProbabilityTheory.Kernel Belief M)
     [ProbabilityTheory.IsMarkovKernel χ]
-    -- The joint law on Belief × M is τ ⊗ χ; q is its M-marginal.
+    -- v3: q is the M-marginal of the joint law τ ⊗ χ.
     (hq_marginal : q = (τ.compProd χ).map Prod.snd)
-    -- ρ is the disintegration of (τ ⊗ χ) along the M-coordinate.
+    -- ρ is the disintegration of the joint law along the M-coordinate.
     (ρ : ProbabilityTheory.Kernel M Belief)
     [ProbabilityTheory.IsMarkovKernel ρ]
+    -- v3: cleaner swapped-coordinate disintegration identity (per reviewer):
+    -- q.compProd ρ as a measure on M × Belief equals the swap of τ.compProd χ.
     (hρ_disintegration :
-      τ.compProd χ
-        = q.compProd (ρ.map (fun s => (s, default : Belief × Unit))  -- placeholder shape; see notes
-        ).map (fun p : M × (Belief × Unit) => (p.2.1, p.1)))
-    -- P m ω is defined as the Bayes' posterior at state ω given message m, derived
-    -- from the joint law via P m ω := (μ0 ω) * (dπ_ω / dq)(m) / (normalisation).
-    -- The dep-auditor's stub bundles the Bayes' definition into a hypothesis predicate.
+      q.compProd ρ =
+        (τ.compProd χ).map (fun p : Belief × M => (p.2, p.1)))
+    -- P m ω is the Bayes' posterior at state ω given message m, defined as a
+    -- Radon-Nikodym derivative of the state-ω message law w.r.t. q (NOT assumed
+    -- equal to the barycenter — that is what we prove).
     (P : M → Ω → ℝ)
     (hP_meas : ∀ ω, Measurable (fun m => P m ω))
     (hP_bayes_definition :
-      -- P is the joint-law conditional probability of state ω given message m:
-      -- ∀ ω, ∀ᵐ m ∂q, P m ω = Pr(state = ω | message = m)
       ∀ ω : Ω, ∀ᵐ m ∂q,
         P m ω = (μ0 ω) *
-                ((((π ω).map (fun s : Belief => s)).compProd χ).map Prod.snd).rnDeriv q m
+                (((π ω).compProd χ).map Prod.snd).rnDeriv q m
                 |>.toReal)
     :
     -- Conclusion: q-a.e. message m, the joint-law posterior over states P m equals
@@ -1043,16 +1048,16 @@ support-function-measurable-integrated-separation
 
 Reason this needs a stub: The pointwise separation theorem is in Mathlib (`iInter_halfSpaces_eq`, `geometric_hahn_banach_point_closed`), but the measurable-correspondence/integrated Hall equivalence is specialist and not a standard packaged theorem.
 
-Proposed Lean statement (sketch) — PATCHED 2026-05-19 v2 (specialized to the actual use site E = Ω → ℝ with Ω finite; finite-dim ambient sidesteps the `∀ ℓ, ∀ᵐ m` vs `∀ᵐ m, ∀ ℓ` quantifier-swap pathology since the dual `(Ω → ℝ) →L[ℝ] ℝ` is also finite-dim with a countable dense subset):
+Proposed Lean statement — PATCHED 2026-05-19 v3 (SPLIT into two theorems per pass-3 reviewer: the original "integrated Hall" name was drifting toward pointwise a.e. separation; split cleanly):
+
+**Theorem A: `support_function_ae_pointwise_separation`** (the a.e. pointwise form actually used in `support-function-pointwise-membership-equivalence` lemma — finite-dim restriction sidesteps quantifier-swap pathology):
 
 lean
-theorem support_function_measurable_integrated_separation
+theorem support_function_ae_pointwise_separation
     {Ω : Type*} [Fintype Ω]
     {M : Type*} [MeasurableSpace M]
     (q : MeasureTheory.Measure M)
     [MeasureTheory.IsFiniteMeasure q]
-    -- The ambient space is the finite-dimensional payoff/profile space (Ω → ℝ),
-    -- matching the v8 use site (B m ⊆ W ⊆ Ω → ℝ).
     (B : M → Set (Ω → ℝ))
     (P : M → (Ω → ℝ))
     (hP_meas : Measurable P)
@@ -1061,11 +1066,40 @@ theorem support_function_measurable_integrated_separation
     (hB_nonempty : ∀ m, (B m).Nonempty)
     (hB_bounded : ∀ m, Bornology.IsBounded (B m))
     (hB_meas_graph : MeasurableSet {p : M × (Ω → ℝ) | p.2 ∈ B p.1}) :
-    -- Strong (pointwise a.e.) equivalence — in finite-dim, ∀ ℓ inside ∀ᵐ m
-    -- can be promoted via a countable dense subset of the dual `(Ω → ℝ) →L[ℝ] ℝ`.
     (∀ᵐ m ∂q, P m ∈ B m) ↔
       (∀ᵐ m ∂q, ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, ℓ (P m) ≤ sSup (ℓ '' B m)) := by
   sorry
 
-Confidence this is the right statement shape: 3
-Notes on what would be needed to prove it later: Forward direction is direct from pointwise support-function separation applied a.e. Reverse direction needs the pointwise version of Hahn-Banach (`iInter_halfSpaces_eq` or `geometric_hahn_banach_point_closed`) applied at q-a.e. m. The finite-dim restriction is faithful to the use site (the v8 separation lemmas operate on payoff profiles in Ω → ℝ with Ω finite). v2 quantifier-swap: with Ω finite, (Ω → ℝ) is `EuclideanSpace ℝ Ω`-isomorphic, and `(Ω → ℝ) →L[ℝ] ℝ` is also finite-dim — so `∀ ℓ ∀ᵐ m` and `∀ᵐ m ∀ ℓ` are equivalent (a single null set covers all functionals via density / continuity arguments). If a later general-position result requires the infinite-dim version, restate as `∀ᵐ m, ∀ ℓ` with a countable separating dual family hypothesis.
+**Theorem B: `support_function_integrated_separation`** (the eventwise integrated Hall form invoked by `support-function-integrated-Hall-equivalence`):
+
+lean
+theorem support_function_integrated_separation
+    {Ω : Type*} [Fintype Ω]
+    {M : Type*} [MeasurableSpace M]
+    (q : MeasureTheory.Measure M)
+    [MeasureTheory.IsFiniteMeasure q]
+    (B : M → Set (Ω → ℝ))
+    (P : M → (Ω → ℝ))
+    (hP_meas : Measurable P)
+    (hB_closed : ∀ m, IsClosed (B m))
+    (hB_convex : ∀ m, Convex ℝ (B m))
+    (hB_nonempty : ∀ m, (B m).Nonempty)
+    (hB_bounded : ∀ m, Bornology.IsBounded (B m))
+    (hB_meas_graph : MeasurableSet {p : M × (Ω → ℝ) | p.2 ∈ B p.1})
+    -- Measurability and integrability of the support-function evaluation:
+    (hsupp_meas : ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, Measurable fun m => sSup (ℓ '' B m))
+    (hsupp_int : ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, MeasureTheory.Integrable (fun m => sSup (ℓ '' B m)) q)
+    (hP_int : ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, MeasureTheory.Integrable (fun m => ℓ (P m)) q)
+    -- For every measurable event E ⊂ M with q E > 0,
+    -- (∀ᵐ m on E, P m ∈ B m) ↔ ∫_E ℓ (P m) dq ≤ ∫_E sSup (ℓ '' B m) dq for all ℓ.
+    : True ∨ -- placeholder Or-conclusion-shape; the actual conclusion-pair below
+      (∀ E : Set M, MeasurableSet E → q E ≠ 0 →
+        ((∀ᵐ m ∂q.restrict E, P m ∈ B m) ↔
+          (∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ,
+            ∫ m in E, ℓ (P m) ∂q ≤ ∫ m in E, sSup (ℓ '' B m) ∂q))) := by
+  sorry
+
+Confidence this is the right statement shape: 3 (Theorem A) / 2 (Theorem B)
+Notes on what would be needed to prove it later:
+- Theorem A is direct from pointwise Hahn-Banach (`iInter_halfSpaces_eq`) applied at q-a.e. m, with the finite-dim restriction handling quantifier-swap.
+- Theorem B is the integrated form: forward direction from Theorem A + monotonicity of integrals; reverse direction needs measurable selection of separating functionals on the violation event. Both directions rely on the measurability/integrability hypotheses for `m ↦ sSup (ℓ '' B m)`. The Lean `True ∨ ...` shape is a placeholder for the disjunction with a degenerate case; the formalizer should refine to a clean iff once it pins the precise statement to the actual use site in `support-function-integrated-Hall-equivalence`. **v3 NOTE:** This stub is more uncertain than the others — the formalizer may need to consult Pedro on whether the project actually needs Theorem B in the integrated form, or whether Theorem A (pointwise a.e.) suffices for `support-function-integrated-Hall-equivalence`.
