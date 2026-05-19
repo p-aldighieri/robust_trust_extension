@@ -1825,15 +1825,36 @@ theorem halfspace_contains_beliefs_inducing_all_vertices :
 
 theorem halfspace_induced_effective_menu_equals_full_vertices :
     InducedEffectiveMenu HalfspaceTrustRegion = FullWTAVertexMenu := by
-  sorry
+  ext v
+  constructor
+  · rintro ⟨i, rfl, _⟩
+    exact ⟨i, rfl⟩
+  · rintro ⟨i, rfl⟩
+    rcases halfspace_contains_beliefs_inducing_all_vertices i with
+      ⟨μ, hμ_mem, hμ_induces⟩
+    exact ⟨i, rfl, ⟨μ, hμ_mem, hμ_induces⟩⟩
 
 theorem halfspace_behavior_equivalent_to_full_simplex :
     BehaviorEquivalentTrustRegion HalfspaceTrustRegion FullSimplexTrustRegion := by
-  sorry
+  unfold BehaviorEquivalentTrustRegion
+  rw [halfspace_induced_effective_menu_equals_full_vertices]
+  symm
+  ext v
+  constructor
+  · rintro ⟨i, hvi, _⟩
+    exact ⟨i, hvi.symm⟩
+  · intro hv
+    have hvH : v ∈ InducedEffectiveMenu HalfspaceTrustRegion := by
+      rw [halfspace_induced_effective_menu_equals_full_vertices]
+      exact hv
+    rcases hvH with ⟨i, hvi, μ, _hμH, hInd⟩
+    exact ⟨i, hvi, μ, by simp [FullSimplexTrustRegion], hInd⟩
 
 theorem halfspace_witness_menu_engine_artifact :
-    HalfspaceWitnessStatement := by
-  sorry
+    HalfspaceWitnessStatement :=
+  ⟨halfspace_contains_beliefs_inducing_all_vertices,
+   halfspace_induced_effective_menu_equals_full_vertices,
+   halfspace_behavior_equivalent_to_full_simplex⟩
 
 /-! ## Main theorem package -/
 
