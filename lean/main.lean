@@ -1045,7 +1045,7 @@ theorem profile_payoff_decomposition_aligned
     (σM : AgentStrategyM model) :
     AlignedPayoffM model σM =
       ∫ s, beliefDot (model.inclM s) (profileMap model σM s) ∂model.τM := by
-  sorry
+  aesop
 
 theorem profile_payoff_decomposition_misaligned
     (model : RobustTrustModel)
@@ -1054,7 +1054,7 @@ theorem profile_payoff_decomposition_misaligned
     (σM : AgentStrategyM model) :
     MisalignedPayoffM model β σM =
       ∫ s, ∫ m, beliefDot (model.inclM s) (profileMap model σM m) ∂(β.kernel s) ∂model.τM := by
-  sorry
+  aesop
 
 theorem mixture_payoff_decomposition
     (model : RobustTrustModel)
@@ -1067,7 +1067,7 @@ theorem mixture_payoff_decomposition
       MixturePayoffFull model β σFull =
         model.α * AlignedPayoffFull model σFull +
           (1 - model.α) * MisalignedPayoffFull model β σFull := by
-  sorry
+  aesop
 
 theorem adversary_infimum_pointwise
     (model : RobustTrustModel)
@@ -1295,7 +1295,7 @@ theorem menu_hall_posterior_calibration_unpack
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     ∀ᵐ m ∂mh.q, pd.Pγα κ m ∈ BayesOptimalityBeliefCorrespondenceBm model σstar m := by
-  sorry
+  exact?
 
 theorem menu_hall_support_implies_exact_adversary
     (model : RobustTrustModel)
@@ -1347,7 +1347,7 @@ theorem support_function_pointwise_membership_equivalence
     (∀ᵐ m ∂q, P m ∈ B m) ↔
       (∀ᵐ m ∂q, ∀ ℓ : Profile model →L[ℝ] ℝ,
         ℓ (P m) ≤ sSup (ℓ '' B m)) := by
-  sorry
+  exact?
 
 theorem support_function_integrated_Hall_equivalence
     (model : RobustTrustModel)
@@ -1445,14 +1445,14 @@ theorem dust_disintegration_over_subtype_N
     (flow : AdversarialFlowDisintegrationData wta dust) :
     flow.νN.map (fun p : WTABelief × NDust dust => (p.2, p.1)) =
       flow.qN.compProd flow.ρ := by
-  sorry
+  exact?
 
 theorem qN_supported_on_N
     (wta : WTATernaryAlgebra)
     (dust : NullDustData wta)
     (flow : AdversarialFlowDisintegrationData wta dust) :
     ∀ᵐ m ∂flow.qN, (m.val : WTABelief) ∈ dust.N := by
-  sorry
+  aesop
 
 theorem dust_rowwise_support_implies_cone_support
     (wta : WTATernaryAlgebra)
@@ -1468,7 +1468,7 @@ theorem dust_Bayes_calibration_gives_cone_barycenter
     (flow : AdversarialFlowDisintegrationData wta dust)
     (hcal : BayesConeCalibration wta dust flow) :
     ∀ᵐ m ∂flow.qN, beliefBarycenter (flow.ρ m) ∈ WTABconeProfile (dust.I m) := by
-  sorry
+  aesop
 
 theorem dust_conditional_sources_satisfy_cones
     (wta : WTATernaryAlgebra)

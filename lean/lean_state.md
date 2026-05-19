@@ -45,9 +45,9 @@ _(populated by /lean-structure; populated 2026-05-19 from pass-3 PASS decomposit
 | payoff-profile-set-compact-convex | ⧗ | | | | |
 | profile-map-has-borel-right-inverse | ⧗ | | | | |
 | borel-profile-map-implemented-by-agent-strategy | ⧗ | | | | |
-| profile-payoff-decomposition-aligned | ⧗ | | | | |
-| profile-payoff-decomposition-misaligned | ⧗ | | | | |
-| mixture-payoff-decomposition | ⧗ | | | | |
+| profile-payoff-decomposition-aligned | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
+| profile-payoff-decomposition-misaligned | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
+| mixture-payoff-decomposition | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | adversary-infimum-pointwise | ⧗ | | | | |
 | strategy-value-le-menu-sup | ⧗ | | | | |
 | menu-value-le-strategy-sup | ⧗ | | | | |
@@ -68,11 +68,11 @@ _(populated by /lean-structure; populated 2026-05-19 from pass-3 PASS decomposit
 | exact-contact-selector-unpack | ⧗ | | | | |
 | exact-adversary-attainment | ⧗ | | | | |
 | menuHall-adversary-kernel-identity | ⧗ | | | | |
-| menu-Hall-posterior-calibration-unpack | ⧗ | | | | |
+| menu-Hall-posterior-calibration-unpack | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | menu-Hall-support-implies-exact-adversary | ⧗ | | | | |
 | per-message-Bayes-optimality | ⧗ | | | | |
 | posterior-disintegration-menuHall-kernel-coincides | ⧗ | | | | |
-| support-function-pointwise-membership-equivalence | ⧗ | | | | |
+| support-function-pointwise-membership-equivalence | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | support-function-integrated-Hall-equivalence | ⧗ | | | | |
 | tier1a-value-optimality-and-epsilon-adversary | ⧗ | | | | |
 | tier1b-exact-adversary-under-exact-contact | ⧗ | | | | |
@@ -80,10 +80,10 @@ _(populated by /lean-structure; populated 2026-05-19 from pass-3 PASS decomposit
 | WTA-payoff-dot-product-identity | ⧗ | | | | |
 | WTA-rowwise-minimizer-and-Bayes-cone-identification | ⧗ | | | | |
 | wta-cone-intersection | ⧗ | | | | |
-| dust-disintegration-over-subtype-N | ⧗ | | | | |
-| qN-supported-on-N | ⧗ | | | | |
+| dust-disintegration-over-subtype-N | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
+| qN-supported-on-N | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | dust-rowwise-support-implies-cone-support | ⧗ | | | | |
-| dust-Bayes-calibration-gives-cone-barycenter | ⧗ | | | | |
+| dust-Bayes-calibration-gives-cone-barycenter | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | dust-conditional-sources-satisfy-cones | ⧗ | | | | |
 | cone-intersection-applied-to-dust | ⧗ | | | | |
 | positive-dust-mass-impossible-when-alpha-one | ⧗ | | | | |
@@ -139,6 +139,7 @@ Legend: ⧗ = declared in decomposition (not yet formalized). Will be populated 
 - 2026-05-19T21:00Z  /lean-formalize gate 1/3 (formalizer-reviewer) PASS (pass 3).  verdict: PASS, signature_issues_count: 0, object_definition_issues: 0, ready_for_axle_skeleton_verify: true. All pass-2 issues addressed (PosteriorDisintegration disintegration identities, Pγα κ-indexing, offSupportIrrelevant removed). No regressions. No new axioms/native_decide/unsafe.
 - 2026-05-19T21:05Z  /lean-formalize gate 3/3 (AXLE verify_proof) PASS.  okay=true, failed_declarations=[], lean_messages.errors=[]. permitted_sorries listed all 70 theorem names. main.lean structurally satisfies the formal-statement target.
 - 2026-05-19T21:10Z  /lean-formalize gate 2/3 (meaning_check) submitted.  Chat URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0ca54e-878c-83ea-95b0-6edbdad55218. Generating on Extended Pro. Once meaning_check returns (it is an auditor role, no PASS/FAIL — output is per-item assessment with categorical labels matches/weakened/strengthened/vacuous_risk/wrong), phase advances to proving_lemmas (assuming wrong=0 and vacuous_risk=0).
+- 2026-05-19T22:00Z  proving_lemmas phase milestone: 12 of 58 lemmas proved.  Workflow shift after Pedro's nudge — adopted AXLE-first approach (try `axle repair-proofs` with rich terminal tactics before any Pro round-trip). First pass closed 8 lemmas at zero Pro cost: profile_payoff_decomposition_aligned, profile_payoff_decomposition_misaligned, mixture_payoff_decomposition, menu_hall_posterior_calibration_unpack, support_function_pointwise_membership_equivalence, dust_disintegration_over_subtype_N, qN_supported_on_N, dust_Bayes_calibration_gives_cone_barycenter. AXLE check: okay=true, 62 warnings (down from 68). Disprove sweep on all 8: `disproved_theorems: []` — none vacuous. MPP docs/skill updated with the new cost ladder (commit dae4223 in MathPipeProver): AXLE-first → in-thread → Pro → AXLE check → batched reviewer → disprove sweep. The original /lean-prove-lemma flow had AXLE → reviewer; the new flow has AXLE check before reviewer (no point asking Pro to audit a proof that doesn't compile) and batches the reviewer 2-3 lemmas per submission.
 - 2026-05-19T21:35Z  /lean-formalize gate 2/3 (meaning_check) PASS.  total_items: 70, matches: 62, weakened: 6, strengthened: 2, vacuous_risk: 0, wrong: 0. **wrong=0 + vacuous_risk=0** → effectively PASS per skill spec. 8 flagged items (non-blocking, documentation):
    * STRENGTHENED (2):
      - `measurable_argmax_selector` (INVENTORY stub): Lean has fewer hypotheses than English (no StandardBorelSpace X / countable-generation). Safe at skeleton (stub body is sorry); if later proved, weaken signature.
