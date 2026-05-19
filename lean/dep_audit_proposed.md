@@ -175,7 +175,21 @@ fubini-tonelli-kernel-integrals
 
 English statement: Iterated integration against product measures and Markov kernels is valid; expected payoffs can be rearranged over states, types, actions, messages, and kernels.
 
-Candidate 1
+**v2 PATCH 2026-05-19** — Candidate ordering re-synchronised with the verified dep_audit.md. The PRIMARY name is now `MeasureTheory.Measure.integral_compProd` (kernel-side Bochner Fubini for `Measure.compProd`), matching what the use sites actually consume (joint source-message law as `τ.compProd β`). Ordinary product Fubini (`MeasureTheory.integral_prod`) is retained as a fallback.
+
+Candidate 1 (PRIMARY, kernel-side Bochner)
+
+name: MeasureTheory.Measure.integral_compProd
+
+import: Mathlib.Probability.Kernel.Composition.MeasureCompProd
+
+signature: theorem MeasureTheory.Measure.integral_compProd {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β] [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure α} {κ : ProbabilityTheory.Kernel α β} [SFinite μ] [ProbabilityTheory.IsSFiniteKernel κ] {f : α × β → E} (hf : Integrable f (μ.compProd κ)) : ∫ z, f z ∂(μ.compProd κ) = ∫ a, ∫ b, f (a, b) ∂κ a ∂μ
+
+confidence: 5
+
+match notes: This is the Bochner Fubini for the joint law τ ⊗ κ used everywhere in profile-payoff-decomposition-misaligned, mixture-payoff-decomposition, adversary-infimum-pointwise. AXLE-confirmed at lean-4.29.0.
+
+Candidate 1-bis (fallback / ordinary product Fubini)
 
 name: MeasureTheory.integral_prod
 
@@ -185,7 +199,7 @@ signature: theorem MeasureTheory.integral_prod {α β E : Type*} [MeasurableSpac
 
 confidence: 5
 
-match notes: Standard Bochner Fubini for product measures.
+match notes: Standard Bochner Fubini for product measures. Use as fallback when the joint law has already been expanded via Kernel.compProd_apply or is genuinely a product measure.
 
 Candidate 2
 
@@ -796,7 +810,7 @@ profile-geometry-import
 
 Reason this needs a stub: This is project-specific geometry of private Markov kernels and payoff profiles. Mathlib compactness/convexity lemmas help only after the private-kernel topology and profile map are already built.
 
-Proposed Lean statement (sketch) — PATCHED 2026-05-19 (W as range in Ω → ℝ; nonempty fibers stated):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 v2 (added explicit convex-realization hypothesis; reviewer noted that Set.range Φ isn't convex from compactness + continuity alone):
 
 lean
 theorem profile_geometry_import
@@ -805,7 +819,15 @@ theorem profile_geometry_import
     [TopologicalSpace PrivateStrategy] [CompactSpace PrivateStrategy] [Nonempty PrivateStrategy]
     [MeasurableSpace PrivateStrategy] [BorelSpace PrivateStrategy]
     (Φ : PrivateStrategy → (Ω → ℝ))
-    (hΦ_cont : Continuous Φ) :
+    (hΦ_cont : Continuous Φ)
+    -- The convexity of the profile range W comes from PRIVATE RANDOMIZATION:
+    -- if w1 = Φ σ1 and w2 = Φ σ2, then for every t ∈ [0,1] there is a randomized
+    -- private strategy σt whose profile is the convex combination t • w1 + (1-t) • w2.
+    -- In the model, this corresponds to the agent randomizing privately between σ1 and σ2.
+    (hconvex_realization :
+      ∀ σ1 σ2 : PrivateStrategy, ∀ t : ℝ, 0 ≤ t → t ≤ 1 →
+        ∃ σt : PrivateStrategy,
+          Φ σt = (fun ω => t * Φ σ1 ω + (1 - t) * Φ σ2 ω)) :
     let W : Set (Ω → ℝ) := Set.range Φ
     IsCompact W ∧
     Convex ℝ W ∧
@@ -813,7 +835,7 @@ theorem profile_geometry_import
   sorry
 
 Confidence this is the right statement shape: 4
-Notes on what would be needed to prove it later: Concrete topology on private kernels (project), compactness/tightness of kernel space, continuity of expected payoff map, convexity under private randomization. The W set is now concretely `Set.range Φ ⊆ Ω → ℝ` (a vector space), so `Convex ℝ W` typechecks. Nonempty fibers are stated explicitly per reviewer.
+Notes on what would be needed to prove it later: With `hconvex_realization` made an explicit hypothesis, convexity of W follows by direct construction. Compactness uses continuity + CompactSpace PrivateStrategy. Nonempty fibers are immediate from `w ∈ Set.range Φ`. The compactness of fibers needs that they are closed in a compact space (closed because Φ is continuous and singletons are closed in a Hausdorff target — Ω → ℝ is Hausdorff as a finite product of ℝ).
 
 krn-borel-right-inverse
 
@@ -842,33 +864,35 @@ kernel-infimum-epsilon-selection
 
 Reason this needs a stub: Combines measurable ε-minimizing selection with deterministic kernels and an integral infimum identity. Mathlib has the integration and deterministic-kernel pieces but not the packaged optimization theorem.
 
-Proposed Lean statement (sketch) — PATCHED 2026-05-19 (ε-selection inequality instead of naked ⨅ equality):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 v2 (dropped `Continuous fun m => g s m` — use sites only have Borel measurability; added StandardBorel + section-nonempty hypotheses for measurable selector existence):
 
 lean
 theorem kernel_infimum_epsilon_selection
     {S M : Type*}
     [MeasurableSpace S] [MeasurableSpace M]
-    [TopologicalSpace M] [CompactSpace M] [Nonempty M]
+    [TopologicalSpace M] [StandardBorelSpace M] [Nonempty M]
     (τ : MeasureTheory.Measure S)
     [MeasureTheory.IsFiniteMeasure τ]
     (g : S → M → ℝ)
     (hg_meas : Measurable fun p : S × M => g p.1 p.2)
-    (hg_cont : ∀ s, Continuous fun m => g s m)
-    (hg_bdd : ∃ C, ∀ s m, |g s m| ≤ C) :
-    -- For every tolerance ε > 0, there is a Markov kernel that almost minimises
-    -- the iterated integral; the rowwise infimum is the limit as ε ↓ 0.
+    -- Boundedness: enough for integrability against finite τ; no continuity needed.
+    (hg_bdd : ∃ C, ∀ s m, |g s m| ≤ C)
+    -- Section infimum is measurable as a function of s. The standard-Borel + bounded
+    -- + jointly-measurable hypotheses suffice (via measurable selection of an
+    -- ε-net under hg_bdd) — this hypothesis is the contract delivered to the use site.
+    (hinf_meas : Measurable fun s => sInf (Set.range (g s))) :
+    -- ε-selection inequality + matching lower bound.
     (∀ ε > 0, ∃ β : ProbabilityTheory.Kernel S M,
         ProbabilityTheory.IsMarkovKernel β ∧
         ∫ s, ∫ m, g s m ∂(β s) ∂τ
           ≤ (∫ s, sInf (Set.range (g s)) ∂τ) + ε) ∧
-    -- Lower bound: every kernel's iterated integral is bounded below by rowwise infima.
     (∀ β : ProbabilityTheory.Kernel S M, ProbabilityTheory.IsMarkovKernel β →
         (∫ s, sInf (Set.range (g s)) ∂τ)
           ≤ ∫ s, ∫ m, g s m ∂(β s) ∂τ) := by
   sorry
 
 Confidence this is the right statement shape: 4
-Notes on what would be needed to prove it later: The ε-selection conjunction avoids lattice complications around `⨅` on kernels (whose order structure in `ℝ` is via the integral, not directly comparable). Proof skeleton: (i) lower bound by pointwise inf swap; (ii) for each ε, construct a measurable ε-minimizer m_ε via measurable selection of `{m : g s m ≤ inf_n g s n + ε}` and lift it to a deterministic kernel. The ε-version is exactly what the project consumes in adversary-infimum-pointwise.
+Notes on what would be needed to prove it later: The patch matches the actual use site adversary-infimum-pointwise where the integrand is `g s m = s · w(m)` with w : M → W Borel (measurable, NOT continuous in m). The proof of the ε-selection direction constructs a measurable ε-minimizer m_ε via measurable selection of `{m : g s m ≤ sInf (g s) + ε}` — non-empty by hg_bdd, measurable graph from hg_meas, in a standard-Borel target — then promotes m_ε to a deterministic Markov kernel β_ε. The lower bound is pointwise inf swap and monotonicity of ∫. `hinf_meas` is included as a hypothesis because the function `s ↦ sInf (Set.range (g s))` requires a measurable-selection argument to establish; carrying it as a hypothesis isolates that part from this theorem's responsibility.
 
 hausdorff-support-function-lipschitz
 
@@ -907,8 +931,9 @@ def UniversallyMeasurable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
 
 theorem jankov_von_neumann_universal_selection
     {X Y : Type*}
-    [MeasurableSpace X] [TopologicalSpace X] [StandardBorelSpace X]
-    [MeasurableSpace Y] [TopologicalSpace Y] [StandardBorelSpace Y] [Nonempty Y]
+    [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X] [StandardBorelSpace X]
+    [MeasurableSpace Y] [TopologicalSpace Y] [BorelSpace Y] [StandardBorelSpace Y] [Nonempty Y]
+    -- v2: BorelSpace instances added per reviewer (Mathlib AnalyticSet API needs them).
     (G : Set (X × Y))
     (hG_analytic : MeasureTheory.AnalyticSet G)
     (hsections : ∀ x, ∃ y, (x, y) ∈ G) :
@@ -938,6 +963,7 @@ theorem geps_borel_selector_upgrade
     {M : Type*}
     [TopologicalSpace M] [MeasurableSpace M] [BorelSpace M] [StandardBorelSpace M]
     [TopologicalSpace.SecondCountableTopology M]
+    [CompactSpace M]  -- v2 patch: section selection needs σ-compactness; CompactSpace suffices
     {Gε : ℝ → M → Set M}
     {ε : ℝ}
     (hε : 0 < ε)
@@ -948,13 +974,13 @@ theorem geps_borel_selector_upgrade
   sorry
 
 Confidence this is the right statement shape: 4
-Notes on what would be needed to prove it later: With closed-valued sections in a standard-Borel second-countable space and measurable graph, the Kuratowski-Ryll-Nardzewski selection theorem yields a Borel selector. The structure GepsRegularity makes the hypothesis bundle reusable across Gε-uses in the proof (Geps-selector-exists, epsilon-adversary-realization, etc.).
+Notes on what would be needed to prove it later: With closed-valued sections in a compact standard-Borel second-countable space and measurable graph, the Kuratowski-Ryll-Nardzewski selection theorem yields a Borel selector. CompactSpace M makes each section compact (closed + compact ambient), giving the σ-compactness needed for KRN. The structure GepsRegularity makes the hypothesis bundle reusable across Gε-uses in the proof (Geps-selector-exists, epsilon-adversary-realization, etc.). v2 added `CompactSpace M` per reviewer; the actual use site has M = supp τ in a compact metric ambient, so this hypothesis is faithful to the source.
 
 bayes-posterior-as-conditional-barycenter
 
 Reason this needs a stub: This is project glue: it identifies a Bayesian posterior over finite states with the coordinatewise barycenter of a conditional law over source posteriors. Mathlib supplies disintegration and integration, not the posterior-process semantics.
 
-Proposed Lean statement (sketch) — PATCHED 2026-05-19 (adds joint-law + disintegration + posterior-consistency hypotheses; conclusion is the coordinate-barycenter identity):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 v2 (removed the "painted door": `hP_post` no longer assumes the conclusion. P is now defined via Bayes' rule from the joint law, and the conclusion follows from disintegration + posterior-law-consistency.):
 
 lean
 theorem bayes_posterior_as_conditional_barycenter
@@ -964,62 +990,82 @@ theorem bayes_posterior_as_conditional_barycenter
     -- Belief is the source-posterior space; coord s ω = s(ω).
     (coord : Belief → Ω → ℝ)
     (hcoord_meas : ∀ ω, Measurable (fun s => coord s ω))
+    (hcoord_nonneg : ∀ s ω, 0 ≤ coord s ω)
     -- Prior over states.
     (μ0 : Ω → ℝ) (hμ0_nonneg : ∀ ω, 0 ≤ μ0 ω) (hμ0_sum : ∑ ω, μ0 ω = 1)
-    -- State-conditional source law π(·|ω) and unconditional source law τ;
-    -- standing posterior-law consistency: μ0(ω) • π ω = (fun s ↦ s ω) • τ.
+    -- State-conditional source law π(·|ω) and unconditional source law τ.
     (π : Ω → MeasureTheory.Measure Belief)
     (τ : MeasureTheory.Measure Belief)
     [MeasureTheory.IsFiniteMeasure τ]
+    -- Standing posterior-law consistency: μ0(ω) • π ω equals τ weighted by the
+    -- coordinate function s ↦ s(ω). This is the v8 posterior-law-consistency-field.
     (hposterior_consistency :
       ∀ ω, (μ0 ω) • (π ω) =
         τ.withDensity (fun s => ENNReal.ofReal (coord s ω)))
-    -- Message-marginal law q (e.g., q = (γ_α)_2 in v8) and conditional
-    -- source-posterior kernel ρ giving the disintegration of the relevant joint law.
+    -- Message-marginal law q and a Markov kernel χ : Belief → M describing how
+    -- the message m is drawn given the source posterior s (e.g., the misaligned
+    -- adversary kernel β, or the menu-Hall kernel κ).
     (q : MeasureTheory.Measure M)
+    (χ : ProbabilityTheory.Kernel Belief M)
+    [ProbabilityTheory.IsMarkovKernel χ]
+    -- The joint law on Belief × M is τ ⊗ χ; q is its M-marginal.
+    (hq_marginal : q = (τ.compProd χ).map Prod.snd)
+    -- ρ is the disintegration of (τ ⊗ χ) along the M-coordinate.
     (ρ : ProbabilityTheory.Kernel M Belief)
     [ProbabilityTheory.IsMarkovKernel ρ]
-    -- P m : posterior over states after observing message m, defined from the joint law.
+    (hρ_disintegration :
+      τ.compProd χ
+        = q.compProd (ρ.map (fun s => (s, default : Belief × Unit))  -- placeholder shape; see notes
+        ).map (fun p : M × (Belief × Unit) => (p.2.1, p.1)))
+    -- P m ω is defined as the Bayes' posterior at state ω given message m, derived
+    -- from the joint law via P m ω := (μ0 ω) * (dπ_ω / dq)(m) / (normalisation).
+    -- The dep-auditor's stub bundles the Bayes' definition into a hypothesis predicate.
     (P : M → Ω → ℝ)
     (hP_meas : ∀ ω, Measurable (fun m => P m ω))
-    (hP_post : ∀ ω : Ω, ∀ᵐ m ∂q,
-      P m ω = (∫ s, coord s ω ∂(ρ m)))  -- assumed identity at the joint level
+    (hP_bayes_definition :
+      -- P is the joint-law conditional probability of state ω given message m:
+      -- ∀ ω, ∀ᵐ m ∂q, P m ω = Pr(state = ω | message = m)
+      ∀ ω : Ω, ∀ᵐ m ∂q,
+        P m ω = (μ0 ω) *
+                ((((π ω).map (fun s : Belief => s)).compProd χ).map Prod.snd).rnDeriv q m
+                |>.toReal)
     :
-    -- Conclusion: q-a.e. message m, the posterior over states is the coordinate-barycenter
-    -- of the conditional source-posterior law ρ m.
+    -- Conclusion: q-a.e. message m, the joint-law posterior over states P m equals
+    -- the coordinate-barycenter ∫ s ω ∂(ρ m) of the disintegration source-posterior law.
+    -- Derives from posterior-law-consistency + disintegration; NOT assumed.
     ∀ᵐ m ∂q, ∀ ω : Ω, P m ω = ∫ s, coord s ω ∂(ρ m) := by
   sorry
 
 Confidence this is the right statement shape: 3
-Notes on what would be needed to prove it later: The statement now bundles the standing posterior-law-consistency identity (μ0(ω) • π ω = (· ω) • τ), the disintegration / conditional kernel ρ, and the joint-law definition of P. The hypothesis hP_post is the project-level posterior-process definition; the conclusion exposes it q-a.e. for downstream use in `definition2-qae-predicate` and Tier 2.
+Notes on what would be needed to prove it later: The painted-door concern in v1 was that `hP_post` assumed the conclusion verbatim. v2 fixes this by defining P (via `hP_bayes_definition`) as the joint-law conditional probability of state given message — a Radon-Nikodym derivative shape that does NOT contain the barycenter identity. The conclusion ∀ᵐ m, P m ω = ∫ s ω ∂(ρ m) then follows by combining (i) posterior-law-consistency to express joint measures in terms of τ + coord, (ii) the disintegration ρ identifying conditional source-posterior laws given m, and (iii) Fubini against τ.compProd χ to commute the integrations. The disintegration relation `hρ_disintegration` is admittedly clunky in Lean — the right encoding will use `MeasureTheory.Measure.condKernel` once the formalizer pins down the precise signature; this stub records the project's logical requirement. If the formalizer simplifies the joint-law modeling, the hypothesis bundle can be tightened.
 
 support-function-measurable-integrated-separation
 
 Reason this needs a stub: The pointwise separation theorem is in Mathlib (`iInter_halfSpaces_eq`, `geometric_hahn_banach_point_closed`), but the measurable-correspondence/integrated Hall equivalence is specialist and not a standard packaged theorem.
 
-Proposed Lean statement (sketch) — PATCHED 2026-05-19 (replaces `True` placeholders with the support-function Hall inequality):
+Proposed Lean statement (sketch) — PATCHED 2026-05-19 v2 (specialized to the actual use site E = Ω → ℝ with Ω finite; finite-dim ambient sidesteps the `∀ ℓ, ∀ᵐ m` vs `∀ᵐ m, ∀ ℓ` quantifier-swap pathology since the dual `(Ω → ℝ) →L[ℝ] ℝ` is also finite-dim with a countable dense subset):
 
 lean
 theorem support_function_measurable_integrated_separation
-    {M E : Type*}
-    [MeasurableSpace M]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyConvexSpace ℝ E]
+    {Ω : Type*} [Fintype Ω]
+    {M : Type*} [MeasurableSpace M]
     (q : MeasureTheory.Measure M)
     [MeasureTheory.IsFiniteMeasure q]
-    (B : M → Set E)
-    (P : M → E)
+    -- The ambient space is the finite-dimensional payoff/profile space (Ω → ℝ),
+    -- matching the v8 use site (B m ⊆ W ⊆ Ω → ℝ).
+    (B : M → Set (Ω → ℝ))
+    (P : M → (Ω → ℝ))
     (hP_meas : Measurable P)
     (hB_closed : ∀ m, IsClosed (B m))
     (hB_convex : ∀ m, Convex ℝ (B m))
     (hB_nonempty : ∀ m, (B m).Nonempty)
     (hB_bounded : ∀ m, Bornology.IsBounded (B m))
-    (hB_meas_graph : MeasurableSet {p : M × E | p.2 ∈ B p.1}) :
-    -- Equivalence: posterior-membership q-a.e. iff every continuous linear functional
-    -- is dominated q-a.e. by the support function of B m. This is the Hall form
-    -- (measurable / integrated version) used by support-function-integrated-Hall-equivalence.
+    (hB_meas_graph : MeasurableSet {p : M × (Ω → ℝ) | p.2 ∈ B p.1}) :
+    -- Strong (pointwise a.e.) equivalence — in finite-dim, ∀ ℓ inside ∀ᵐ m
+    -- can be promoted via a countable dense subset of the dual `(Ω → ℝ) →L[ℝ] ℝ`.
     (∀ᵐ m ∂q, P m ∈ B m) ↔
-      (∀ ℓ : E →L[ℝ] ℝ, ∀ᵐ m ∂q, ℓ (P m) ≤ sSup (ℓ '' B m)) := by
+      (∀ᵐ m ∂q, ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, ℓ (P m) ≤ sSup (ℓ '' B m)) := by
   sorry
 
 Confidence this is the right statement shape: 3
-Notes on what would be needed to prove it later: Forward direction is direct from pointwise separation applied a.e. Reverse direction needs measurable separation: if `P m ∉ B m` on a positive-measure set, the violation set has a measurable selector of a separating functional ℓ_m, integrated over q to produce a witness ℓ for which the inequality fails. The bounded/closed/convex/nonempty hypotheses and the measurable graph of B together support a measurable-selection version of Hahn-Banach. `LocallyConvexSpace ℝ E` ensures the dual separates points.
+Notes on what would be needed to prove it later: Forward direction is direct from pointwise support-function separation applied a.e. Reverse direction needs the pointwise version of Hahn-Banach (`iInter_halfSpaces_eq` or `geometric_hahn_banach_point_closed`) applied at q-a.e. m. The finite-dim restriction is faithful to the use site (the v8 separation lemmas operate on payoff profiles in Ω → ℝ with Ω finite). v2 quantifier-swap: with Ω finite, (Ω → ℝ) is `EuclideanSpace ℝ Ω`-isomorphic, and `(Ω → ℝ) →L[ℝ] ℝ` is also finite-dim — so `∀ ℓ ∀ᵐ m` and `∀ᵐ m ∀ ℓ` are equivalent (a single null set covers all functionals via density / continuity arguments). If a later general-position result requires the infinite-dim version, restate as `∀ᵐ m, ∀ ℓ` with a countable separating dual family hypothesis.
