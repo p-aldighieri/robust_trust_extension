@@ -1020,7 +1020,10 @@ theorem payoff_profile_set_compact_convex
       Convex ℝ (PayoffProfileSet model) ∧
       (∀ w : Profile model, w ∈ PayoffProfileSet model →
         ∃ σ : model.PrivateStrategy, model.profileOfPrivate σ = w) := by
-  sorry
+  refine ⟨prs.W_compact, prs.W_convex, ?_⟩
+  intro w hw
+  obtain ⟨σ, hσ⟩ := prs.Φ_surjective_onto_W w hw
+  exact ⟨σ, by rw [← prs.Φ_eq_profile]; exact hσ⟩
 
 theorem profile_map_has_borel_right_inverse
     (model : RobustTrustModel)
@@ -1037,7 +1040,10 @@ theorem borel_profile_map_implemented_by_agent_strategy
     (hwMap : Measurable wMap) :
     ∃ σM : AgentStrategyM model,
       ∀ m : model.M, profileMap model σM m = (wMap m).val := by
-  sorry
+  refine ⟨{ sectionM := fun m => R.R (wMap m)
+           , measurable_sectionM := R.measurable_R.comp hwMap }, ?_⟩
+  intro m
+  exact R.right_inverse (wMap m)
 
 theorem profile_payoff_decomposition_aligned
     (model : RobustTrustModel)
@@ -1258,8 +1264,8 @@ theorem exact_contact_selector_unpack
       Measurable mstar ∧
         (∀ᵐ s ∂model.τM, mstar s ∈ RowwiseContactG model ec.cdagger s) ∧
         (∀ m : model.M,
-          profileMap model (restrictFullToM model σstar) m = (ec.wlabel.wstar m).val) := by
-  sorry
+          profileMap model (restrictFullToM model σstar) m = (ec.wlabel.wstar m).val) :=
+  ⟨ec.selector, ec.selector_measurable, ec.selector_mem, ec.sigma_implements_wlabel⟩
 
 theorem exact_adversary_attainment
     (model : RobustTrustModel)
@@ -1284,8 +1290,8 @@ theorem menuHall_adversary_kernel_identity
     (let βstar : AdviserKernel model := κ;
       βstar = κ ∧
         mh.q = MixtureMessageLaw model κ ∧
-        mh.q = (MixtureCouplingGammaAlpha model κ).map Prod.snd) := by
-  sorry
+        mh.q = (MixtureCouplingGammaAlpha model κ).map Prod.snd) :=
+  ⟨rfl, mh.q_eq_qκ, mh.q_eq_gamma_second⟩
 
 theorem menu_hall_posterior_calibration_unpack
     (model : RobustTrustModel)

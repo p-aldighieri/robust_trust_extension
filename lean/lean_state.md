@@ -42,9 +42,9 @@ _(populated by /lean-structure; populated 2026-05-19 from pass-3 PASS decomposit
 | adversary-kernels-restrict-to-M | ⧗ | | | | |
 | full-restricted-Ustar-equivalence | ⧗ | | | | |
 | q-dominates-tau-when-alpha-pos | ⧗ | | | | |
-| payoff-profile-set-compact-convex | ⧗ | | | | |
+| payoff-profile-set-compact-convex | ✓ | ✓ | ✓ (in-thread) | ✓ | |
 | profile-map-has-borel-right-inverse | ⧗ | | | | |
-| borel-profile-map-implemented-by-agent-strategy | ⧗ | | | | |
+| borel-profile-map-implemented-by-agent-strategy | ✓ | ✓ | ✓ (in-thread) | ✓ | |
 | profile-payoff-decomposition-aligned | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | profile-payoff-decomposition-misaligned | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | mixture-payoff-decomposition | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
@@ -65,9 +65,9 @@ _(populated by /lean-structure; populated 2026-05-19 from pass-3 PASS decomposit
 | Geps-graph-measurable | ⧗ | | | | |
 | Geps-selector-exists | ⧗ | | | | |
 | epsilon-adversary-realization | ⧗ | | | | |
-| exact-contact-selector-unpack | ⧗ | | | | |
+| exact-contact-selector-unpack | ✓ | ✓ | ✓ (in-thread) | ✓ | |
 | exact-adversary-attainment | ⧗ | | | | |
-| menuHall-adversary-kernel-identity | ⧗ | | | | |
+| menuHall-adversary-kernel-identity | ✓ | ✓ | ✓ (in-thread) | ✓ | |
 | menu-Hall-posterior-calibration-unpack | ✓ | ✓ | ✓ (AXLE repair) | ✓ | |
 | menu-Hall-support-implies-exact-adversary | ⧗ | | | | |
 | per-message-Bayes-optimality | ⧗ | | | | |
