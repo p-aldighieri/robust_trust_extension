@@ -1483,7 +1483,18 @@ theorem per_message_Bayes_optimality
     (0 < model.α →
       ∀ᵐ m ∂model.τM,
         IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m)) := by
-  sorry
+  have hq_ae :
+      ∀ᵐ m ∂mh.q,
+        IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m) := by
+    filter_upwards [mh.calibration] with m hm
+    exact hm
+  refine ⟨hq_ae, ?_⟩
+  intro hα
+  have hq_ae' :
+      ∀ᵐ m ∂MixtureMessageLaw model κ,
+        IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m) := by
+    rw [← mh.q_eq_qκ]; exact hq_ae
+  exact q_dominates_tau_when_alpha_pos model κ hα hq_ae'
 
 theorem posterior_disintegration_menuHall_kernel_coincides
     (model : RobustTrustModel)
@@ -1619,7 +1630,13 @@ theorem tier1b_exact_adversary_under_exact_contact
     (hσstar : RobustPayoffFull model σstar = UStarFull model)
     (ec : ExactContact model σstar) :
     Nonempty (Tier1bResult model σstar ec) := by
-  sorry
+  obtain ⟨βstar, hdet, hsupp, hadv, hmix, _⟩ :=
+    exact_adversary_attainment model σstar hσstar ec
+  exact ⟨{ βstar := βstar
+           deterministic := hdet
+           supported_on_G := hsupp
+           adversarial := hadv
+           value := hmix.trans hσstar }⟩
 
 theorem tier2_qae_robust_rationalizability_under_menu_Hall
     (model : RobustTrustModel)
@@ -1632,7 +1649,20 @@ theorem tier2_qae_robust_rationalizability_under_menu_Hall
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     Tier2Result model pd σstar ec κ mh := by
-  sorry
+  obtain ⟨hadv, hmix⟩ :=
+    menu_hall_support_implies_exact_adversary model σstar hσstar ec κ mh.supported
+  have h_pm := per_message_Bayes_optimality model pd σstar ec κ mh
+  have h_coincide :=
+    posterior_disintegration_menuHall_kernel_coincides model pd σstar ec κ mh
+  have h_bayes_q :
+      ∀ᵐ m ∂MixtureMessageLaw model κ,
+        IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m) := by
+    rw [← mh.q_eq_qκ]; exact h_pm.1
+  have h_def2 : Definition2QAEPredicate model pd κ σstar := by
+    refine ⟨hadv, ?_⟩
+    filter_upwards [h_bayes_q, h_coincide] with m hb hc
+    rw [hc]; exact hb
+  exact ⟨rfl, mh.q_eq_qκ, mh.q_eq_gamma_second, hadv, hmix, h_def2, h_pm.2⟩
 
 theorem wta_payoff_dot_product_identity
     (lam : WTAΩ → ℝ)
@@ -2060,7 +2090,185 @@ theorem dust_rowwise_support_implies_cone_support
     (flow : AdversarialFlowDisintegrationData wta dust)
     (hrow : RowwiseSupport wta dust flow) :
     ∀ᵐ m ∂flow.qN, flow.ρ m (WTAKminus (dust.I m)) = 1 := by
-  sorry
+  classical
+
+  let sw : WTABelief × NDust dust → NDust dust × WTABelief := fun p => (p.2, p.1)
+
+  have hsw : Measurable sw := by
+    dsimp [sw]
+    measurability
+
+  have hA :
+      MeasurableSet
+        {q : NDust dust × WTABelief | q.2 ∈ WTAKminus (dust.I q.1)} := by
+    have hImp : ∀ i k : WTAΩ,
+        MeasurableSet
+          {q : NDust dust × WTABelief |
+            0 < dust.lam q.1 i → q.2.val i ≤ q.2.val k} := by
+      intro i k
+      have hlam :
+          Measurable (fun q : NDust dust × WTABelief => dust.lam q.1 i) :=
+        (dust.lam_measurable i).comp measurable_fst
+      have hnonpos :
+          MeasurableSet
+            {q : NDust dust × WTABelief | dust.lam q.1 i ≤ 0} :=
+        measurableSet_le hlam measurable_const
+      have hs_i :
+          Measurable (fun q : NDust dust × WTABelief => q.2.val i) :=
+        (measurable_pi_apply i).comp (measurable_subtype_coe.comp measurable_snd)
+      have hs_k :
+          Measurable (fun q : NDust dust × WTABelief => q.2.val k) :=
+        (measurable_pi_apply k).comp (measurable_subtype_coe.comp measurable_snd)
+      have hle :
+          MeasurableSet
+            {q : NDust dust × WTABelief | q.2.val i ≤ q.2.val k} :=
+        measurableSet_le hs_i hs_k
+      have hEqImp :
+          {q : NDust dust × WTABelief |
+              0 < dust.lam q.1 i → q.2.val i ≤ q.2.val k}
+            =
+          {q : NDust dust × WTABelief | dust.lam q.1 i ≤ 0} ∪
+            {q : NDust dust × WTABelief | q.2.val i ≤ q.2.val k} := by
+        ext q
+        by_cases hpos : 0 < dust.lam q.1 i
+        · have hnle : ¬ dust.lam q.1 i ≤ 0 := not_le_of_gt hpos
+          simp [hpos, hnle]
+        · have hle0 : dust.lam q.1 i ≤ 0 := le_of_not_gt hpos
+          simp [hpos, hle0]
+      rw [hEqImp]
+      exact hnonpos.union hle
+
+    have hInter :
+        MeasurableSet
+          (⋂ i : WTAΩ, ⋂ k : WTAΩ,
+            {q : NDust dust × WTABelief |
+              0 < dust.lam q.1 i → q.2.val i ≤ q.2.val k}) := by
+      exact MeasurableSet.iInter fun i =>
+        MeasurableSet.iInter fun k => hImp i k
+
+    have hEqAll :
+        {q : NDust dust × WTABelief |
+          ∀ i : WTAΩ, 0 < dust.lam q.1 i →
+            ∀ k : WTAΩ, q.2.val i ≤ q.2.val k}
+          =
+        (⋂ i : WTAΩ, ⋂ k : WTAΩ,
+          {q : NDust dust × WTABelief |
+            0 < dust.lam q.1 i → q.2.val i ≤ q.2.val k}) := by
+      ext q
+      simp only [Set.mem_setOf_eq, Set.mem_iInter]
+      constructor
+      · intro h i k hi
+        exact h i hi k
+      · intro h i hi k
+        exact h i k hi
+
+    have hAll :
+        MeasurableSet
+          {q : NDust dust × WTABelief |
+            ∀ i : WTAΩ, 0 < dust.lam q.1 i →
+              ∀ k : WTAΩ, q.2.val i ≤ q.2.val k} := by
+      rw [hEqAll]
+      exact hInter
+
+    have hEqA :
+        {q : NDust dust × WTABelief | q.2 ∈ WTAKminus (dust.I q.1)}
+          =
+        {q : NDust dust × WTABelief |
+          ∀ i : WTAΩ, 0 < dust.lam q.1 i →
+            ∀ k : WTAΩ, q.2.val i ≤ q.2.val k} := by
+      ext q
+      simp only [WTAKminus, Set.mem_setOf_eq]
+      constructor
+      · intro h i hpos k
+        exact h i ((dust.lam_support_positive q.1 i).mpr hpos) k
+      · intro h i hi k
+        exact h i ((dust.lam_support_positive q.1 i).mp hi) k
+
+    rw [hEqA]
+    exact hAll
+
+  have hmap :
+      ∀ᵐ q ∂(flow.νN.map sw),
+        q.2 ∈ WTAKminus (dust.I q.1) := by
+    exact (MeasureTheory.ae_map_iff hsw.aemeasurable hA).2 <| by
+      simpa [sw, RowwiseSupport] using hrow
+
+  have hcomp :
+      ∀ᵐ q ∂(flow.qN.compProd flow.ρ),
+        q.2 ∈ WTAKminus (dust.I q.1) := by
+    have hmap' :
+        ∀ᵐ q ∂(flow.νN.map
+          (fun p : WTABelief × NDust dust => (p.2, p.1))),
+          q.2 ∈ WTAKminus (dust.I q.1) := by
+      simpa [sw] using hmap
+    rw [← flow.rho_disintegrates_nuN]
+    exact hmap'
+
+  by_cases hsf : SFinite flow.qN
+  · haveI : SFinite flow.qN := hsf
+    haveI : IsMarkovKernel flow.ρ := flow.ρ_markov
+
+    have hfib :
+        ∀ᵐ m ∂flow.qN, ∀ᵐ s ∂flow.ρ m,
+          s ∈ WTAKminus (dust.I m) := by
+      simpa using
+        (Measure.ae_ae_of_ae_compProd
+          (μ := flow.qN) (κ := flow.ρ)
+          (p := fun q : NDust dust × WTABelief =>
+            q.2 ∈ WTAKminus (dust.I q.1)) hcomp)
+
+    filter_upwards [hfib] with m hm
+    let K : Set WTABelief := WTAKminus (dust.I m)
+    change flow.ρ m K = 1
+
+    have hKc : flow.ρ m (Kᶜ) = 0 := by
+      have h0 : flow.ρ m {s : WTABelief | ¬ s ∈ K} = 0 :=
+        MeasureTheory.ae_iff.mp hm
+      simpa [K] using h0
+
+    have hprob_univ : flow.ρ m Set.univ = 1 :=
+      (flow.ρ_prob m).measure_univ
+
+    have huniv_le : flow.ρ m Set.univ ≤ flow.ρ m K + flow.ρ m (Kᶜ) := by
+      calc
+        flow.ρ m Set.univ = flow.ρ m (K ∪ Kᶜ) := by
+          rw [Set.union_compl_self]
+        _ ≤ flow.ρ m K + flow.ρ m (Kᶜ) :=
+          MeasureTheory.measure_union_le (μ := flow.ρ m) K (Kᶜ)
+
+    have hone_le : 1 ≤ flow.ρ m K := by
+      calc
+        1 = flow.ρ m Set.univ := hprob_univ.symm
+        _ ≤ flow.ρ m K + flow.ρ m (Kᶜ) := huniv_le
+        _ = flow.ρ m K := by simp [hKc]
+
+    have hle_one : flow.ρ m K ≤ 1 := by
+      calc
+        flow.ρ m K ≤ flow.ρ m Set.univ :=
+          MeasureTheory.measure_mono (μ := flow.ρ m) (Set.subset_univ K)
+        _ = 1 := hprob_univ
+
+    exact le_antisymm hle_one hone_le
+
+  · have hcomp0 : flow.qN.compProd flow.ρ = 0 :=
+      Measure.compProd_of_not_sfinite flow.qN flow.ρ hsf
+
+    have hmap0' :
+        flow.νN.map
+          (fun p : WTABelief × NDust dust => (p.2, p.1)) = 0 := by
+      rw [flow.rho_disintegrates_nuN, hcomp0]
+
+    have hmap0 : flow.νN.map sw = 0 := by
+      simpa [sw] using hmap0'
+
+    have hν0 : flow.νN = 0 :=
+      (Measure.map_eq_zero_iff hsw.aemeasurable).mp hmap0
+
+    have hq0 : flow.qN = 0 := by
+      rw [flow.qN_eq_marginal, hν0]
+      simp
+
+    simp [hq0]
 
 theorem dust_Bayes_calibration_gives_cone_barycenter
     (wta : WTATernaryAlgebra)
@@ -2116,7 +2324,196 @@ theorem dust_positive_mass_forces_mu0_atom
     (hα : flow.α < 1)
     (hdirac : ∀ᵐ m ∂flow.qN, flow.ρ m = Measure.dirac wta.μ0) :
     0 < wta.τ ({wta.μ0} : Set WTABelief) := by
-  sorry
+  classical
+  haveI : IsProbabilityMeasure wta.τ := wta.τ_prob
+  haveI : IsMarkovKernel flow.κ := flow.κ_markov
+  haveI : IsMarkovKernel flow.ρ := flow.ρ_markov
+
+  let sndMass : Measure WTABelief :=
+    (wta.τ.compProd flow.κ).map Prod.snd
+
+  have hsμ0 : MeasurableSet ({wta.μ0} : Set WTABelief) :=
+    measurableSet_singleton _
+  have hsN : MeasurableSet dust.N := dust.measurable_N
+
+  have hprod_pos :
+      0 < ENNReal.ofReal (1 - flow.α) * sndMass dust.N := by
+    have h := hpos
+    dsimp [WTAPositiveQMass, WTAMixtureMessageLaw, sndMass] at h
+    simpa [Measure.add_apply, Measure.smul_apply, smul_eq_mul,
+      dust.tau_null, zero_add, mul_zero] using h
+
+  have hsnd_pos : 0 < sndMass dust.N := by
+    by_contra hnot
+    have hzero : sndMass dust.N = 0 :=
+      le_antisymm (le_of_not_gt hnot) (zero_le _)
+    have : 0 < (0 : ENNReal) := by
+      simpa [hzero] using hprod_pos
+    exact (lt_irrefl (0 : ENNReal)) this
+
+  let embed : WTABelief × NDust dust → WTABelief × WTABelief :=
+    fun p => (p.1, (p.2 : WTABelief))
+  let swap : WTABelief × NDust dust → NDust dust × WTABelief :=
+    fun p => (p.2, p.1)
+
+  have hembed_meas : Measurable embed := by
+    dsimp [embed]
+    refine Measurable.prod ?_ ?_
+    · exact measurable_fst
+    · exact measurable_subtype_coe.comp measurable_snd
+  have hswap_meas : Measurable swap := by
+    dsimp [swap]
+    refine Measurable.prod ?_ ?_
+    · exact measurable_snd
+    · exact measurable_fst
+
+  have hembed_map : flow.νN.map embed = flow.nuN_raw := by
+    dsimp [embed]
+    exact flow.nuN_subtype_pushforward
+  have hswap_map : flow.νN.map swap = flow.qN.compProd flow.ρ := by
+    dsimp [swap]
+    exact flow.rho_disintegrates_nuN
+
+  let dustCyl : Set (WTABelief × WTABelief) :=
+    {p : WTABelief × WTABelief | p.2 ∈ dust.N}
+
+  have hqN_univ_eq : flow.qN Set.univ = sndMass dust.N := by
+    calc
+      flow.qN Set.univ
+          = (flow.νN.map Prod.snd) Set.univ := by
+              rw [flow.qN_eq_marginal]
+      _ = flow.νN Set.univ := by
+              rw [Measure.map_apply_of_aemeasurable
+                (measurable_snd.aemeasurable) MeasurableSet.univ]
+              simp
+      _ = (flow.νN.map embed) Set.univ := by
+              rw [Measure.map_apply_of_aemeasurable
+                (hembed_meas.aemeasurable) MeasurableSet.univ]
+              simp
+      _ = flow.nuN_raw Set.univ := by
+              rw [hembed_map]
+      _ = flow.ν dustCyl := by
+              rw [flow.nuN_eq_restrict]
+              rw [Measure.restrict_apply MeasurableSet.univ]
+              simp [dustCyl]
+      _ = (flow.ν.map Prod.snd) dust.N := by
+              rw [Measure.map_apply_of_aemeasurable
+                (measurable_snd.aemeasurable) hsN]
+              rfl
+      _ = sndMass dust.N := by
+              rw [flow.nu_eq_compProd]
+
+  have hqN_univ_pos : 0 < flow.qN Set.univ := by
+    rwa [hqN_univ_eq]
+
+  have h_sndMass_prob : IsProbabilityMeasure sndMass := by
+    dsimp [sndMass]
+    exact Measure.isProbabilityMeasure_map measurable_snd.aemeasurable
+  haveI : IsProbabilityMeasure sndMass := h_sndMass_prob
+
+  have hqN_univ_lt_top : flow.qN Set.univ < ⊤ := by
+    rw [hqN_univ_eq]
+    exact lt_of_le_of_lt
+      (prob_le_one (μ := sndMass) (s := dust.N))
+      (by simp)
+  haveI : IsFiniteMeasure flow.qN := ⟨hqN_univ_lt_top⟩
+
+  let target0 : Set (NDust dust × WTABelief) :=
+    (Set.univ : Set (NDust dust)) ×ˢ ({wta.μ0} : Set WTABelief)
+  let source0 : Set (WTABelief × NDust dust) :=
+    ({wta.μ0} : Set WTABelief) ×ˢ (Set.univ : Set (NDust dust))
+
+  have htarget0_meas : MeasurableSet target0 := by
+    dsimp [target0]
+    exact MeasurableSet.univ.prod hsμ0
+
+  have hswap_pre : swap ⁻¹' target0 = source0 := by
+    ext p
+    simp [swap, target0, source0]
+
+  have hcomp_target0 :
+      (flow.qN.compProd flow.ρ) target0 = flow.qN Set.univ := by
+    dsimp [target0]
+    rw [Measure.compProd_apply_prod MeasurableSet.univ hsμ0]
+    have hρ_one :
+        (fun m : NDust dust => flow.ρ m ({wta.μ0} : Set WTABelief))
+          =ᵐ[flow.qN] (fun _ => (1 : ENNReal)) := by
+      filter_upwards [hdirac] with m hm
+      show flow.ρ m ({wta.μ0} : Set WTABelief) = 1
+      rw [hm]
+      simp
+    calc
+      ∫⁻ m in (Set.univ : Set (NDust dust)),
+          flow.ρ m ({wta.μ0} : Set WTABelief) ∂flow.qN
+          = ∫⁻ m,
+              flow.ρ m ({wta.μ0} : Set WTABelief) ∂flow.qN := by
+              simp
+      _ = ∫⁻ _m : NDust dust, (1 : ENNReal) ∂flow.qN := by
+              exact lintegral_congr_ae hρ_one
+      _ = flow.qN Set.univ := by
+              simp
+
+  have hνN_source_eq_comp :
+      flow.νN source0 = (flow.qN.compProd flow.ρ) target0 := by
+    rw [← hswap_map]
+    rw [Measure.map_apply_of_aemeasurable
+      (hswap_meas.aemeasurable) htarget0_meas]
+    rw [hswap_pre]
+
+  have hνN_source_pos : 0 < flow.νN source0 := by
+    rw [hνN_source_eq_comp, hcomp_target0]
+    exact hqN_univ_pos
+
+  let target0N : Set (WTABelief × WTABelief) :=
+    ({wta.μ0} : Set WTABelief) ×ˢ dust.N
+  let sourceBig : Set (WTABelief × WTABelief) :=
+    ({wta.μ0} : Set WTABelief) ×ˢ (Set.univ : Set WTABelief)
+
+  have htarget0N_meas : MeasurableSet target0N := by
+    dsimp [target0N]
+    exact hsμ0.prod hsN
+
+  have hembed_pre : embed ⁻¹' target0N = source0 := by
+    ext p
+    simp only [embed, target0N, source0, Set.mem_preimage,
+      Set.mem_prod, Set.mem_singleton_iff, Set.mem_univ, and_true]
+    exact ⟨fun hp => hp.1, fun hp => ⟨hp, by simpa using p.2.property⟩⟩
+
+  have hνN_source_eq_raw :
+      flow.νN source0 = flow.nuN_raw target0N := by
+    rw [← hembed_map]
+    rw [Measure.map_apply_of_aemeasurable
+      (hembed_meas.aemeasurable) htarget0N_meas]
+    rw [hembed_pre]
+
+  have hraw_le_tau :
+      flow.nuN_raw target0N ≤ wta.τ ({wta.μ0} : Set WTABelief) := by
+    have hsubset : target0N ∩ dustCyl ⊆ sourceBig := by
+      intro p hp
+      simp only [target0N, dustCyl, sourceBig, Set.mem_inter_iff,
+        Set.mem_prod, Set.mem_singleton_iff, Set.mem_univ, and_true] at hp ⊢
+      exact hp.1.1
+    have hsourceBig :
+        flow.ν sourceBig = wta.τ ({wta.μ0} : Set WTABelief) := by
+      dsimp [sourceBig]
+      rw [flow.nu_eq_compProd]
+      rw [Measure.compProd_apply_prod hsμ0 MeasurableSet.univ]
+      simp
+    calc
+      flow.nuN_raw target0N
+          = (flow.ν.restrict dustCyl) target0N := by
+              rw [flow.nuN_eq_restrict]
+      _ = flow.ν (target0N ∩ dustCyl) := by
+              rw [Measure.restrict_apply htarget0N_meas]
+      _ ≤ flow.ν sourceBig := by
+              exact measure_mono hsubset
+      _ = wta.τ ({wta.μ0} : Set WTABelief) := hsourceBig
+
+  have hraw_pos : 0 < flow.nuN_raw target0N := by
+    rw [← hνN_source_eq_raw]
+    exact hνN_source_pos
+
+  exact lt_of_lt_of_le hraw_pos hraw_le_tau
 
 theorem wta_no_free_dust
     (wta : WTATernaryAlgebra)
@@ -2250,7 +2647,24 @@ theorem robust_trust_infinite_extension_v8_package
     (bridge : MessageRestrictionBridge model msupp)
     (prs : ProfileRealizationSetup model) :
     RobustTrustInfiniteExtensionV8Package model plc msupp bridge prs := by
-  sorry
+  obtain ⟨σstar, h_tier1a⟩ :=
+    tier1a_value_optimality_and_epsilon_adversary model plc msupp bridge prs
+  refine ⟨σstar, h_tier1a, ?_, ?_, ?_, ?_, ?_⟩
+  · intro ec
+    exact tier1b_exact_adversary_under_exact_contact
+      model plc msupp bridge prs σstar h_tier1a.1 ec
+  · intro pd ec κ mh
+    exact tier2_qae_robust_rationalizability_under_menu_Hall
+      model plc prs pd σstar h_tier1a.1 ec κ mh
+  · -- WTA_ConeIntersectionStatement
+    intro wta I lam hsupp hpos hsum hI ρ hρprob hρsupp hρbary
+    haveI := hρprob
+    exact wta_cone_intersection wta I lam hsupp hpos hsum hI ρ hρsupp hρbary
+  · -- WTA_NoFreeDustStatement
+    intro wta sharp α hα0 hα1
+    exact wta_no_free_dust wta sharp α hα0 hα1
+  · -- HalfspaceWitnessStatement
+    exact halfspace_witness_menu_engine_artifact
 
 end
 
