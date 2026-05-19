@@ -35,7 +35,7 @@ _(populated by /lean-structure; populated 2026-05-19 from pass-3 PASS decomposit
 
 | Slug | declared | proved | reviewed | merged | permanent_stub |
 |---|---|---|---|---|---|
-| posterior-law-barycenter-identities | ⧗ | | | | |
+| posterior-law-barycenter-identities | ✓ | ✓ | ✓ (in-thread) | ✓ | |
 | strategy-restriction-to-M | ⧗ | | | | |
 | restricted-agent-strategy-extends-to-full | ⧗ | | | | |
 | outside-M-messages-irrelevant | ⧗ | | | | |
