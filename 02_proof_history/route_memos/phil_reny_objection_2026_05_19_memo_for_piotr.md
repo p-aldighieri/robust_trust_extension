@@ -88,3 +88,108 @@ breaking Bayes-cone calibration.
 
 The longer, self-contained durable analysis is on disk at
 `02_proof_history/route_memos/phil_reny_objection_2026_05_19.md`.
+
+---
+
+## Pro second opinion (Extended Pro, two-pass prover + reviewer)
+
+We ran the question through ChatGPT Extended Pro on two independent
+sessions: a *prover* asked for a fresh adversarial verdict (chats:
+`6a0ce500-c980-...`), and a *reviewer* on a separate session asked to
+challenge the prover (`6a0ce8de-4fa8-...`). Both responses are on disk
+in `02_proof_history/route_memos/pro_prover_response.md` and
+`pro_reviewer_response.md`. Verdicts converge: the in-repo position
+above is correct in substance, with four specific tightenings flagged
+by the reviewer.
+
+### Where prover and reviewer agree (PATCH_SMALL on all four)
+
+- **Piotr's objection is right against exact $F$-attainment**, under
+  precise conditions: $|\Omega|\ge 3$, $\tau$ equivalent to
+  $d$-dimensional Lebesgue on a full-dimensional region of
+  $\Delta(\Omega)$, regular trust-region boundary, uniqueness of the
+  rowwise minimizer $\mu(s)$ on a positive-$\tau$ set, $P^{-1}(\mu(s))$
+  contained in lower-dimensional $C^1$ submanifolds, strict
+  off-fiber payoff. Under those conditions exact $F$-attainment is
+  impossible; the optimal $\beta^*$ must be singular (Dirac in $B$).
+- **Branch A value-optimality survives**: a Lusin-thick stratified
+  $\tau$-AC tube construction approximates any $\beta\in B$ in payoff
+  against $\sigma^*$, so the restricted-game value lifts.
+- **L8c's Dirac selector genuinely escapes the objection at the
+  attainment layer.** It moves the singularity from a forbidden class
+  $F$ to the admissible $B$. (A8c-lsc) is a strong, non-generic
+  regularity assumption, not derivable from (A5).
+- **Full robust rationalizability is not free.** Rowwise minimization
+  + lsc does not imply Bayes-cone calibration after message pooling;
+  that gap is precisely menu-Hall in v8 (or, more generally,
+  deletion-compatible Hall duality in the closure memo's open-object
+  language).
+
+### What the reviewer tightened (the four PATCH_SMALL items)
+
+1. **Claim 1 — "rich-private-strategy geometry" is too broad.** The
+   null-fiber conclusion needs explicit full-dimensional $\tau$ + a
+   regular trust-region boundary + strict off-fiber payoff + a
+   genuine lower-dimensional fiber. The paper's *baseline* hypotheses
+   do not include differentiability / strict convexity of $U$; those
+   come from the rich-strategy section. Also, missed cases: $M$
+   supported on a lower-dimensional subset; atomic / mixed $\tau$;
+   non-smooth corners with full-dim normal cones; degenerate decision
+   problems (flat indirect utility); $\alpha = 1$ (objection becomes
+   formal, not substantive).
+2. **Claim 2 — L6 needs a *stratified* tube construction.**
+   "Continuity on each $K_n$" is not uniform across $\bigcup_n K_n$;
+   the smoothing kernel $q_\varepsilon(\cdot\mid y)$ must concentrate
+   inside a *single* compact stratum where the payoff coordinates
+   $p_\omega$ are continuous. The reviewer gives the explicit safe
+   construction: assign each $y$ to its first stratum $i(y)$, set
+   $q_\varepsilon(z\mid y) = \mathbf{1}\{z\in B_\varepsilon(y)\cap K_{i(y)}\}/\tau(B_\varepsilon(y)\cap K_{i(y)})$,
+   anchor off-$K^*$ at a fixed $s_0$. The denominator is positive by
+   support-thickness on each stratum. (A5) is overstrong; a leaner
+   "Lusin-thick support-thickness for $\tau$" suffices.
+3. **Claim 3 — escape is genuine but narrow.** L8c gives *exact
+   rowwise adversary attainment*; it does NOT give a saddle point
+   with calibration. The label-regularity (tie-breaking on Bayes-cone
+   boundaries) is the small knife the prover missed. Also: the
+   "$\ell$ is a Borel normal integrand" step requires lsc on a Borel
+   full-measure set, not merely on an unspecified $\tau$-a.e. set —
+   else the argmin graph can be analytic and only Jankov–von Neumann
+   selection (universal measurability) applies; that is fine for
+   $q$-a.e. statements but not for everywhere-Borel ones.
+4. **Synthesis — the open object is sharper than "Hall duality."**
+   The reviewer reframes it as an *endogenous-marginal constrained
+   weak-transport theorem with obedience cones*: it is not plain
+   Strassen/Kellerer (the second marginal $q$ is endogenous to $\kappa$),
+   not plain martingale or weak OT (rowwise-support constraint
+   $m\in G(s)$ and Bayes-cone conditional-barycenter constraint are
+   coupled), and not plain persuasion duality (sourcewise deletion
+   certificates must match messagewise calibration). Also: exact
+   Dirac selection is too rigid — set-valued mixing over $G(s)$ is
+   the right level of generality, which is exactly what v8's
+   menu-Hall already allows.
+
+### What did NOT survive examination
+
+Nothing was refuted. No PATCH_BIG was issued. Both passes converge on
+the same overall reading.
+
+### Net answer to Piotr
+
+Your objection is correct. ChatGPT's read in your share is correct.
+The route's L8c patch escapes it at the attainment layer (by leaving
+$F$), but the calibration layer — making the message posterior land
+in the agent's Bayes cone after pooling sources — does not come along
+for the ride, and that is exactly the gap the closure memo named as
+the deletion-compatible Hall duality theorem (the reviewer suggests
+the sharper framing: an *endogenous-marginal constrained
+weak-transport theorem with obedience cones*). v8's menu engine is
+the cleaner architecture for the value side and is not threatened by
+your objection; v8's sharpness package (Lemma 7 + Theorem 8) is the
+formal version of your geometric observation.
+
+The two recommendations both passes converge on, if anyone tries to
+revive the Reny line:
+1. Press on **L9 (calibration), not L6 (value)** — value approximates
+   via tubes; calibration does not.
+2. Look for a **constrained weak-transport / Hall theorem with
+   Bayes-cone obedience**, not another absolutely-continuous minimax.
