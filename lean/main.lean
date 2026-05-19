@@ -1040,7 +1040,59 @@ theorem profile_map_has_borel_right_inverse
     ∃ R : ProfileInW model → model.PrivateStrategy,
       Measurable R ∧
         ∀ w : ProfileInW model, model.profileOfPrivate (R w) = w.val := by
-  sorry
+  classical
+  have hW_meas : MeasurableSet (PayoffProfileSet model) :=
+    prs.W_compact.measurableSet
+  letI : StandardBorelSpace (ProfileInW model) := hW_meas.standardBorel
+  let hmem : ∀ σ : model.PrivateStrategy, prs.Φ σ ∈ PayoffProfileSet model := by
+    intro σ
+    rw [prs.Φ_eq_profile]
+    exact ⟨σ, rfl⟩
+  let ΦW : model.PrivateStrategy → ProfileInW model :=
+    fun σ => ⟨prs.Φ σ, hmem σ⟩
+  have hΦW_cont : Continuous ΦW := by
+    simpa [ΦW] using prs.Φ_continuous.subtype_mk hmem
+  have hΦW_surj : Function.Surjective ΦW := by
+    intro w
+    rcases prs.Φ_surjective_onto_W w.val w.property with ⟨σ, hσ⟩
+    refine ⟨σ, ?_⟩
+    apply Subtype.ext
+    simpa [ΦW] using hσ
+  have hΦW_fib_compact :
+      ∀ w : ProfileInW model,
+        IsCompact (ΦW ⁻¹' ({w} : Set (ProfileInW model))) := by
+    intro w
+    have hset :
+        ΦW ⁻¹' ({w} : Set (ProfileInW model)) =
+          prs.Φ ⁻¹' ({w.val} : Set (Profile model)) := by
+      ext σ
+      change ΦW σ = w ↔ prs.Φ σ = w.val
+      constructor
+      · intro h
+        simpa [ΦW] using congrArg (fun x : ProfileInW model => x.val) h
+      · intro h
+        apply Subtype.ext
+        simpa [ΦW] using h
+    rw [hset]
+    exact prs.fibers_compact w.val
+  have hΦW_fib_ne :
+      ∀ w : ProfileInW model,
+        (ΦW ⁻¹' ({w} : Set (ProfileInW model))).Nonempty := by
+    intro w
+    rcases hΦW_surj w with ⟨σ, hσ⟩
+    refine ⟨σ, ?_⟩
+    change ΦW σ = w
+    exact hσ
+  rcases Inventory.krn_borel_right_inverse
+      (Φ := ΦW)
+      hΦW_cont hΦW_surj hΦW_fib_compact hΦW_fib_ne with
+    ⟨R, hR_meas, hR_right⟩
+  refine ⟨R, hR_meas, ?_⟩
+  intro w
+  have hΦ : prs.Φ (R w) = w.val := by
+    simpa [ΦW] using
+      congrArg (fun x : ProfileInW model => x.val) (hR_right w)
+  simpa [prs.Φ_eq_profile] using hΦ
 
 theorem borel_profile_map_implemented_by_agent_strategy
     (model : RobustTrustModel)
