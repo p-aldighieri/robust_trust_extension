@@ -1217,7 +1217,18 @@ theorem optimal_menu_exists
     (setup : ProfileRealizationSetup model) :
     ∃ Cstar : CompactMenu model,
       ∀ C : CompactMenu model, MenuFunctionalF model C ≤ MenuFunctionalF model Cstar := by
-  sorry
+  haveI : CompactSpace (CompactMenu model) := compact_menu_space_compact model setup
+  obtain ⟨σ0⟩ : Nonempty model.PrivateStrategy := inferInstance
+  let w0 : Profile model := model.profileOfPrivate σ0
+  have hw0 : w0 ∈ PayoffProfileSet model := ⟨σ0, rfl⟩
+  let x0 : ProfileInW model := ⟨w0, hw0⟩
+  haveI : Nonempty (CompactMenu model) :=
+    ⟨⟨⟨{x0}, isCompact_singleton⟩, Set.singleton_nonempty x0⟩⟩
+  have hcont : Continuous (MenuFunctionalF model) := menu_functional_continuity model setup
+  have hcpct : IsCompact (Set.univ : Set (CompactMenu model)) := isCompact_univ
+  obtain ⟨Cstar, _hC_mem, hCmax⟩ :=
+    hcpct.exists_isMaxOn Set.univ_nonempty hcont.continuousOn
+  exact ⟨Cstar, fun C => hCmax (Set.mem_univ C)⟩
 
 theorem aligned_best_labeling_selection
     (model : RobustTrustModel)
@@ -1672,7 +1683,233 @@ theorem wta_rowwise_minimizer_and_Bayes_cone_identification
     (s p : WTABelief) :
     (WTARowwiseMinimizer I lam s (WTA_mixedLabel lam) ↔ s ∈ WTAKminus I) ∧
       (WTABayesOptimalWTA I lam p (WTA_mixedLabel lam) ↔ p ∈ WTABcone I) := by
-  sorry
+  classical
+
+  have h_outside : ∀ i : WTAΩ, i ∉ I → lam i = 0 := by
+    intro i hi
+    have hnotpos : ¬ 0 < lam i := by
+      intro hpos
+      have hsupp : i ∈ WTASupport lam := by
+        change 0 < lam i
+        exact hpos
+      have hmem : i ∈ I := by
+        simpa [h_support_eq] using hsupp
+      exact hi hmem
+    exact le_antisymm (le_of_not_gt hnotpos) (hlam_nonneg i)
+
+  have hvertex :
+      ∀ (b : WTABelief) (k : WTAΩ),
+        beliefDot b (WTA_vertex k) = 2 * b.val k - 1 := by
+    intro b k
+    let delta : WTAΩ → ℝ := fun i => if i = k then (1 : ℝ) else 0
+    have hdelta_nonneg : ∀ i : WTAΩ, 0 ≤ delta i := by
+      intro i
+      by_cases h : i = k <;> simp [delta, h]
+    have hdelta_sum : ∑ i : WTAΩ, delta i = 1 := by
+      dsimp [delta]
+      rw [Finset.sum_eq_single k]
+      · simp
+      · intro i _ hik
+        simp [hik]
+      · intro hk
+        exact False.elim (hk (Finset.mem_univ k))
+    have hmixed_delta : WTA_mixedLabel delta = WTA_vertex k := by
+      funext j
+      unfold WTA_mixedLabel
+      rw [Finset.sum_eq_single k]
+      · simp [delta]
+      · intro i _ hik
+        simp [delta, hik]
+      · intro hk
+        exact False.elim (hk (Finset.mem_univ k))
+    have hdelta_b : ∑ i : WTAΩ, delta i * b.val i = b.val k := by
+      dsimp [delta]
+      rw [Finset.sum_eq_single k]
+      · simp
+      · intro i _ hik
+        simp [hik]
+      · intro hk
+        exact False.elim (hk (Finset.mem_univ k))
+    have h :=
+      wta_payoff_dot_product_identity delta hdelta_nonneg hdelta_sum b
+    rw [hmixed_delta, hdelta_b] at h
+    exact h
+
+  have h_eq_of_avg_le :
+      ∀ (b : WTABelief) (avg : ℝ),
+        avg = (∑ i : WTAΩ, lam i * b.val i) →
+        (∀ k : WTAΩ, avg ≤ b.val k) →
+        ∀ i0 : WTAΩ, i0 ∈ I → b.val i0 = avg := by
+    intro b avg havg hle i0 hi0
+    have hsumTerms : ∑ i : WTAΩ, lam i * (b.val i - avg) = 0 := by
+      calc
+        ∑ i : WTAΩ, lam i * (b.val i - avg)
+            = (∑ i : WTAΩ, lam i * b.val i) - (∑ i : WTAΩ, lam i) * avg := by
+                simp_rw [mul_sub]
+                rw [Finset.sum_sub_distrib, ← Finset.sum_mul]
+        _ = avg - 1 * avg := by
+                rw [← havg, hlam_sum]
+        _ = 0 := by ring
+    have htermNonneg :
+        ∀ i ∈ (Finset.univ : Finset WTAΩ), 0 ≤ lam i * (b.val i - avg) := by
+      intro i _
+      by_cases hi : i ∈ I
+      · exact mul_nonneg (hlam_nonneg i) (sub_nonneg.mpr (hle i))
+      · rw [h_outside i hi]
+        simp
+    have hzeroAll :=
+      (Finset.sum_eq_zero_iff_of_nonneg htermNonneg).mp hsumTerms
+    have hprod_zero : lam i0 * (b.val i0 - avg) = 0 :=
+      hzeroAll i0 (Finset.mem_univ i0)
+    have hdiff_zero : b.val i0 - avg = 0 := by
+      rcases mul_eq_zero.mp hprod_zero with hlam0 | hdiff
+      · have hpos := h_pos_on_I i0 hi0
+        linarith
+      · exact hdiff
+    linarith
+
+  have h_eq_of_le_avg :
+      ∀ (b : WTABelief) (avg : ℝ),
+        avg = (∑ i : WTAΩ, lam i * b.val i) →
+        (∀ k : WTAΩ, b.val k ≤ avg) →
+        ∀ i0 : WTAΩ, i0 ∈ I → b.val i0 = avg := by
+    intro b avg havg hle i0 hi0
+    have hsumTerms : ∑ i : WTAΩ, lam i * (avg - b.val i) = 0 := by
+      calc
+        ∑ i : WTAΩ, lam i * (avg - b.val i)
+            = (∑ i : WTAΩ, lam i) * avg - (∑ i : WTAΩ, lam i * b.val i) := by
+                simp_rw [mul_sub]
+                rw [Finset.sum_sub_distrib, ← Finset.sum_mul]
+        _ = 1 * avg - avg := by
+                rw [hlam_sum, ← havg]
+        _ = 0 := by ring
+    have htermNonneg :
+        ∀ i ∈ (Finset.univ : Finset WTAΩ), 0 ≤ lam i * (avg - b.val i) := by
+      intro i _
+      by_cases hi : i ∈ I
+      · exact mul_nonneg (hlam_nonneg i) (sub_nonneg.mpr (hle i))
+      · rw [h_outside i hi]
+        simp
+    have hzeroAll :=
+      (Finset.sum_eq_zero_iff_of_nonneg htermNonneg).mp hsumTerms
+    have hprod_zero : lam i0 * (avg - b.val i0) = 0 :=
+      hzeroAll i0 (Finset.mem_univ i0)
+    have hdiff_zero : avg - b.val i0 = 0 := by
+      rcases mul_eq_zero.mp hprod_zero with hlam0 | hdiff
+      · have hpos := h_pos_on_I i0 hi0
+        linarith
+      · exact hdiff
+    linarith
+
+  have h_avg_le_from_K :
+      ∀ (b : WTABelief),
+        (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, b.val i ≤ b.val k) →
+        ∀ k : WTAΩ, (∑ i : WTAΩ, lam i * b.val i) ≤ b.val k := by
+    intro b hK k
+    have hterm_le :
+        ∀ i ∈ (Finset.univ : Finset WTAΩ),
+          lam i * b.val i ≤ lam i * b.val k := by
+      intro i _
+      by_cases hi : i ∈ I
+      · exact mul_le_mul_of_nonneg_left (hK i hi k) (hlam_nonneg i)
+      · rw [h_outside i hi]
+        simp
+    have hsum_le :=
+      Finset.sum_le_sum hterm_le
+    have hright : ∑ i : WTAΩ, lam i * b.val k = b.val k := by
+      calc
+        ∑ i : WTAΩ, lam i * b.val k = (∑ i : WTAΩ, lam i) * b.val k := by
+          rw [← Finset.sum_mul]
+        _ = 1 * b.val k := by
+          rw [hlam_sum]
+        _ = b.val k := by ring
+    calc
+      (∑ i : WTAΩ, lam i * b.val i) ≤ ∑ i : WTAΩ, lam i * b.val k := hsum_le
+      _ = b.val k := hright
+
+  have h_le_avg_from_B :
+      ∀ (b : WTABelief),
+        (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, b.val k ≤ b.val i) →
+        ∀ k : WTAΩ, b.val k ≤ (∑ i : WTAΩ, lam i * b.val i) := by
+    intro b hB k
+    have hterm_le :
+        ∀ i ∈ (Finset.univ : Finset WTAΩ),
+          lam i * b.val k ≤ lam i * b.val i := by
+      intro i _
+      by_cases hi : i ∈ I
+      · exact mul_le_mul_of_nonneg_left (hB i hi k) (hlam_nonneg i)
+      · rw [h_outside i hi]
+        simp
+    have hsum_le :=
+      Finset.sum_le_sum hterm_le
+    have hleft : ∑ i : WTAΩ, lam i * b.val k = b.val k := by
+      calc
+        ∑ i : WTAΩ, lam i * b.val k = (∑ i : WTAΩ, lam i) * b.val k := by
+          rw [← Finset.sum_mul]
+        _ = 1 * b.val k := by
+          rw [hlam_sum]
+        _ = b.val k := by ring
+    calc
+      b.val k = ∑ i : WTAΩ, lam i * b.val k := hleft.symm
+      _ ≤ ∑ i : WTAΩ, lam i * b.val i := hsum_le
+
+  constructor
+  · constructor
+    · intro hrow
+      rcases hrow with ⟨_, hmin⟩
+      have hsum_le :
+          ∀ k : WTAΩ, (∑ j : WTAΩ, lam j * s.val j) ≤ s.val k := by
+        intro k
+        have hdot := hmin (WTA_vertex k) ⟨k, rfl⟩
+        have hmix :=
+          wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum s
+        rw [hmix, hvertex s k] at hdot
+        linarith
+      have heq_on_I :=
+        h_eq_of_avg_le s (∑ j : WTAΩ, lam j * s.val j) rfl hsum_le
+      change ∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, s.val i ≤ s.val k
+      intro i hi k
+      calc
+        s.val i = (∑ j : WTAΩ, lam j * s.val j) := heq_on_I i hi
+        _ ≤ s.val k := hsum_le k
+    · intro hsK
+      change (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, s.val i ≤ s.val k) at hsK
+      refine ⟨rfl, ?_⟩
+      intro m' hm'
+      rcases hm' with ⟨k, rfl⟩
+      have hcoord := h_avg_le_from_K s hsK k
+      have hmix :=
+        wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum s
+      rw [hmix, hvertex s k]
+      linarith
+  · constructor
+    · intro hbayes
+      rcases hbayes with ⟨_, hmax⟩
+      have hle_sum :
+          ∀ k : WTAΩ, p.val k ≤ (∑ j : WTAΩ, lam j * p.val j) := by
+        intro k
+        have hdot := hmax (WTA_vertex k) ⟨k, rfl⟩
+        have hmix :=
+          wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum p
+        rw [hmix, hvertex p k] at hdot
+        linarith
+      have heq_on_I :=
+        h_eq_of_le_avg p (∑ j : WTAΩ, lam j * p.val j) rfl hle_sum
+      change ∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, p.val k ≤ p.val i
+      intro i hi k
+      calc
+        p.val k ≤ (∑ j : WTAΩ, lam j * p.val j) := hle_sum k
+        _ = p.val i := (heq_on_I i hi).symm
+    · intro hpB
+      change (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, p.val k ≤ p.val i) at hpB
+      refine ⟨rfl, ?_⟩
+      intro m' hm'
+      rcases hm' with ⟨k, rfl⟩
+      have hcoord := h_le_avg_from_B p hpB k
+      have hmix :=
+        wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum p
+      rw [hmix, hvertex p k]
+      linarith
 
 theorem wta_cone_intersection
     (wta : WTATernaryAlgebra)
