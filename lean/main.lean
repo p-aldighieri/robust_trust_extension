@@ -290,6 +290,7 @@ structure RobustTrustModel where
   μ0_fullSupport : ∀ ω : Ω, 0 < μ0 ω
 
   π : Ω → Measure (Belief Ω)
+  π_prob : ∀ ω : Ω, IsProbabilityMeasure (π ω)
   τ : Measure (Belief Ω)
   τ_prob : IsProbabilityMeasure τ
 
@@ -352,7 +353,9 @@ abbrev Profile (model : RobustTrustModel) : Type :=
 structure PriorAdviserPosteriorLaw (model : RobustTrustModel) where
   unconditional_law_identity :
     model.τ = ∑ ω : model.Ω, (ENNReal.ofReal (model.μ0 ω)) • model.π ω
-  support_is_range : Set.range model.inclM = Set.univ ∨ True
+  support_is_msupp :
+    ∀ s : Belief model.Ω,
+      s ∈ Set.range model.inclM ↔ s ∈ MeasureTheory.Measure.support model.τ
 
 structure PosteriorLawConsistency (model : RobustTrustModel) where
   coordinate_measure_identity :
@@ -397,8 +400,8 @@ def restrictFullToM (model : RobustTrustModel)
   { sectionM := fun m => σFull.sectionFull (model.inclM m)
     measurable_sectionM := σFull.measurable_sectionFull.comp model.inclM_measurable }
 
-structure MessageRestrictionBridge (model : RobustTrustModel) where
-  support : MessageSupportM model
+structure MessageRestrictionBridge (model : RobustTrustModel)
+    (support : MessageSupportM model) where
   defaultPrivateStrategy : model.PrivateStrategy
   restrictFull : AgentStrategyFull model → AgentStrategyM model
   restrictFull_eq : ∀ σ m, (restrictFull σ).sectionM m = σ.sectionFull (model.inclM m)
@@ -495,12 +498,27 @@ def PositiveQMass (model : RobustTrustModel)
     (N : Set model.M) (β : AdviserKernel model) : Prop :=
   0 < MixtureMessageLaw model β N
 
+noncomputable def MixtureCouplingGammaAlpha (model : RobustTrustModel)
+    (κ : AdviserKernel model) : Measure (model.M × model.M) :=
+  (ENNReal.ofReal model.α) • (model.τM.map (fun s : model.M => (s, s))) +
+    (ENNReal.ofReal (1 - model.α)) • (model.τM.compProd κ.kernel)
+
 structure PosteriorDisintegration (model : RobustTrustModel) where
   Pβ : AdviserKernel model → model.M → Belief model.Ω
   Pγα : model.M → Belief model.Ω
+  sourceLawβ : AdviserKernel model → Kernel model.M (Belief model.Ω)
+  sourceLawγα : AdviserKernel model → Kernel model.M (Belief model.Ω)
   Pβ_measurable : ∀ β, Measurable (Pβ β)
   Pγα_measurable : Measurable Pγα
-  conditional_barycenter : Prop
+  sourceLawβ_markov : ∀ β, IsMarkovKernel (sourceLawβ β)
+  sourceLawγα_markov : ∀ κ, IsMarkovKernel (sourceLawγα κ)
+  conditional_barycenter :
+    ∀ β : AdviserKernel model, ∀ᵐ m ∂(MixtureMessageLaw model β),
+      beliefBarycenter ((sourceLawβ β) m) = beliefAsProfile (Pβ β m)
+  gamma_alpha_conditional_barycenter :
+    ∀ κ : AdviserKernel model,
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        beliefBarycenter ((sourceLawγα κ) m) = beliefAsProfile (Pγα m)
 
 def Definition2QAEPredicate (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
@@ -597,7 +615,8 @@ def EpsilonContactGeps (model : RobustTrustModel)
     beliefDot (model.inclM s) (wlabel.wstar m).val ≤
       minPayoff model cdagger.Cdagger s + ε}
 
-structure ExactContact (model : RobustTrustModel) where
+structure ExactContact (model : RobustTrustModel)
+    (σstar : AgentStrategyFull model) where
   opt : OptimalMenuCstar model
   wlabel : AlignedBestLabelingWstar model opt
   cdagger : PrunedMenuCdagger model wlabel
@@ -605,6 +624,9 @@ structure ExactContact (model : RobustTrustModel) where
   selector_measurable : Measurable selector
   selector_mem :
     ∀ᵐ s ∂model.τM, selector s ∈ RowwiseContactG model cdagger s
+  sigma_implements_wlabel :
+    ∀ m : model.M,
+      profileMap model (restrictFullToM model σstar) m = (wlabel.wstar m).val
 
 def KernelSupportedOnG (model : RobustTrustModel)
     {opt : OptimalMenuCstar model}
@@ -614,22 +636,18 @@ def KernelSupportedOnG (model : RobustTrustModel)
   ∀ᵐ s ∂model.τM, κ.kernel s (RowwiseContactG model cdagger s) = 1
 
 structure ExactAdversaryKernel (model : RobustTrustModel)
-    (ec : ExactContact model) (β : AdviserKernel model) : Prop where
-  deterministic_selector :
-    ∃ mstar : model.M → model.M,
-      Measurable mstar ∧
-      ∀ᵐ s ∂model.τM, mstar s ∈ RowwiseContactG model ec.cdagger s
-  supported_exact : KernelSupportedOnG model ec.cdagger β
+    (σstar : AgentStrategyFull model)
+    (ec : ExactContact model σstar)
+    (β : AdviserKernel model) : Prop where
+  deterministic :
+    ∀ s : model.M, β.kernel s = Measure.dirac (ec.selector s)
+  supported_on_G : KernelSupportedOnG model ec.cdagger β
 
 structure MenuHallAdversaryKernel (model : RobustTrustModel)
-    (ec : ExactContact model) where
+    (σstar : AgentStrategyFull model)
+    (ec : ExactContact model σstar) where
   κ : AdviserKernel model
   supported : KernelSupportedOnG model ec.cdagger κ
-
-noncomputable def MixtureCouplingGammaAlpha (model : RobustTrustModel)
-    (κ : AdviserKernel model) : Measure (model.M × model.M) :=
-  (ENNReal.ofReal model.α) • (model.τM.map (fun s : model.M => (s, s))) +
-    (ENNReal.ofReal (1 - model.α)) • (model.τM.compProd κ.kernel)
 
 def BayesOptimalityBeliefCorrespondenceBm (model : RobustTrustModel)
     (σFull : AgentStrategyFull model) (m : model.M) : Set (Belief model.Ω) :=
@@ -639,7 +657,7 @@ def BayesOptimalityBeliefCorrespondenceBm (model : RobustTrustModel)
 structure MenuHall (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σFull : AgentStrategyFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σFull)
     (κ : AdviserKernel model) where
   supported : KernelSupportedOnG model ec.cdagger κ
   q : Measure model.M
@@ -702,12 +720,16 @@ def WTABconeProfile (I : Set WTAΩ) : Set WTAProfile :=
   {p : WTAProfile | ∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, p k ≤ p i}
 
 def WTARowwiseMinimizer (I : Set WTAΩ) (lam : WTAΩ → ℝ)
-    (s : WTABelief) : Prop :=
-  s ∈ WTAKminus I
+    (s : WTABelief) (m : WTAProfile) : Prop :=
+  m = WTA_mixedLabel lam ∧
+    ∀ m' : WTAProfile, m' ∈ Set.range WTA_vertex →
+      beliefDot s m ≤ beliefDot s m'
 
 def WTABayesOptimalWTA (I : Set WTAΩ) (lam : WTAΩ → ℝ)
-    (p : WTABelief) : Prop :=
-  p ∈ WTABcone I
+    (p : WTABelief) (m : WTAProfile) : Prop :=
+  m = WTA_mixedLabel lam ∧
+    ∀ m' : WTAProfile, m' ∈ Set.range WTA_vertex →
+      beliefDot p m' ≤ beliefDot p m
 
 structure NullDustData (wta : WTATernaryAlgebra) where
   N : Set WTABelief
@@ -716,7 +738,8 @@ structure NullDustData (wta : WTATernaryAlgebra) where
   wN : {m : WTABelief // m ∈ N} → WTAProfile
   lam : {m : WTABelief // m ∈ N} → WTAΩ → ℝ
   I : {m : WTABelief // m ∈ N} → Set WTAΩ
-  lam_measurable : True
+  lam_measurable :
+    ∀ i : WTAΩ, Measurable (fun m : {m : WTABelief // m ∈ N} => lam m i)
   lam_nonneg : ∀ m i, 0 ≤ lam m i
   lam_sum_one : ∀ m, ∑ i : WTAΩ, lam m i = 1
   lam_support_nonempty : ∀ m, (I m).Nonempty
@@ -735,10 +758,19 @@ structure AdversarialFlowDisintegrationData
   κ_markov : IsMarkovKernel κ
   ν : Measure (WTABelief × WTABelief)
   νN : Measure (WTABelief × NDust dust)
+  nuN_raw : Measure (WTABelief × WTABelief)
   qN : Measure (NDust dust)
-  ρ : NDust dust → Measure WTABelief
+  ρ : Kernel (NDust dust) WTABelief
+  ρ_markov : IsMarkovKernel ρ
   ρ_prob : ∀ m, IsProbabilityMeasure (ρ m)
-  disintegration_identity : Prop
+  nu_eq_compProd : ν = wta.τ.compProd κ
+  nuN_eq_restrict :
+    nuN_raw = ν.restrict {p : WTABelief × WTABelief | p.2 ∈ dust.N}
+  nuN_subtype_pushforward :
+    νN.map (fun p : WTABelief × NDust dust => (p.1, (p.2 : WTABelief))) = nuN_raw
+  qN_eq_marginal : qN = νN.map Prod.snd
+  rho_disintegrates_nuN :
+    νN.map (fun p : WTABelief × NDust dust => (p.2, p.1)) = qN.compProd ρ
 
 def RowwiseSupport (wta : WTATernaryAlgebra)
     (dust : NullDustData wta)
@@ -805,17 +837,19 @@ def Tier1aResult (model : RobustTrustModel)
             RobustPayoffFull model σstar + (1 - model.α) * ε ∧
           MixturePayoffFull model βε σstar ≤ UStarFull model + ε
 
-def Tier1bResult (model : RobustTrustModel)
-    (σstar : AgentStrategyFull model) : Prop :=
-  ∃ βstar : AdviserKernel model,
-    IsAdversarialFull model βstar σstar ∧
-      MixturePayoffFull model βstar σstar = RobustPayoffFull model σstar ∧
-      RobustPayoffFull model σstar = UStarFull model
+structure Tier1bResult (model : RobustTrustModel)
+    (σstar : AgentStrategyFull model)
+    (ec : ExactContact model σstar) where
+  βstar : AdviserKernel model
+  deterministic : ∀ s : model.M, βstar.kernel s = Measure.dirac (ec.selector s)
+  supported_on_G : KernelSupportedOnG model ec.cdagger βstar
+  adversarial : IsAdversarialFull model βstar σstar
+  value : MixturePayoffFull model βstar σstar = UStarFull model
 
 def Tier2Result (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) : Prop :=
   (let βstar : AdviserKernel model := κ;
@@ -830,7 +864,11 @@ def Tier2Result (model : RobustTrustModel)
           IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα m)))
 
 def WTA_ConeIntersectionStatement : Prop :=
-  ∀ (wta : WTATernaryAlgebra) (I : Set WTAΩ), I.Nonempty →
+  ∀ (wta : WTATernaryAlgebra) (I : Set WTAΩ) (lam : WTAΩ → ℝ),
+    WTASupport lam = I →
+    (∀ i : WTAΩ, i ∈ I → 0 < lam i) →
+    (∑ i : WTAΩ, lam i = 1) →
+    I.Nonempty →
     ∀ ρ : Measure WTABelief, IsProbabilityMeasure ρ →
       ρ (WTAKminus I) = 1 →
       beliefBarycenter ρ ∈ WTABconeProfile I →
@@ -841,7 +879,8 @@ def WTA_NoFreeDustStatement : Prop :=
     ∀ α : ℝ, 0 ≤ α → α ≤ 1 →
       ¬ ∃ (dust : NullDustData wta)
           (flow : AdversarialFlowDisintegrationData wta dust),
-        WTAPositiveQMass wta α dust.N flow.κ ∧
+        flow.α = α ∧
+          WTAPositiveQMass wta α dust.N flow.κ ∧
           RowwiseSupport wta dust flow ∧
           BayesConeCalibration wta dust flow
 
@@ -853,12 +892,14 @@ def HalfspaceWitnessStatement : Prop :=
 def RobustTrustInfiniteExtensionV8Package
     (model : RobustTrustModel)
     (_plc : PosteriorLawConsistency model)
+    (msupp : MessageSupportM model)
+    (_bridge : MessageRestrictionBridge model msupp)
     (_prs : ProfileRealizationSetup model) : Prop :=
   ∃ σstar : AgentStrategyFull model,
     Tier1aResult model σstar ∧
-      (∀ ec : ExactContact model, Tier1bResult model σstar) ∧
+      (∀ ec : ExactContact model σstar, Nonempty (Tier1bResult model σstar ec)) ∧
       (∀ (pd : PosteriorDisintegration model)
-          (ec : ExactContact model)
+          (ec : ExactContact model σstar)
           (κ : AdviserKernel model)
           (mh : MenuHall model pd σstar ec κ),
         Tier2Result model pd σstar ec κ mh) ∧
@@ -887,7 +928,8 @@ theorem strategy_restriction_to_M
 
 theorem restricted_agent_strategy_extends_to_full
     (model : RobustTrustModel)
-    (bridge : MessageRestrictionBridge model)
+    (msupp : MessageSupportM model)
+    (bridge : MessageRestrictionBridge model msupp)
     (σM : AgentStrategyM model) :
     ∃ σFull : AgentStrategyFull model,
       ∀ m : model.M, σFull.sectionFull (model.inclM m) = σM.sectionM m := by
@@ -907,6 +949,8 @@ theorem outside_M_messages_irrelevant
 
 theorem adversary_kernels_restrict_to_M
     (model : RobustTrustModel)
+    (msupp : MessageSupportM model)
+    (bridge : MessageRestrictionBridge model msupp)
     (σFull : AgentStrategyFull model) :
     sInf (Set.range fun βFull : FullMessageAdviserKernel model =>
         MixturePayoffFullRaw model βFull σFull) =
@@ -917,7 +961,9 @@ theorem adversary_kernels_restrict_to_M
   sorry
 
 theorem full_restricted_Ustar_equivalence
-    (model : RobustTrustModel) :
+    (model : RobustTrustModel)
+    (msupp : MessageSupportM model)
+    (bridge : MessageRestrictionBridge model msupp) :
     UStarFull model = UStarM model ∧
       ∀ (σFull : AgentStrategyFull model) (σM : AgentStrategyM model),
         (∀ m : model.M, σFull.sectionFull (model.inclM m) = σM.sectionM m) →
@@ -993,9 +1039,27 @@ theorem adversary_infimum_pointwise
     (model : RobustTrustModel)
     (w : model.M → ProfileInW model)
     (hw_meas : Measurable w)
+    (hg_meas :
+      Measurable fun p : model.M × model.M =>
+        beliefDot (model.inclM p.1) (w p.2).val)
     (hw_bdd :
       ∃ C : ℝ, ∀ s m : model.M,
-        |beliefDot (model.inclM s) (w m).val| ≤ C) :
+        |beliefDot (model.inclM s) (w m).val| ≤ C)
+    (hinf_meas :
+      Measurable fun s : model.M =>
+        sInf (Set.range fun m : model.M =>
+          beliefDot (model.inclM s) (w m).val))
+    (hinf_int :
+      Integrable
+        (fun s : model.M =>
+          sInf (Set.range fun m : model.M =>
+            beliefDot (model.inclM s) (w m).val)) model.τM)
+    (hkernel_int :
+      ∀ β : AdviserKernel model,
+        Integrable
+          (fun p : model.M × model.M =>
+            beliefDot (model.inclM p.1) (w p.2).val)
+          (model.τM.compProd β.kernel)) :
     sInf (Set.range fun β : AdviserKernel model =>
       ∫ s, ∫ m, beliefDot (model.inclM s) (w m).val ∂(β.kernel s) ∂model.τM) =
         ∫ s, sInf (Set.range fun m : model.M =>
@@ -1004,18 +1068,23 @@ theorem adversary_infimum_pointwise
 
 theorem strategy_value_le_menu_sup
     (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
     (σM : AgentStrategyM model) :
     RobustPayoffM model σM ≤ sSup (Set.range (MenuFunctionalF model)) := by
   sorry
 
 theorem menu_value_le_strategy_sup
     (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
+    (prm : ProfileRealizationMap model)
     (C : CompactMenu model) :
     MenuFunctionalF model C ≤ UStarM model := by
   sorry
 
 theorem menu_value_equivalence
-    (model : RobustTrustModel) :
+    (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
+    (prm : ProfileRealizationMap model) :
     UStarM model = sSup (Set.range (MenuFunctionalF model)) := by
   sorry
 
@@ -1034,12 +1103,14 @@ theorem menu_extrema_Hausdorff_Lipschitz
   sorry
 
 theorem menu_functional_continuity
-    (model : RobustTrustModel) :
+    (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model) :
     Continuous (MenuFunctionalF model) := by
   sorry
 
 theorem optimal_menu_exists
-    (model : RobustTrustModel) :
+    (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model) :
     ∃ Cstar : CompactMenu model,
       ∀ C : CompactMenu model, MenuFunctionalF model C ≤ MenuFunctionalF model Cstar := by
   sorry
@@ -1047,7 +1118,11 @@ theorem optimal_menu_exists
 theorem aligned_best_labeling_selection
     (model : RobustTrustModel)
     (opt : OptimalMenuCstar model) :
-    ∃ wstar : AlignedBestLabelingWstar model opt, True := by
+    ∃ wlabel : AlignedBestLabelingWstar model opt,
+      (∀ m : model.M, wlabel.wstar m ∈ (↑opt.Cstar : Set (ProfileInW model))) ∧
+        (∀ m : model.M,
+          IsMaxOn (fun w : ProfileInW model => beliefDot (model.inclM m) w.val)
+            (↑opt.Cstar : Set (ProfileInW model)) (wlabel.wstar m)) := by
   sorry
 
 theorem closure_pruning_value_preservation
@@ -1063,6 +1138,8 @@ theorem closure_pruning_value_preservation
 
 theorem wstar_profile_map_implemented
     (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
+    (prm : ProfileRealizationMap model)
     (opt : OptimalMenuCstar model)
     (wlabel : AlignedBestLabelingWstar model opt)
     (cdagger : PrunedMenuCdagger model wlabel) :
@@ -1086,6 +1163,8 @@ theorem wstar_payoff_equals_F_Cdagger
 
 theorem sigma_star_robust_optimal
     (model : RobustTrustModel)
+    (msupp : MessageSupportM model)
+    (bridge : MessageRestrictionBridge model msupp)
     (σstarM : AgentStrategyM model)
     (hσstarM : RobustPayoffM model σstarM = UStarM model) :
     ∃ σstarFull : AgentStrategyFull model,
@@ -1139,19 +1218,24 @@ theorem epsilon_adversary_realization
 
 theorem exact_contact_selector_unpack
     (model : RobustTrustModel)
-    (ec : ExactContact model) :
+    (σstar : AgentStrategyFull model)
+    (ec : ExactContact model σstar) :
     ∃ mstar : model.M → model.M,
       Measurable mstar ∧
-        ∀ᵐ s ∂model.τM, mstar s ∈ RowwiseContactG model ec.cdagger s := by
+        (∀ᵐ s ∂model.τM, mstar s ∈ RowwiseContactG model ec.cdagger s) ∧
+        (∀ m : model.M,
+          profileMap model (restrictFullToM model σstar) m = (ec.wlabel.wstar m).val) := by
   sorry
 
 theorem exact_adversary_attainment
     (model : RobustTrustModel)
     (σstar : AgentStrategyFull model)
     (hσstar : RobustPayoffFull model σstar = UStarFull model)
-    (ec : ExactContact model) :
+    (ec : ExactContact model σstar) :
     ∃ βstar : AdviserKernel model,
-      IsAdversarialFull model βstar σstar ∧
+      (∀ s : model.M, βstar.kernel s = Measure.dirac (ec.selector s)) ∧
+        KernelSupportedOnG model ec.cdagger βstar ∧
+        IsAdversarialFull model βstar σstar ∧
         MixturePayoffFull model βstar σstar = RobustPayoffFull model σstar ∧
         RobustPayoffFull model σstar = UStarFull model := by
   sorry
@@ -1160,7 +1244,7 @@ theorem menuHall_adversary_kernel_identity
     (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     (let βstar : AdviserKernel model := κ;
@@ -1173,7 +1257,7 @@ theorem menu_hall_posterior_calibration_unpack
     (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     ∀ᵐ m ∂mh.q, pd.Pγα m ∈ BayesOptimalityBeliefCorrespondenceBm model σstar m := by
@@ -1183,7 +1267,7 @@ theorem menu_hall_support_implies_exact_adversary
     (model : RobustTrustModel)
     (σstar : AgentStrategyFull model)
     (hσstar : RobustPayoffFull model σstar = UStarFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (hsupp : KernelSupportedOnG model ec.cdagger κ) :
     IsAdversarialFull model κ σstar ∧
@@ -1194,7 +1278,7 @@ theorem per_message_Bayes_optimality
     (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     (∀ᵐ m ∂mh.q,
@@ -1208,7 +1292,7 @@ theorem posterior_disintegration_menuHall_kernel_coincides
     (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     ∀ᵐ m ∂MixtureMessageLaw model κ, pd.Pβ κ m = pd.Pγα m := by
@@ -1242,7 +1326,10 @@ theorem support_function_integrated_Hall_equivalence
     (hB_convex : ∀ m, Convex ℝ (B m))
     (hB_nonempty : ∀ m, (B m).Nonempty)
     (hB_bounded : ∀ m, Bornology.IsBounded (B m))
-    (hB_meas_graph : MeasurableSet {p : model.M × Profile model | p.2 ∈ B p.1}) :
+    (hB_meas_graph : MeasurableSet {p : model.M × Profile model | p.2 ∈ B p.1})
+    (hsupp_meas : ∀ ℓ : Profile model →L[ℝ] ℝ, Measurable fun m => sSup (ℓ '' B m))
+    (hsupp_int : ∀ ℓ : Profile model →L[ℝ] ℝ, Integrable (fun m => sSup (ℓ '' B m)) q)
+    (hP_int : ∀ ℓ : Profile model →L[ℝ] ℝ, Integrable (fun m => ℓ (P m)) q) :
     PosteriorCalibrationProfiles model q B P ↔
       SupportFunctionHallInequalities model q B P := by
   sorry
@@ -1250,6 +1337,8 @@ theorem support_function_integrated_Hall_equivalence
 theorem tier1a_value_optimality_and_epsilon_adversary
     (model : RobustTrustModel)
     (plc : PosteriorLawConsistency model)
+    (msupp : MessageSupportM model)
+    (bridge : MessageRestrictionBridge model msupp)
     (prs : ProfileRealizationSetup model) :
     ∃ σstar : AgentStrategyFull model, Tier1aResult model σstar := by
   sorry
@@ -1257,13 +1346,13 @@ theorem tier1a_value_optimality_and_epsilon_adversary
 theorem tier1b_exact_adversary_under_exact_contact
     (model : RobustTrustModel)
     (plc : PosteriorLawConsistency model)
+    (msupp : MessageSupportM model)
+    (bridge : MessageRestrictionBridge model msupp)
     (prs : ProfileRealizationSetup model)
     (σstar : AgentStrategyFull model)
     (hσstar : RobustPayoffFull model σstar = UStarFull model)
-    (ec : ExactContact model) :
-    ∃ βstar : AdviserKernel model,
-      IsAdversarialFull model βstar σstar ∧
-        MixturePayoffFull model βstar σstar = UStarFull model := by
+    (ec : ExactContact model σstar) :
+    Nonempty (Tier1bResult model σstar ec) := by
   sorry
 
 theorem tier2_qae_robust_rationalizability_under_menu_Hall
@@ -1273,7 +1362,7 @@ theorem tier2_qae_robust_rationalizability_under_menu_Hall
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
     (hσstar : RobustPayoffFull model σstar = UStarFull model)
-    (ec : ExactContact model)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     Tier2Result model pd σstar ec κ mh := by
@@ -1292,17 +1381,22 @@ theorem wta_rowwise_minimizer_and_Bayes_cone_identification
     (I : Set WTAΩ)
     (lam : WTAΩ → ℝ)
     (hI : I.Nonempty)
-    (hsupport : ∀ i : WTAΩ, i ∈ I ↔ 0 < lam i)
+    (h_support_eq : WTASupport lam = I)
+    (h_pos_on_I : ∀ i : WTAΩ, i ∈ I → 0 < lam i)
     (hlam_nonneg : ∀ i : WTAΩ, 0 ≤ lam i)
     (hlam_sum : ∑ i : WTAΩ, lam i = 1)
     (s p : WTABelief) :
-    (WTARowwiseMinimizer I lam s ↔ s ∈ WTAKminus I) ∧
-      (WTABayesOptimalWTA I lam p ↔ p ∈ WTABcone I) := by
+    (WTARowwiseMinimizer I lam s (WTA_mixedLabel lam) ↔ s ∈ WTAKminus I) ∧
+      (WTABayesOptimalWTA I lam p (WTA_mixedLabel lam) ↔ p ∈ WTABcone I) := by
   sorry
 
 theorem wta_cone_intersection
     (wta : WTATernaryAlgebra)
     (I : Set WTAΩ)
+    (lam : WTAΩ → ℝ)
+    (h_support_eq : WTASupport lam = I)
+    (h_pos_on_I : ∀ i : WTAΩ, i ∈ I → 0 < lam i)
+    (h_sum_one : ∑ i : WTAΩ, lam i = 1)
     (hI : I.Nonempty)
     (ρ : Measure WTABelief)
     [IsProbabilityMeasure ρ]
@@ -1315,8 +1409,8 @@ theorem dust_disintegration_over_subtype_N
     (wta : WTATernaryAlgebra)
     (dust : NullDustData wta)
     (flow : AdversarialFlowDisintegrationData wta dust) :
-    ∃ ρ : NDust dust → Measure WTABelief,
-      (∀ m, IsProbabilityMeasure (ρ m)) ∧ ρ = flow.ρ := by
+    flow.νN.map (fun p : WTABelief × NDust dust => (p.2, p.1)) =
+      flow.qN.compProd flow.ρ := by
   sorry
 
 theorem qN_supported_on_N
@@ -1388,7 +1482,8 @@ theorem wta_no_free_dust
     (hα1 : α ≤ 1) :
     ¬ ∃ (dust : NullDustData wta)
         (flow : AdversarialFlowDisintegrationData wta dust),
-      WTAPositiveQMass wta α dust.N flow.κ ∧
+      flow.α = α ∧
+        WTAPositiveQMass wta α dust.N flow.κ ∧
         RowwiseSupport wta dust flow ∧
         BayesConeCalibration wta dust flow := by
   sorry
@@ -1405,7 +1500,8 @@ theorem sharpness_corollary
       ρ = Measure.dirac wta.μ0) ∧
     (¬ ∃ (dust : NullDustData wta)
         (flow : AdversarialFlowDisintegrationData wta dust),
-      WTAPositiveQMass wta α dust.N flow.κ ∧
+      flow.α = α ∧
+        WTAPositiveQMass wta α dust.N flow.κ ∧
         RowwiseSupport wta dust flow ∧
         BayesConeCalibration wta dust flow) := by
   sorry
@@ -1431,8 +1527,10 @@ theorem halfspace_witness_menu_engine_artifact :
 theorem robust_trust_infinite_extension_v8_package
     (model : RobustTrustModel)
     (plc : PosteriorLawConsistency model)
+    (msupp : MessageSupportM model)
+    (bridge : MessageRestrictionBridge model msupp)
     (prs : ProfileRealizationSetup model) :
-    RobustTrustInfiniteExtensionV8Package model plc prs := by
+    RobustTrustInfiniteExtensionV8Package model plc msupp bridge prs := by
   sorry
 
 end
