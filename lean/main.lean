@@ -1187,7 +1187,26 @@ theorem menu_value_equivalence
     (setup : ProfileRealizationSetup model)
     (prm : ProfileRealizationMap model) :
     UStarM model = sSup (Set.range (MenuFunctionalF model)) := by
-  sorry
+  obtain ⟨σ0⟩ : Nonempty model.PrivateStrategy := inferInstance
+  haveI hAgent_ne : Nonempty (AgentStrategyM model) :=
+    ⟨{ sectionM := fun _ => σ0, measurable_sectionM := measurable_const }⟩
+  let w0 : Profile model := model.profileOfPrivate σ0
+  have hw0 : w0 ∈ PayoffProfileSet model := ⟨σ0, rfl⟩
+  let x0 : ProfileInW model := ⟨w0, hw0⟩
+  let C0 : CompactMenu model :=
+    ⟨⟨{x0}, isCompact_singleton⟩, Set.singleton_nonempty x0⟩
+  haveI hMenu_ne : Nonempty (CompactMenu model) := ⟨C0⟩
+  apply le_antisymm
+  · -- UStarM = sSup (range RobustPayoffM) ≤ sSup (range F)
+    refine csSup_le ?_ ?_
+    · exact Set.range_nonempty _
+    · rintro x ⟨σM, rfl⟩
+      exact strategy_value_le_menu_sup model setup σM
+  · -- sSup (range F) ≤ UStarM
+    refine csSup_le ?_ ?_
+    · exact Set.range_nonempty _
+    · rintro x ⟨C, rfl⟩
+      exact menu_value_le_strategy_sup model setup prm C
 
 theorem compact_menu_space_compact
     (model : RobustTrustModel)
@@ -1198,13 +1217,230 @@ theorem compact_menu_space_compact
   change CompactSpace (TopologicalSpace.NonemptyCompacts (ProfileInW model))
   infer_instance
 
+private lemma menu_sSup_image_lipschitz_nonemptyCompacts
+    {α : Type*} [MetricSpace α] {f : α → ℝ} (hf : LipschitzWith 1 f)
+    (C D : TopologicalSpace.NonemptyCompacts α) :
+    |sSup (f '' (↑C : Set α)) - sSup (f '' (↑D : Set α))| ≤ dist C D := by
+  classical
+  have hfinCD : Metric.hausdorffEDist (↑C : Set α) (↑D : Set α) ≠ ⊤ :=
+    Metric.hausdorffEDist_ne_top_of_nonempty_of_bounded
+      C.nonempty D.nonempty C.isCompact.isBounded D.isCompact.isBounded
+  have hfinDC : Metric.hausdorffEDist (↑D : Set α) (↑C : Set α) ≠ ⊤ :=
+    Metric.hausdorffEDist_ne_top_of_nonempty_of_bounded
+      D.nonempty C.nonempty D.isCompact.isBounded C.isCompact.isBounded
+  have hCne : (f '' (↑C : Set α)).Nonempty := by
+    rcases C.nonempty with ⟨x, hx⟩
+    exact ⟨f x, ⟨x, hx, rfl⟩⟩
+  have hDne : (f '' (↑D : Set α)).Nonempty := by
+    rcases D.nonempty with ⟨x, hx⟩
+    exact ⟨f x, ⟨x, hx, rfl⟩⟩
+  have hCbdd : BddAbove (f '' (↑C : Set α)) :=
+    C.isCompact.bddAbove_image (hf.continuous.continuousOn)
+  have hDbdd : BddAbove (f '' (↑D : Set α)) :=
+    D.isCompact.bddAbove_image (hf.continuous.continuousOn)
+
+  have hCD :
+      sSup (f '' (↑C : Set α)) ≤ sSup (f '' (↑D : Set α)) + dist C D := by
+    refine csSup_le hCne ?_
+    rintro _ ⟨x, hxC, rfl⟩
+    obtain ⟨y, hyD, hy⟩ := D.isCompact.exists_infDist_eq_dist D.nonempty x
+    have hxy : dist x y ≤ dist C D := by
+      rw [← hy]
+      calc
+        Metric.infDist x (↑D : Set α)
+            ≤ Metric.hausdorffDist (↑C : Set α) (↑D : Set α) :=
+          Metric.infDist_le_hausdorffDist_of_mem hxC hfinCD
+        _ = dist C D := by
+          rw [← Metric.NonemptyCompacts.dist_eq]
+    have hySup : f y ≤ sSup (f '' (↑D : Set α)) :=
+      le_csSup hDbdd ⟨y, hyD, rfl⟩
+    have hxle : f x ≤ f y + dist x y := by
+      simpa using hf.le_add_mul x y
+    linarith
+
+  have hDC :
+      sSup (f '' (↑D : Set α)) ≤ sSup (f '' (↑C : Set α)) + dist C D := by
+    refine csSup_le hDne ?_
+    rintro _ ⟨x, hxD, rfl⟩
+    obtain ⟨y, hyC, hy⟩ := C.isCompact.exists_infDist_eq_dist C.nonempty x
+    have hxy : dist x y ≤ dist C D := by
+      rw [← hy]
+      calc
+        Metric.infDist x (↑C : Set α)
+            ≤ Metric.hausdorffDist (↑D : Set α) (↑C : Set α) :=
+          Metric.infDist_le_hausdorffDist_of_mem hxD hfinDC
+        _ = Metric.hausdorffDist (↑C : Set α) (↑D : Set α) := by
+          rw [Metric.hausdorffDist_comm]
+        _ = dist C D := by
+          rw [← Metric.NonemptyCompacts.dist_eq]
+    have hySup : f y ≤ sSup (f '' (↑C : Set α)) :=
+      le_csSup hCbdd ⟨y, hyC, rfl⟩
+    have hxle : f x ≤ f y + dist x y := by
+      simpa using hf.le_add_mul x y
+    linarith
+
+  rw [abs_sub_le_iff]
+  constructor <;> linarith
+
+private lemma menu_sInf_image_lipschitz_nonemptyCompacts
+    {α : Type*} [MetricSpace α] {f : α → ℝ} (hf : LipschitzWith 1 f)
+    (C D : TopologicalSpace.NonemptyCompacts α) :
+    |sInf (f '' (↑C : Set α)) - sInf (f '' (↑D : Set α))| ≤ dist C D := by
+  classical
+  have hfinCD : Metric.hausdorffEDist (↑C : Set α) (↑D : Set α) ≠ ⊤ :=
+    Metric.hausdorffEDist_ne_top_of_nonempty_of_bounded
+      C.nonempty D.nonempty C.isCompact.isBounded D.isCompact.isBounded
+  have hfinDC : Metric.hausdorffEDist (↑D : Set α) (↑C : Set α) ≠ ⊤ :=
+    Metric.hausdorffEDist_ne_top_of_nonempty_of_bounded
+      D.nonempty C.nonempty D.isCompact.isBounded C.isCompact.isBounded
+  have hCne : (f '' (↑C : Set α)).Nonempty := by
+    rcases C.nonempty with ⟨x, hx⟩
+    exact ⟨f x, ⟨x, hx, rfl⟩⟩
+  have hDne : (f '' (↑D : Set α)).Nonempty := by
+    rcases D.nonempty with ⟨x, hx⟩
+    exact ⟨f x, ⟨x, hx, rfl⟩⟩
+  have hCbdd : BddBelow (f '' (↑C : Set α)) :=
+    C.isCompact.bddBelow_image (hf.continuous.continuousOn)
+  have hDbdd : BddBelow (f '' (↑D : Set α)) :=
+    D.isCompact.bddBelow_image (hf.continuous.continuousOn)
+
+  have hCD :
+      sInf (f '' (↑D : Set α)) - dist C D ≤ sInf (f '' (↑C : Set α)) := by
+    refine le_csInf hCne ?_
+    rintro _ ⟨x, hxC, rfl⟩
+    obtain ⟨y, hyD, hy⟩ := D.isCompact.exists_infDist_eq_dist D.nonempty x
+    have hxy : dist x y ≤ dist C D := by
+      rw [← hy]
+      calc
+        Metric.infDist x (↑D : Set α)
+            ≤ Metric.hausdorffDist (↑C : Set α) (↑D : Set α) :=
+          Metric.infDist_le_hausdorffDist_of_mem hxC hfinCD
+        _ = dist C D := by
+          rw [← Metric.NonemptyCompacts.dist_eq]
+    have hInf : sInf (f '' (↑D : Set α)) ≤ f y :=
+      csInf_le hDbdd ⟨y, hyD, rfl⟩
+    have hfy : f y ≤ f x + dist x y := by
+      have h := hf.le_add_mul y x
+      simpa [dist_comm] using h
+    linarith
+
+  have hDC :
+      sInf (f '' (↑C : Set α)) - dist C D ≤ sInf (f '' (↑D : Set α)) := by
+    refine le_csInf hDne ?_
+    rintro _ ⟨x, hxD, rfl⟩
+    obtain ⟨y, hyC, hy⟩ := C.isCompact.exists_infDist_eq_dist C.nonempty x
+    have hxy : dist x y ≤ dist C D := by
+      rw [← hy]
+      calc
+        Metric.infDist x (↑C : Set α)
+            ≤ Metric.hausdorffDist (↑D : Set α) (↑C : Set α) :=
+          Metric.infDist_le_hausdorffDist_of_mem hxD hfinDC
+        _ = Metric.hausdorffDist (↑C : Set α) (↑D : Set α) := by
+          rw [Metric.hausdorffDist_comm]
+        _ = dist C D := by
+          rw [← Metric.NonemptyCompacts.dist_eq]
+    have hInf : sInf (f '' (↑C : Set α)) ≤ f y :=
+      csInf_le hCbdd ⟨y, hyC, rfl⟩
+    have hfy : f y ≤ f x + dist x y := by
+      have h := hf.le_add_mul y x
+      simpa [dist_comm] using h
+    linarith
+
+  rw [abs_sub_le_iff]
+  constructor <;> linarith
+
+private lemma beliefDot_lipschitz
+    (model : RobustTrustModel) (s : model.M) :
+    LipschitzWith 1
+      (fun w : ProfileInW model => beliefDot (model.inclM s) w.val) := by
+  classical
+  refine LipschitzWith.of_le_add ?_
+  intro x y
+  have hp0 : ∀ ω : model.Ω, 0 ≤ (model.inclM s).val ω :=
+    (model.inclM s).property.1
+  have hpsum : (∑ ω : model.Ω, (model.inclM s).val ω) = 1 :=
+    (model.inclM s).property.2
+  have hcoord (ω : model.Ω) :
+      |x.val ω - y.val ω| ≤ dist x y := by
+    have heval :
+        dist (x.val ω) (y.val ω) ≤ dist x.val y.val := by
+      simpa [Function.eval] using
+        ((LipschitzWith.eval (ι := model.Ω)
+            (α := fun _ : model.Ω => ℝ) ω).dist_le_mul x.val y.val)
+    simpa [Real.dist_eq, Subtype.dist_eq] using heval
+
+  have hdiff :
+      beliefDot (model.inclM s) x.val - beliefDot (model.inclM s) y.val =
+        ∑ ω : model.Ω,
+          (model.inclM s).val ω * (x.val ω - y.val ω) := by
+    unfold beliefDot
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl ?_
+    intro ω hω
+    ring
+
+  have hsum_abs :
+      (∑ ω : model.Ω,
+          (model.inclM s).val ω * (x.val ω - y.val ω)) ≤
+        ∑ ω : model.Ω,
+          (model.inclM s).val ω * |x.val ω - y.val ω| := by
+    refine Finset.sum_le_sum ?_
+    intro ω hω
+    exact mul_le_mul_of_nonneg_left
+      (le_abs_self (x.val ω - y.val ω)) (hp0 ω)
+
+  have hsum_dist :
+      (∑ ω : model.Ω,
+          (model.inclM s).val ω * |x.val ω - y.val ω|) ≤
+        ∑ ω : model.Ω, (model.inclM s).val ω * dist x y := by
+    refine Finset.sum_le_sum ?_
+    intro ω hω
+    exact mul_le_mul_of_nonneg_left (hcoord ω) (hp0 ω)
+
+  have hsum_eq :
+      (∑ ω : model.Ω, (model.inclM s).val ω * dist x y) = dist x y := by
+    calc
+      (∑ ω : model.Ω, (model.inclM s).val ω * dist x y)
+          = (∑ ω : model.Ω, (model.inclM s).val ω) * dist x y := by
+            simpa using
+              (Finset.sum_mul
+                (s := Finset.univ)
+                (f := fun ω : model.Ω => (model.inclM s).val ω)
+                (a := dist x y)).symm
+      _ = dist x y := by
+            rw [hpsum, one_mul]
+
+  have hsub :
+      beliefDot (model.inclM s) x.val - beliefDot (model.inclM s) y.val
+        ≤ dist x y := by
+    calc
+      beliefDot (model.inclM s) x.val - beliefDot (model.inclM s) y.val
+          = ∑ ω : model.Ω,
+              (model.inclM s).val ω * (x.val ω - y.val ω) := hdiff
+      _ ≤ ∑ ω : model.Ω,
+              (model.inclM s).val ω * |x.val ω - y.val ω| := hsum_abs
+      _ ≤ ∑ ω : model.Ω,
+              (model.inclM s).val ω * dist x y := hsum_dist
+      _ = dist x y := hsum_eq
+  linarith
+
 theorem menu_extrema_Hausdorff_Lipschitz
     (model : RobustTrustModel) :
     ∃ L : ℝ, 0 ≤ L ∧
       ∀ (C D : CompactMenu model) (s : model.M),
         |maxPayoff model C s - maxPayoff model D s| ≤ L * dist C D ∧
         |minPayoff model C s - minPayoff model D s| ≤ L * dist C D := by
-  sorry
+  refine ⟨1, by norm_num, ?_⟩
+  intro C D s
+  let f : ProfileInW model → ℝ :=
+    fun w => beliefDot (model.inclM s) w.val
+  have hf : LipschitzWith 1 f :=
+    beliefDot_lipschitz model s
+  constructor
+  · simpa [maxPayoff, f, one_mul] using
+      menu_sSup_image_lipschitz_nonemptyCompacts hf C D
+  · simpa [minPayoff, f, one_mul] using
+      menu_sInf_image_lipschitz_nonemptyCompacts hf C D
 
 theorem menu_functional_continuity
     (model : RobustTrustModel)
