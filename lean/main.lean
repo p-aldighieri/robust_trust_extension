@@ -1227,7 +1227,89 @@ theorem aligned_best_labeling_selection
         (∀ m : model.M,
           IsMaxOn (fun w : ProfileInW model => beliefDot (model.inclM m) w.val)
             (↑opt.Cstar : Set (ProfileInW model)) (wlabel.wstar m)) := by
-  sorry
+  classical
+  set C : Set (ProfileInW model) := (↑opt.Cstar : Set (ProfileInW model)) with hC_def
+  haveI hCne : Nonempty C := by
+    rcases opt.Cstar.nonempty with ⟨w, hw⟩
+    exact ⟨⟨w, by simpa [hC_def] using hw⟩⟩
+  have hC_cpt : IsCompact C := by
+    simpa [hC_def] using opt.Cstar.isCompact
+  haveI hCcs : CompactSpace C :=
+    isCompact_iff_compactSpace.mp hC_cpt
+  let Γ : model.M → Set C := fun _ => Set.univ
+  let f : model.M → C → ℝ := fun m w =>
+    beliefDot (model.inclM m) w.val.val
+  have hΓ_meas : MeasurableSet {p : model.M × C | p.2 ∈ Γ p.1} := by
+    simpa [Γ] using
+      (MeasurableSet.univ : MeasurableSet (Set.univ : Set (model.M × C)))
+  have hΓ_ne : ∀ x : model.M, (Γ x).Nonempty := by
+    intro x
+    simpa [Γ] using (Set.univ_nonempty : (Set.univ : Set C).Nonempty)
+  have hΓ_compact : ∀ x : model.M, IsCompact (Γ x) := by
+    intro x
+    simpa [Γ] using (isCompact_univ : IsCompact (Set.univ : Set C))
+  have hf_meas : Measurable fun p : model.M × C => f p.1 p.2 := by
+    dsimp [f, beliefDot]
+    refine Finset.measurable_sum _ ?_
+    intro ω _
+    have hμ : Measurable (fun p : model.M × C => (model.inclM p.1).val) := by
+      exact measurable_subtype_coe.comp
+        (model.inclM_measurable.comp measurable_fst)
+    have hw : Measurable (fun p : model.M × C => p.2.val.val) := by
+      exact measurable_subtype_coe.comp
+        (measurable_subtype_coe.comp measurable_snd)
+    have h1 : Measurable
+        (fun p : model.M × C => (model.inclM p.1).val ω) := by
+      exact
+        ((measurable_pi_apply ω :
+            Measurable (fun g : model.Ω → ℝ => g ω))).comp hμ
+    have h2 : Measurable
+        (fun p : model.M × C => p.2.val.val ω) := by
+      exact
+        ((measurable_pi_apply ω :
+            Measurable (fun g : model.Ω → ℝ => g ω))).comp hw
+    exact h1.mul h2
+  have hf_cont :
+      ∀ x : model.M, ContinuousOn (fun y : C => f x y) (Γ x) := by
+    intro x
+    have hcont : Continuous (fun y : C => f x y) := by
+      dsimp [f, beliefDot]
+      refine continuous_finset_sum _ ?_
+      intro ω _
+      have hval : Continuous (fun y : C => y.val.val) := by
+        exact continuous_subtype_val.comp continuous_subtype_val
+      exact continuous_const.mul ((continuous_apply ω).comp hval)
+    exact hcont.continuousOn
+  obtain ⟨wsel, hwsel_meas, hwsel⟩ :=
+    Inventory.measurable_argmax_selector
+      (Γ := Γ) (f := f)
+      hΓ_meas hΓ_ne hΓ_compact hf_meas hf_cont
+  refine
+    ⟨{ wstar := fun m => (wsel m).val
+       measurable_wstar := measurable_subtype_coe.comp hwsel_meas
+       mem_Cstar := fun m => by
+         simpa [hC_def] using (wsel m).property
+       is_argmax := ?_ }, ?_, ?_⟩
+  · intro m
+    rw [isMaxOn_iff]
+    intro w hw
+    have hwC : w ∈ C := by
+      simpa [hC_def] using hw
+    have h_isMax : IsMaxOn (fun y : ↥C => f m y) (Γ m) (wsel m) := (hwsel m).2
+    have h_mem : (⟨w, hwC⟩ : ↥C) ∈ Γ m := by simp [Γ]
+    have hmax : f m ⟨w, hwC⟩ ≤ f m (wsel m) := h_isMax h_mem
+    simpa [f] using hmax
+  · intro m
+    simpa [hC_def] using (wsel m).property
+  · intro m
+    rw [isMaxOn_iff]
+    intro w hw
+    have hwC : w ∈ C := by
+      simpa [hC_def] using hw
+    have h_isMax : IsMaxOn (fun y : ↥C => f m y) (Γ m) (wsel m) := (hwsel m).2
+    have h_mem : (⟨w, hwC⟩ : ↥C) ∈ Γ m := by simp [Γ]
+    have hmax : f m ⟨w, hwC⟩ ≤ f m (wsel m) := h_isMax h_mem
+    simpa [f] using hmax
 
 theorem closure_pruning_value_preservation
     (model : RobustTrustModel)
@@ -1400,7 +1482,76 @@ theorem posterior_disintegration_menuHall_kernel_coincides
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     ∀ᵐ m ∂MixtureMessageLaw model κ, pd.Pβ κ m = pd.Pγα κ m := by
-  sorry
+  classical
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  haveI : IsMarkovKernel κ.kernel := κ.isMarkov
+  haveI : IsMarkovKernel (pd.sourceLawβ κ) := pd.sourceLawβ_markov κ
+  haveI : IsMarkovKernel (pd.sourceLawγα κ) := pd.sourceLawγα_markov κ
+  haveI hMixtureMessageLaw_finite :
+      IsFiniteMeasure (MixtureMessageLaw model κ) := by
+    unfold MixtureMessageLaw
+    have h1 : IsFiniteMeasure ((ENNReal.ofReal model.α) • model.τM) :=
+      MeasureTheory.Measure.smul_finite model.τM
+        (c := ENNReal.ofReal model.α) ENNReal.ofReal_ne_top
+    have hprod : IsFiniteMeasure (model.τM.compProd κ.kernel) := by
+      infer_instance
+    have hmap : IsFiniteMeasure
+        (MeasureTheory.Measure.map Prod.snd (model.τM.compProd κ.kernel)) := by
+      haveI : IsFiniteMeasure (model.τM.compProd κ.kernel) := hprod
+      infer_instance
+    have h2 : IsFiniteMeasure
+        ((ENNReal.ofReal (1 - model.α)) •
+          MeasureTheory.Measure.map Prod.snd (model.τM.compProd κ.kernel)) := by
+      haveI : IsFiniteMeasure
+          (MeasureTheory.Measure.map Prod.snd (model.τM.compProd κ.kernel)) := hmap
+      exact MeasureTheory.Measure.smul_finite
+        (MeasureTheory.Measure.map Prod.snd (model.τM.compProd κ.kernel))
+        (c := ENNReal.ofReal (1 - model.α)) ENNReal.ofReal_ne_top
+    haveI : IsFiniteMeasure ((ENNReal.ofReal model.α) • model.τM) := h1
+    haveI : IsFiniteMeasure
+        ((ENNReal.ofReal (1 - model.α)) •
+          MeasureTheory.Measure.map Prod.snd (model.τM.compProd κ.kernel)) := h2
+    infer_instance
+  have hbase :
+      (MixtureCouplingGammaAlpha model κ).map Prod.snd =
+        MixtureMessageLaw model κ :=
+    mh.q_eq_gamma_second.symm.trans mh.q_eq_qκ
+  have hγ_dis :
+      (MixtureCouplingGammaAlpha model κ).map
+          (fun p : model.M × model.M => (p.2, model.inclM p.1)) =
+        (MixtureMessageLaw model κ).compProd (pd.sourceLawγα κ) := by
+    simpa [hbase] using pd.sourceLawγα_disintegrates κ
+  have hcomp :
+      (MixtureMessageLaw model κ).compProd (pd.sourceLawβ κ) =
+        (MixtureMessageLaw model κ).compProd (pd.sourceLawγα κ) :=
+    (pd.sourceLawβ_disintegrates κ).symm.trans hγ_dis
+  have hsource :
+      (⇑(pd.sourceLawβ κ)) =ᵐ[MixtureMessageLaw model κ]
+        ⇑(pd.sourceLawγα κ) :=
+    ProbabilityTheory.Kernel.ae_eq_of_compProd_eq hcomp
+  have hbβ :
+      ∀ᵐ m ∂MixtureMessageLaw model κ,
+        beliefBarycenter ((pd.sourceLawβ κ) m) =
+          beliefAsProfile (pd.Pβ κ m) :=
+    pd.conditional_barycenter κ
+  have hbγ :
+      ∀ᵐ m ∂MixtureMessageLaw model κ,
+        beliefBarycenter ((pd.sourceLawγα κ) m) =
+          beliefAsProfile (pd.Pγα κ m) := by
+    simpa [hbase] using pd.gamma_alpha_conditional_barycenter κ
+  filter_upwards [hsource, hbβ, hbγ] with m hsrc hβ hγ
+  have hprofile :
+      beliefAsProfile (pd.Pβ κ m) =
+        beliefAsProfile (pd.Pγα κ m) := by
+    calc
+      beliefAsProfile (pd.Pβ κ m)
+          = beliefBarycenter ((pd.sourceLawβ κ) m) := hβ.symm
+      _ = beliefBarycenter ((pd.sourceLawγα κ) m) := by
+            rw [hsrc]
+      _ = beliefAsProfile (pd.Pγα κ m) := hγ
+  apply Subtype.ext
+  funext ω
+  simpa [beliefAsProfile] using congrFun hprofile ω
 
 theorem support_function_pointwise_membership_equivalence
     (model : RobustTrustModel)
@@ -1595,7 +1746,8 @@ theorem positive_dust_mass_impossible_when_alpha_one
     (flow : AdversarialFlowDisintegrationData wta dust)
     (hα : flow.α = 1) :
     ¬ WTAPositiveQMass wta flow.α dust.N flow.κ := by
-  sorry
+  intro h
+  simpa [WTAPositiveQMass, WTAMixtureMessageLaw, hα, dust.tau_null] using h
 
 theorem dust_positive_mass_forces_mu0_atom
     (wta : WTATernaryAlgebra)
