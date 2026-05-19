@@ -408,7 +408,9 @@ structure MessageRestrictionBridge (model : RobustTrustModel)
   extendRestricted : AgentStrategyM model → AgentStrategyFull model
   extendRestricted_eq :
     ∀ σM m, (extendRestricted σM).sectionFull (model.inclM m) = σM.sectionM m
-  offSupportIrrelevant : Prop
+  -- 2026-05-19 patch v2: opaque `offSupportIrrelevant : Prop` removed per reviewer.
+  -- The actual off-support irrelevance content lives in the
+  -- `outside_M_messages_irrelevant` theorem, not in this bundle.
 
 structure AdviserKernel (model : RobustTrustModel) where
   kernel : Kernel model.M model.M
@@ -505,11 +507,14 @@ noncomputable def MixtureCouplingGammaAlpha (model : RobustTrustModel)
 
 structure PosteriorDisintegration (model : RobustTrustModel) where
   Pβ : AdviserKernel model → model.M → Belief model.Ω
-  Pγα : model.M → Belief model.Ω
+  -- 2026-05-19 patch v2: Pγα is now indexed by κ per reviewer (the posterior
+  -- under the γ_α mixture depends on κ; without indexing the structure was
+  -- either over-strong or empty).
+  Pγα : AdviserKernel model → model.M → Belief model.Ω
   sourceLawβ : AdviserKernel model → Kernel model.M (Belief model.Ω)
   sourceLawγα : AdviserKernel model → Kernel model.M (Belief model.Ω)
   Pβ_measurable : ∀ β, Measurable (Pβ β)
-  Pγα_measurable : Measurable Pγα
+  Pγα_measurable : ∀ κ, Measurable (Pγα κ)
   sourceLawβ_markov : ∀ β, IsMarkovKernel (sourceLawβ β)
   sourceLawγα_markov : ∀ κ, IsMarkovKernel (sourceLawγα κ)
   conditional_barycenter :
@@ -518,7 +523,21 @@ structure PosteriorDisintegration (model : RobustTrustModel) where
   gamma_alpha_conditional_barycenter :
     ∀ κ : AdviserKernel model,
       ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
-        beliefBarycenter ((sourceLawγα κ) m) = beliefAsProfile (Pγα m)
+        beliefBarycenter ((sourceLawγα κ) m) = beliefAsProfile (Pγα κ m)
+  -- 2026-05-19 patch v2: real disintegration identities tying sourceLawβ
+  -- and sourceLawγα to the actual mixture couplings (closes the "smuggled
+  -- arbitrary kernel" hole — reviewer's main pass-2 concern).
+  sourceLawβ_disintegrates :
+    ∀ β : AdviserKernel model,
+      (MixtureCouplingGammaAlpha model β).map
+        (fun p : model.M × model.M => (p.2, model.inclM p.1)) =
+      (MixtureMessageLaw model β).compProd (sourceLawβ β)
+  sourceLawγα_disintegrates :
+    ∀ κ : AdviserKernel model,
+      (MixtureCouplingGammaAlpha model κ).map
+        (fun p : model.M × model.M => (p.2, model.inclM p.1)) =
+      ((MixtureCouplingGammaAlpha model κ).map Prod.snd).compProd
+        (sourceLawγα κ)
 
 def Definition2QAEPredicate (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
@@ -664,7 +683,7 @@ structure MenuHall (model : RobustTrustModel)
   q_eq_qκ : q = MixtureMessageLaw model κ
   q_eq_gamma_second : q = (MixtureCouplingGammaAlpha model κ).map Prod.snd
   calibration :
-    ∀ᵐ m ∂q, pd.Pγα m ∈ BayesOptimalityBeliefCorrespondenceBm model σFull m
+    ∀ᵐ m ∂q, pd.Pγα κ m ∈ BayesOptimalityBeliefCorrespondenceBm model σFull m
 
 def PosteriorCalibrationProfiles (model : RobustTrustModel)
     (q : Measure model.M)
@@ -861,7 +880,7 @@ def Tier2Result (model : RobustTrustModel)
       Definition2QAEPredicate model pd κ σstar ∧
       (0 < model.α →
         ∀ᵐ m ∂model.τM,
-          IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα m)))
+          IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m)))
 
 def WTA_ConeIntersectionStatement : Prop :=
   ∀ (wta : WTATernaryAlgebra) (I : Set WTAΩ) (lam : WTAΩ → ℝ),
@@ -1260,7 +1279,7 @@ theorem menu_hall_posterior_calibration_unpack
     (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
-    ∀ᵐ m ∂mh.q, pd.Pγα m ∈ BayesOptimalityBeliefCorrespondenceBm model σstar m := by
+    ∀ᵐ m ∂mh.q, pd.Pγα κ m ∈ BayesOptimalityBeliefCorrespondenceBm model σstar m := by
   sorry
 
 theorem menu_hall_support_implies_exact_adversary
@@ -1282,10 +1301,10 @@ theorem per_message_Bayes_optimality
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
     (∀ᵐ m ∂mh.q,
-      IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα m)) ∧
+      IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m)) ∧
     (0 < model.α →
       ∀ᵐ m ∂model.τM,
-        IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα m)) := by
+        IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m)) := by
   sorry
 
 theorem posterior_disintegration_menuHall_kernel_coincides
@@ -1295,7 +1314,7 @@ theorem posterior_disintegration_menuHall_kernel_coincides
     (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
     (mh : MenuHall model pd σstar ec κ) :
-    ∀ᵐ m ∂MixtureMessageLaw model κ, pd.Pβ κ m = pd.Pγα m := by
+    ∀ᵐ m ∂MixtureMessageLaw model κ, pd.Pβ κ m = pd.Pγα κ m := by
   sorry
 
 theorem support_function_pointwise_membership_equivalence
