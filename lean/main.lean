@@ -1011,7 +1011,16 @@ theorem q_dominates_tau_when_alpha_pos
     (hα : 0 < model.α)
     (hP : ∀ᵐ m ∂MixtureMessageLaw model β, P m) :
     ∀ᵐ m ∂model.τM, P m := by
-  sorry
+  have hc : ENNReal.ofReal model.α ≠ 0 :=
+    ne_of_gt (ENNReal.ofReal_pos.mpr hα)
+  have hτ_ac : model.τM ≪ MixtureMessageLaw model β := by
+    have hscaled : model.τM ≪ (ENNReal.ofReal model.α) • model.τM :=
+      MeasureTheory.Measure.absolutelyContinuous_smul hc
+    simpa [MixtureMessageLaw] using
+      (hscaled.add_right
+        ((ENNReal.ofReal (1 - model.α)) •
+          ((model.τM.compProd β.kernel).map Prod.snd)))
+  exact hτ_ac.ae_le hP
 
 theorem payoff_profile_set_compact_convex
     (model : RobustTrustModel)
@@ -1132,7 +1141,10 @@ theorem compact_menu_space_compact
     (model : RobustTrustModel)
     (prs : ProfileRealizationSetup model) :
     CompactSpace (CompactMenu model) := by
-  sorry
+  haveI : CompactSpace (ProfileInW model) := by
+    simpa [ProfileInW] using (isCompact_iff_compactSpace.mp prs.W_compact)
+  change CompactSpace (TopologicalSpace.NonemptyCompacts (ProfileInW model))
+  infer_instance
 
 theorem menu_extrema_Hausdorff_Lipschitz
     (model : RobustTrustModel) :
@@ -1415,7 +1427,36 @@ theorem wta_payoff_dot_product_identity
     (s : WTABelief) :
     beliefDot s (WTA_mixedLabel lam) =
       2 * (∑ i : WTAΩ, lam i * s.val i) - 1 := by
-  sorry
+  classical
+  have hvertex : ∀ j : WTAΩ, WTA_mixedLabel lam j = 2 * lam j - 1 := by
+    intro j
+    unfold WTA_mixedLabel WTA_vertex
+    calc
+      (∑ i : WTAΩ, lam i * (if i = j then (1 : ℝ) else -1))
+          = ∑ i : WTAΩ, (2 * (if i = j then lam i else (0 : ℝ)) - lam i) := by
+            apply Finset.sum_congr rfl
+            intro i _
+            by_cases h : i = j <;> simp [h] <;> ring
+      _ = 2 * (∑ i : WTAΩ, (if i = j then lam i else (0 : ℝ))) - (∑ i : WTAΩ, lam i) := by
+            rw [Finset.sum_sub_distrib]
+            rw [← Finset.mul_sum]
+      _ = 2 * lam j - 1 := by
+            have hsingle : (∑ i : WTAΩ, (if i = j then lam i else (0 : ℝ))) = lam j := by
+              simp
+            rw [hsingle, hlam_sum]
+  unfold beliefDot
+  simp_rw [hvertex]
+  calc
+    (∑ ω : WTAΩ, s.val ω * (2 * lam ω - 1))
+        = ∑ ω : WTAΩ, (2 * (lam ω * s.val ω) - s.val ω) := by
+          apply Finset.sum_congr rfl
+          intro ω _
+          ring
+    _ = 2 * (∑ ω : WTAΩ, lam ω * s.val ω) - (∑ ω : WTAΩ, s.val ω) := by
+          rw [Finset.sum_sub_distrib]
+          rw [← Finset.mul_sum]
+    _ = 2 * (∑ i : WTAΩ, lam i * s.val i) - 1 := by
+          rw [s.property.2]
 
 theorem wta_rowwise_minimizer_and_Bayes_cone_identification
     (I : Set WTAΩ)
