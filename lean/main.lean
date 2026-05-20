@@ -2200,7 +2200,60 @@ theorem geps_nonempty
     {ε : ℝ}
     (hε : 0 < ε) :
     ∀ s : model.M, (EpsilonContactGeps model cdagger ε s).Nonempty := by
-  sorry
+  intro s
+  classical
+
+  let f : ProfileInW model → ℝ :=
+    fun w => beliefDot (model.inclM s) w.val
+
+  have hf : Continuous f := by
+    dsimp [f]
+    unfold beliefDot
+    refine continuous_finset_sum _ ?_
+    intro ω _
+    exact continuous_const.mul ((continuous_apply ω).comp continuous_subtype_val)
+
+  obtain ⟨w0, hw0_mem, hw0_sInf⟩ :
+      ∃ w0 ∈ (↑cdagger.Cdagger : Set (ProfileInW model)),
+        sInf (f '' (↑cdagger.Cdagger : Set (ProfileInW model))) = f w0 := by
+    exact cdagger.Cdagger.isCompact.exists_sInf_image_eq
+      cdagger.Cdagger.nonempty hf.continuousOn
+
+  have hf_w0 : f w0 = minPayoff model cdagger.Cdagger s := by
+    unfold minPayoff
+    change f w0 =
+      sInf (f '' (↑cdagger.Cdagger : Set (ProfileInW model)))
+    exact hw0_sInf.symm
+
+  have hw0_closure : w0 ∈ closure (Set.range wlabel.wstar) :=
+    cdagger.range_dense hw0_mem
+
+  let U : Set (ProfileInW model) :=
+    {w | f w < minPayoff model cdagger.Cdagger s + ε}
+
+  have hU_open : IsOpen U := by
+    dsimp [U]
+    exact isOpen_lt hf continuous_const
+
+  have hw0_U : w0 ∈ U := by
+    dsimp [U]
+    rw [hf_w0]
+    exact lt_add_of_pos_right _ hε
+
+  have hhit : (U ∩ Set.range wlabel.wstar).Nonempty := by
+    by_contra hnone
+    have hsub : Set.range wlabel.wstar ⊆ Uᶜ := by
+      intro x hx hxU
+      exact hnone ⟨x, hxU, hx⟩
+    have hclsub : closure (Set.range wlabel.wstar) ⊆ Uᶜ :=
+      closure_minimal hsub hU_open.isClosed_compl
+    exact hclsub hw0_closure hw0_U
+
+  rcases hhit with ⟨w, hwU, hw_range⟩
+  rcases hw_range with ⟨m, rfl⟩
+  refine ⟨m, ?_⟩
+  dsimp [EpsilonContactGeps, U, f] at hwU ⊢
+  exact le_of_lt hwU
 
 theorem geps_graph_measurable
     (model : RobustTrustModel)
