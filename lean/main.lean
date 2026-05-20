@@ -30,24 +30,6 @@ theorem measurable_argmax_selector
 
 /-! ## 2. profile-geometry-import -/
 
-theorem profile_geometry_import
-    {Ω PrivateStrategy : Type*}
-    [Fintype Ω]
-    [TopologicalSpace PrivateStrategy] [CompactSpace PrivateStrategy] [Nonempty PrivateStrategy]
-    [MeasurableSpace PrivateStrategy] [BorelSpace PrivateStrategy]
-    (Φ : PrivateStrategy → (Ω → ℝ))
-    (hΦ_cont : Continuous Φ)
-    (hconvex_realization :
-      ∀ σ1 σ2 : PrivateStrategy, ∀ t : ℝ, 0 ≤ t → t ≤ 1 →
-        ∃ σt : PrivateStrategy,
-          Φ σt = (fun ω => t * Φ σ1 ω + (1 - t) * Φ σ2 ω)) :
-    let W : Set (Ω → ℝ) := Set.range Φ
-    IsCompact W ∧
-    Convex ℝ W ∧
-    (∀ w ∈ W, (Φ ⁻¹' {w}).Nonempty ∧ IsCompact (Φ ⁻¹' {w})) := by
-  sorry
-
-/-! ## 3. krn-borel-right-inverse -/
 
 theorem krn_borel_right_inverse
     {X Y : Type*}
@@ -85,34 +67,10 @@ theorem kernel_infimum_epsilon_selection
 
 /-! ## 5. hausdorff-support-function-lipschitz -/
 
-theorem hausdorff_support_function_lipschitz
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (ℓ : E →L[ℝ] ℝ) :
-    ∃ L : ℝ, 0 ≤ L ∧
-      ∀ C D : TopologicalSpace.NonemptyCompacts E,
-        |(sSup (ℓ '' (↑C : Set E))) - (sSup (ℓ '' (↑D : Set E)))|
-          ≤ L * dist C D := by
-  sorry
-
-/-! ## 6. jankov-von-neumann-universal-selection -/
-
-/-- Universal measurability: `f` is measurable with respect to every Borel completion. -/
 def UniversallyMeasurable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
     [MeasurableSpace Y] (f : X → Y) : Prop :=
   ∀ μ : Measure X, IsFiniteMeasure μ → AEMeasurable f μ
 
-theorem jankov_von_neumann_universal_selection
-    {X Y : Type*}
-    [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X] [StandardBorelSpace X]
-    [MeasurableSpace Y] [TopologicalSpace Y] [BorelSpace Y] [StandardBorelSpace Y] [Nonempty Y]
-    (G : Set (X × Y))
-    (hG_analytic : MeasureTheory.AnalyticSet G)
-    (hsections : ∀ x, ∃ y, (x, y) ∈ G) :
-    ∃ f : X → Y,
-      UniversallyMeasurable f ∧ ∀ x, (x, f x) ∈ G := by
-  sorry
-
-/-! ## 7. geps-borel-selector-upgrade -/
 
 structure GepsRegularity {M : Type*} [TopologicalSpace M] [MeasurableSpace M]
     (Gε : ℝ → M → Set M) (ε : ℝ) : Prop where
@@ -120,101 +78,7 @@ structure GepsRegularity {M : Type*} [TopologicalSpace M] [MeasurableSpace M]
   graph_measurable : MeasurableSet {p : M × M | p.2 ∈ Gε ε p.1}
   sections_measurable : ∀ s : M, MeasurableSet (Gε ε s)
 
-theorem geps_borel_selector_upgrade
-    {M : Type*}
-    [MetricSpace M]
-    [MeasurableSpace M] [BorelSpace M] [StandardBorelSpace M]
-    [SecondCountableTopology M]
-    [CompactSpace M]
-    {Gε : ℝ → M → Set M}
-    {ε : ℝ}
-    (hε : 0 < ε)
-    (hne : ∀ s : M, (Gε ε s).Nonempty)
-    (hregular : GepsRegularity Gε ε) :
-    ∃ mε : M → M,
-      Measurable mε ∧ ∀ s : M, mε s ∈ Gε ε s := by
-  sorry
 
-/-! ## 8. bayes-posterior-as-conditional-barycenter -/
-
-theorem bayes_posterior_as_conditional_barycenter
-    {Ω : Type*} [Fintype Ω]
-    {Belief : Type*} [TopologicalSpace Belief] [MeasurableSpace Belief]
-    [BorelSpace Belief] [StandardBorelSpace Belief]
-    {M : Type*} [TopologicalSpace M] [MeasurableSpace M] [BorelSpace M] [StandardBorelSpace M]
-    (coord : Belief → Ω → ℝ)
-    (hcoord_meas : ∀ ω, Measurable (fun s => coord s ω))
-    (hcoord_nonneg : ∀ s ω, 0 ≤ coord s ω)
-    (hcoord_sum : ∀ s, ∑ ω, coord s ω = 1)
-    (μ0 : Ω → ℝ) (hμ0_nonneg : ∀ ω, 0 ≤ μ0 ω) (hμ0_sum : ∑ ω, μ0 ω = 1)
-    (π : Ω → Measure Belief)
-    [hπ_prob : ∀ ω, IsProbabilityMeasure (π ω)]
-    (τ : Measure Belief)
-    [IsProbabilityMeasure τ]
-    (hposterior_consistency :
-      ∀ ω, (ENNReal.ofReal (μ0 ω)) • (π ω) =
-        τ.withDensity (fun s => ENNReal.ofReal (coord s ω)))
-    (q : Measure M)
-    [IsProbabilityMeasure q]
-    (χ : Kernel Belief M)
-    [IsMarkovKernel χ]
-    (hq_marginal : q = (τ.compProd χ).map Prod.snd)
-    (ρ : Kernel M Belief)
-    [IsMarkovKernel ρ]
-    (hρ_disintegration :
-      q.compProd ρ =
-        (τ.compProd χ).map (fun p : Belief × M => (p.2, p.1)))
-    (P : M → Ω → ℝ)
-    (hP_meas : ∀ ω, Measurable (fun m => P m ω))
-    (hP_bayes_definition :
-      ∀ ω : Ω, ∀ᵐ m ∂q,
-        P m ω = (μ0 ω) *
-          ((((π ω).compProd χ).map Prod.snd).rnDeriv q m).toReal) :
-    ∀ᵐ m ∂q, ∀ ω : Ω, P m ω = ∫ s, coord s ω ∂(ρ m) := by
-  sorry
-
-/-! ## 9. support-function-measurable-integrated-separation -/
-
-/-- A.e. pointwise version. -/
-theorem support_function_ae_pointwise_separation
-    {Ω : Type*} [Fintype Ω]
-    {M : Type*} [MeasurableSpace M]
-    (q : Measure M)
-    [IsFiniteMeasure q]
-    (B : M → Set (Ω → ℝ))
-    (P : M → (Ω → ℝ))
-    (hP_meas : Measurable P)
-    (hB_closed : ∀ m, IsClosed (B m))
-    (hB_convex : ∀ m, Convex ℝ (B m))
-    (hB_nonempty : ∀ m, (B m).Nonempty)
-    (hB_bounded : ∀ m, Bornology.IsBounded (B m))
-    (hB_meas_graph : MeasurableSet {p : M × (Ω → ℝ) | p.2 ∈ B p.1}) :
-    (∀ᵐ m ∂q, P m ∈ B m) ↔
-      (∀ᵐ m ∂q, ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, ℓ (P m) ≤ sSup (ℓ '' B m)) := by
-  sorry
-
-/-- Eventwise integrated Hall form. -/
-theorem support_function_integrated_separation
-    {Ω : Type*} [Fintype Ω]
-    {M : Type*} [MeasurableSpace M]
-    (q : Measure M)
-    [IsFiniteMeasure q]
-    (B : M → Set (Ω → ℝ))
-    (P : M → (Ω → ℝ))
-    (hP_meas : Measurable P)
-    (hB_closed : ∀ m, IsClosed (B m))
-    (hB_convex : ∀ m, Convex ℝ (B m))
-    (hB_nonempty : ∀ m, (B m).Nonempty)
-    (hB_bounded : ∀ m, Bornology.IsBounded (B m))
-    (hB_meas_graph : MeasurableSet {p : M × (Ω → ℝ) | p.2 ∈ B p.1})
-    (hsupp_meas : ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, Measurable fun m => sSup (ℓ '' B m))
-    (hsupp_int : ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, Integrable (fun m => sSup (ℓ '' B m)) q)
-    (hP_int : ∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ, Integrable (fun m => ℓ (P m)) q) :
-    ∀ E : Set M, MeasurableSet E → q E ≠ 0 →
-      ((∀ᵐ m ∂q.restrict E, P m ∈ B m) ↔
-        (∀ ℓ : (Ω → ℝ) →L[ℝ] ℝ,
-          ∫ m in E, ℓ (P m) ∂q ≤ ∫ m in E, sSup (ℓ '' B m) ∂q)) := by
-  sorry
 
 end Inventory
 
@@ -928,31 +792,8 @@ def RobustTrustInfiniteExtensionV8Package
 
 /-! ## 59 theorem declarations in dependency order -/
 
-theorem posterior_law_barycenter_identities
-    (model : RobustTrustModel)
-    (plc : PosteriorLawConsistency model) :
-    beliefBarycenter model.τ = model.μ0 ∧
-      (∀ ω : model.Ω,
-        (ENNReal.ofReal (model.μ0 ω)) • model.π ω =
-          model.τ.withDensity (fun s => ENNReal.ofReal (beliefCoord s ω))) ∧
-      (∀ᵐ s ∂model.τ, plc.posteriorAfterAdviser s = s) :=
-  ⟨plc.barycenter_eq_prior, plc.coordinate_measure_identity, plc.posterior_after_adviser_ae⟩
 
-theorem strategy_restriction_to_M
-    (model : RobustTrustModel)
-    (σFull : AgentStrategyFull model) :
-    ∃ σM : AgentStrategyM model,
-      ∀ m : model.M, σM.sectionM m = σFull.sectionFull (model.inclM m) :=
-  ⟨restrictFullToM model σFull, fun _ => rfl⟩
 
-theorem restricted_agent_strategy_extends_to_full
-    (model : RobustTrustModel)
-    (msupp : MessageSupportM model)
-    (bridge : MessageRestrictionBridge model msupp)
-    (σM : AgentStrategyM model) :
-    ∃ σFull : AgentStrategyFull model,
-      ∀ m : model.M, σFull.sectionFull (model.inclM m) = σM.sectionM m :=
-  ⟨bridge.extendRestricted σM, bridge.extendRestricted_eq σM⟩
 
 theorem outside_M_messages_irrelevant
     (model : RobustTrustModel)
@@ -1069,17 +910,6 @@ theorem q_dominates_tau_when_alpha_pos
           ((model.τM.compProd β.kernel).map Prod.snd)))
   exact hτ_ac.ae_le hP
 
-theorem payoff_profile_set_compact_convex
-    (model : RobustTrustModel)
-    (prs : ProfileRealizationSetup model) :
-    IsCompact (PayoffProfileSet model) ∧
-      Convex ℝ (PayoffProfileSet model) ∧
-      (∀ w : Profile model, w ∈ PayoffProfileSet model →
-        ∃ σ : model.PrivateStrategy, model.profileOfPrivate σ = w) := by
-  refine ⟨prs.W_compact, prs.W_convex, ?_⟩
-  intro w hw
-  obtain ⟨σ, hσ⟩ := prs.Φ_surjective_onto_W w hw
-  exact ⟨σ, by rw [← prs.Φ_eq_profile]; exact hσ⟩
 
 theorem profile_map_has_borel_right_inverse
     (model : RobustTrustModel)
@@ -1141,47 +971,9 @@ theorem profile_map_has_borel_right_inverse
       congrArg (fun x : ProfileInW model => x.val) (hR_right w)
   simpa [prs.Φ_eq_profile] using hΦ
 
-theorem borel_profile_map_implemented_by_agent_strategy
-    (model : RobustTrustModel)
-    (R : ProfileRealizationMap model)
-    (wMap : model.M → ProfileInW model)
-    (hwMap : Measurable wMap) :
-    ∃ σM : AgentStrategyM model,
-      ∀ m : model.M, profileMap model σM m = (wMap m).val := by
-  refine ⟨{ sectionM := fun m => R.R (wMap m)
-           , measurable_sectionM := R.measurable_R.comp hwMap }, ?_⟩
-  intro m
-  exact R.right_inverse (wMap m)
 
-theorem profile_payoff_decomposition_aligned
-    (model : RobustTrustModel)
-    (plc : PosteriorLawConsistency model)
-    (σM : AgentStrategyM model) :
-    AlignedPayoffM model σM =
-      ∫ s, beliefDot (model.inclM s) (profileMap model σM s) ∂model.τM := by
-  aesop
 
-theorem profile_payoff_decomposition_misaligned
-    (model : RobustTrustModel)
-    (plc : PosteriorLawConsistency model)
-    (β : AdviserKernel model)
-    (σM : AgentStrategyM model) :
-    MisalignedPayoffM model β σM =
-      ∫ s, ∫ m, beliefDot (model.inclM s) (profileMap model σM m) ∂(β.kernel s) ∂model.τM := by
-  aesop
 
-theorem mixture_payoff_decomposition
-    (model : RobustTrustModel)
-    (β : AdviserKernel model)
-    (σM : AgentStrategyM model)
-    (σFull : AgentStrategyFull model) :
-    MixturePayoffM model β σM =
-        model.α * AlignedPayoffM model σM +
-          (1 - model.α) * MisalignedPayoffM model β σM ∧
-      MixturePayoffFull model β σFull =
-        model.α * AlignedPayoffFull model σFull +
-          (1 - model.α) * MisalignedPayoffFull model β σFull := by
-  aesop
 
 theorem adversary_infimum_pointwise
     (model : RobustTrustModel)
@@ -1588,19 +1380,6 @@ private lemma minPayoff_integrable
   rcases minPayoff_mem_Icc_ae model C with ⟨B, hB⟩
   exact Integrable.of_mem_Icc (-B) B (minPayoff_aemeasurable model C) hB
 
-private lemma beliefDot_continuous_profile_for_kernel_bound
-    (model : RobustTrustModel) :
-    Continuous
-      (fun x : Belief model.Ω × (model.Ω → ℝ) =>
-        beliefDot x.1 x.2) := by
-  classical
-  unfold beliefDot
-  refine continuous_finset_sum _ ?_
-  intro ω _
-  exact
-    ((continuous_apply ω).comp
-        (continuous_subtype_val.comp continuous_fst)).mul
-      ((continuous_apply ω).comp continuous_snd)
 
 private lemma profileMap_measurable_for_kernel_bound
     (model : RobustTrustModel) (setup : ProfileRealizationSetup model)
@@ -3875,16 +3654,6 @@ theorem epsilon_adversary_realization
         rw [hσstar]
         linarith
 
-theorem exact_contact_selector_unpack
-    (model : RobustTrustModel)
-    (σstar : AgentStrategyFull model)
-    (ec : ExactContact model σstar) :
-    ∃ mstar : model.M → model.M,
-      Measurable mstar ∧
-        (∀ᵐ s ∂model.τM, mstar s ∈ RowwiseContactG model ec.cdagger s) ∧
-        (∀ m : model.M,
-          profileMap model (restrictFullToM model σstar) m = (ec.wlabel.wstar m).val) :=
-  ⟨ec.selector, ec.selector_measurable, ec.selector_mem, ec.sigma_implements_wlabel⟩
 
 theorem exact_adversary_attainment
     (model : RobustTrustModel)
@@ -4079,32 +3848,7 @@ theorem exact_adversary_attainment
   refine ⟨βstar, hdet, hsupp, ?_, hmix, hσstar⟩
   simpa [IsAdversarialFull] using hmix
 
-theorem menuHall_adversary_kernel_identity
-    (model : RobustTrustModel)
-    (pd : PosteriorDisintegration model)
-    (σstar : AgentStrategyFull model)
-    (ec : ExactContact model σstar)
-    (κ : AdviserKernel model)
-    (mh : MenuHall model pd σstar ec κ) :
-    (let βstar : AdviserKernel model := κ;
-      βstar = κ ∧
-        mh.q = MixtureMessageLaw model κ ∧
-        mh.q = (MixtureCouplingGammaAlpha model κ).map Prod.snd) :=
-  ⟨rfl, mh.q_eq_qκ, mh.q_eq_gamma_second⟩
 
-theorem menu_hall_posterior_calibration_unpack
-    (model : RobustTrustModel)
-    (pd : PosteriorDisintegration model)
-    (σstar : AgentStrategyFull model)
-    (ec : ExactContact model σstar)
-    (κ : AdviserKernel model)
-    (mh : MenuHall model pd σstar ec κ) :
-    ∀ᵐ m ∂mh.q, pd.Pγα κ m ∈ BayesOptimalityBeliefCorrespondenceBm model σstar m := by
-  exact?
-
-/-- Bridge: κ supported on rowwise contact G ⟹ MixturePayoffFull κ σstar = RobustPayoff.
-The substantive measure-theory step: kernel integral equals minPayoff on supported set
-(uses Markov kernel + κ.kernel s (G s) = 1 a.e.), and every β bounded below by minPayoff. -/
 private lemma kernel_supportedOnG_mixture_eq_robust
     (model : RobustTrustModel)
     (σstar : AgentStrategyFull model)
@@ -4523,244 +4267,6 @@ theorem wta_payoff_dot_product_identity
     _ = 2 * (∑ i : WTAΩ, lam i * s.val i) - 1 := by
           rw [s.property.2]
 
-theorem wta_rowwise_minimizer_and_Bayes_cone_identification
-    (I : Set WTAΩ)
-    (lam : WTAΩ → ℝ)
-    (hI : I.Nonempty)
-    (h_support_eq : WTASupport lam = I)
-    (h_pos_on_I : ∀ i : WTAΩ, i ∈ I → 0 < lam i)
-    (hlam_nonneg : ∀ i : WTAΩ, 0 ≤ lam i)
-    (hlam_sum : ∑ i : WTAΩ, lam i = 1)
-    (s p : WTABelief) :
-    (WTARowwiseMinimizer I lam s (WTA_mixedLabel lam) ↔ s ∈ WTAKminus I) ∧
-      (WTABayesOptimalWTA I lam p (WTA_mixedLabel lam) ↔ p ∈ WTABcone I) := by
-  classical
-
-  have h_outside : ∀ i : WTAΩ, i ∉ I → lam i = 0 := by
-    intro i hi
-    have hnotpos : ¬ 0 < lam i := by
-      intro hpos
-      have hsupp : i ∈ WTASupport lam := by
-        change 0 < lam i
-        exact hpos
-      have hmem : i ∈ I := by
-        simpa [h_support_eq] using hsupp
-      exact hi hmem
-    exact le_antisymm (le_of_not_gt hnotpos) (hlam_nonneg i)
-
-  have hvertex :
-      ∀ (b : WTABelief) (k : WTAΩ),
-        beliefDot b (WTA_vertex k) = 2 * b.val k - 1 := by
-    intro b k
-    let delta : WTAΩ → ℝ := fun i => if i = k then (1 : ℝ) else 0
-    have hdelta_nonneg : ∀ i : WTAΩ, 0 ≤ delta i := by
-      intro i
-      by_cases h : i = k <;> simp [delta, h]
-    have hdelta_sum : ∑ i : WTAΩ, delta i = 1 := by
-      dsimp [delta]
-      rw [Finset.sum_eq_single k]
-      · simp
-      · intro i _ hik
-        simp [hik]
-      · intro hk
-        exact False.elim (hk (Finset.mem_univ k))
-    have hmixed_delta : WTA_mixedLabel delta = WTA_vertex k := by
-      funext j
-      unfold WTA_mixedLabel
-      rw [Finset.sum_eq_single k]
-      · simp [delta]
-      · intro i _ hik
-        simp [delta, hik]
-      · intro hk
-        exact False.elim (hk (Finset.mem_univ k))
-    have hdelta_b : ∑ i : WTAΩ, delta i * b.val i = b.val k := by
-      dsimp [delta]
-      rw [Finset.sum_eq_single k]
-      · simp
-      · intro i _ hik
-        simp [hik]
-      · intro hk
-        exact False.elim (hk (Finset.mem_univ k))
-    have h :=
-      wta_payoff_dot_product_identity delta hdelta_nonneg hdelta_sum b
-    rw [hmixed_delta, hdelta_b] at h
-    exact h
-
-  have h_eq_of_avg_le :
-      ∀ (b : WTABelief) (avg : ℝ),
-        avg = (∑ i : WTAΩ, lam i * b.val i) →
-        (∀ k : WTAΩ, avg ≤ b.val k) →
-        ∀ i0 : WTAΩ, i0 ∈ I → b.val i0 = avg := by
-    intro b avg havg hle i0 hi0
-    have hsumTerms : ∑ i : WTAΩ, lam i * (b.val i - avg) = 0 := by
-      calc
-        ∑ i : WTAΩ, lam i * (b.val i - avg)
-            = (∑ i : WTAΩ, lam i * b.val i) - (∑ i : WTAΩ, lam i) * avg := by
-                simp_rw [mul_sub]
-                rw [Finset.sum_sub_distrib, ← Finset.sum_mul]
-        _ = avg - 1 * avg := by
-                rw [← havg, hlam_sum]
-        _ = 0 := by ring
-    have htermNonneg :
-        ∀ i ∈ (Finset.univ : Finset WTAΩ), 0 ≤ lam i * (b.val i - avg) := by
-      intro i _
-      by_cases hi : i ∈ I
-      · exact mul_nonneg (hlam_nonneg i) (sub_nonneg.mpr (hle i))
-      · rw [h_outside i hi]
-        simp
-    have hzeroAll :=
-      (Finset.sum_eq_zero_iff_of_nonneg htermNonneg).mp hsumTerms
-    have hprod_zero : lam i0 * (b.val i0 - avg) = 0 :=
-      hzeroAll i0 (Finset.mem_univ i0)
-    have hdiff_zero : b.val i0 - avg = 0 := by
-      rcases mul_eq_zero.mp hprod_zero with hlam0 | hdiff
-      · have hpos := h_pos_on_I i0 hi0
-        linarith
-      · exact hdiff
-    linarith
-
-  have h_eq_of_le_avg :
-      ∀ (b : WTABelief) (avg : ℝ),
-        avg = (∑ i : WTAΩ, lam i * b.val i) →
-        (∀ k : WTAΩ, b.val k ≤ avg) →
-        ∀ i0 : WTAΩ, i0 ∈ I → b.val i0 = avg := by
-    intro b avg havg hle i0 hi0
-    have hsumTerms : ∑ i : WTAΩ, lam i * (avg - b.val i) = 0 := by
-      calc
-        ∑ i : WTAΩ, lam i * (avg - b.val i)
-            = (∑ i : WTAΩ, lam i) * avg - (∑ i : WTAΩ, lam i * b.val i) := by
-                simp_rw [mul_sub]
-                rw [Finset.sum_sub_distrib, ← Finset.sum_mul]
-        _ = 1 * avg - avg := by
-                rw [hlam_sum, ← havg]
-        _ = 0 := by ring
-    have htermNonneg :
-        ∀ i ∈ (Finset.univ : Finset WTAΩ), 0 ≤ lam i * (avg - b.val i) := by
-      intro i _
-      by_cases hi : i ∈ I
-      · exact mul_nonneg (hlam_nonneg i) (sub_nonneg.mpr (hle i))
-      · rw [h_outside i hi]
-        simp
-    have hzeroAll :=
-      (Finset.sum_eq_zero_iff_of_nonneg htermNonneg).mp hsumTerms
-    have hprod_zero : lam i0 * (avg - b.val i0) = 0 :=
-      hzeroAll i0 (Finset.mem_univ i0)
-    have hdiff_zero : avg - b.val i0 = 0 := by
-      rcases mul_eq_zero.mp hprod_zero with hlam0 | hdiff
-      · have hpos := h_pos_on_I i0 hi0
-        linarith
-      · exact hdiff
-    linarith
-
-  have h_avg_le_from_K :
-      ∀ (b : WTABelief),
-        (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, b.val i ≤ b.val k) →
-        ∀ k : WTAΩ, (∑ i : WTAΩ, lam i * b.val i) ≤ b.val k := by
-    intro b hK k
-    have hterm_le :
-        ∀ i ∈ (Finset.univ : Finset WTAΩ),
-          lam i * b.val i ≤ lam i * b.val k := by
-      intro i _
-      by_cases hi : i ∈ I
-      · exact mul_le_mul_of_nonneg_left (hK i hi k) (hlam_nonneg i)
-      · rw [h_outside i hi]
-        simp
-    have hsum_le :=
-      Finset.sum_le_sum hterm_le
-    have hright : ∑ i : WTAΩ, lam i * b.val k = b.val k := by
-      calc
-        ∑ i : WTAΩ, lam i * b.val k = (∑ i : WTAΩ, lam i) * b.val k := by
-          rw [← Finset.sum_mul]
-        _ = 1 * b.val k := by
-          rw [hlam_sum]
-        _ = b.val k := by ring
-    calc
-      (∑ i : WTAΩ, lam i * b.val i) ≤ ∑ i : WTAΩ, lam i * b.val k := hsum_le
-      _ = b.val k := hright
-
-  have h_le_avg_from_B :
-      ∀ (b : WTABelief),
-        (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, b.val k ≤ b.val i) →
-        ∀ k : WTAΩ, b.val k ≤ (∑ i : WTAΩ, lam i * b.val i) := by
-    intro b hB k
-    have hterm_le :
-        ∀ i ∈ (Finset.univ : Finset WTAΩ),
-          lam i * b.val k ≤ lam i * b.val i := by
-      intro i _
-      by_cases hi : i ∈ I
-      · exact mul_le_mul_of_nonneg_left (hB i hi k) (hlam_nonneg i)
-      · rw [h_outside i hi]
-        simp
-    have hsum_le :=
-      Finset.sum_le_sum hterm_le
-    have hleft : ∑ i : WTAΩ, lam i * b.val k = b.val k := by
-      calc
-        ∑ i : WTAΩ, lam i * b.val k = (∑ i : WTAΩ, lam i) * b.val k := by
-          rw [← Finset.sum_mul]
-        _ = 1 * b.val k := by
-          rw [hlam_sum]
-        _ = b.val k := by ring
-    calc
-      b.val k = ∑ i : WTAΩ, lam i * b.val k := hleft.symm
-      _ ≤ ∑ i : WTAΩ, lam i * b.val i := hsum_le
-
-  constructor
-  · constructor
-    · intro hrow
-      rcases hrow with ⟨_, hmin⟩
-      have hsum_le :
-          ∀ k : WTAΩ, (∑ j : WTAΩ, lam j * s.val j) ≤ s.val k := by
-        intro k
-        have hdot := hmin (WTA_vertex k) ⟨k, rfl⟩
-        have hmix :=
-          wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum s
-        rw [hmix, hvertex s k] at hdot
-        linarith
-      have heq_on_I :=
-        h_eq_of_avg_le s (∑ j : WTAΩ, lam j * s.val j) rfl hsum_le
-      change ∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, s.val i ≤ s.val k
-      intro i hi k
-      calc
-        s.val i = (∑ j : WTAΩ, lam j * s.val j) := heq_on_I i hi
-        _ ≤ s.val k := hsum_le k
-    · intro hsK
-      change (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, s.val i ≤ s.val k) at hsK
-      refine ⟨rfl, ?_⟩
-      intro m' hm'
-      rcases hm' with ⟨k, rfl⟩
-      have hcoord := h_avg_le_from_K s hsK k
-      have hmix :=
-        wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum s
-      rw [hmix, hvertex s k]
-      linarith
-  · constructor
-    · intro hbayes
-      rcases hbayes with ⟨_, hmax⟩
-      have hle_sum :
-          ∀ k : WTAΩ, p.val k ≤ (∑ j : WTAΩ, lam j * p.val j) := by
-        intro k
-        have hdot := hmax (WTA_vertex k) ⟨k, rfl⟩
-        have hmix :=
-          wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum p
-        rw [hmix, hvertex p k] at hdot
-        linarith
-      have heq_on_I :=
-        h_eq_of_le_avg p (∑ j : WTAΩ, lam j * p.val j) rfl hle_sum
-      change ∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, p.val k ≤ p.val i
-      intro i hi k
-      calc
-        p.val k ≤ (∑ j : WTAΩ, lam j * p.val j) := hle_sum k
-        _ = p.val i := (heq_on_I i hi).symm
-    · intro hpB
-      change (∀ i : WTAΩ, i ∈ I → ∀ k : WTAΩ, p.val k ≤ p.val i) at hpB
-      refine ⟨rfl, ?_⟩
-      intro m' hm'
-      rcases hm' with ⟨k, rfl⟩
-      have hcoord := h_le_avg_from_B p hpB k
-      have hmix :=
-        wta_payoff_dot_product_identity lam hlam_nonneg hlam_sum p
-      rw [hmix, hvertex p k]
-      linarith
 
 theorem wta_cone_intersection
     (wta : WTATernaryAlgebra)
@@ -4890,20 +4396,7 @@ theorem wta_cone_intersection
 
   simpa [Measure.map_const] using hmap
 
-theorem dust_disintegration_over_subtype_N
-    (wta : WTATernaryAlgebra)
-    (dust : NullDustData wta)
-    (flow : AdversarialFlowDisintegrationData wta dust) :
-    flow.νN.map (fun p : WTABelief × NDust dust => (p.2, p.1)) =
-      flow.qN.compProd flow.ρ := by
-  exact?
 
-theorem qN_supported_on_N
-    (wta : WTATernaryAlgebra)
-    (dust : NullDustData wta)
-    (flow : AdversarialFlowDisintegrationData wta dust) :
-    ∀ᵐ m ∂flow.qN, (m.val : WTABelief) ∈ dust.N := by
-  aesop
 
 theorem dust_rowwise_support_implies_cone_support
     (wta : WTATernaryAlgebra)
