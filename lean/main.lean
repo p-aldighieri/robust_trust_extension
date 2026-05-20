@@ -4587,6 +4587,90 @@ theorem support_function_pointwise_membership_equivalence
         ℓ (P m) ≤ sSup (ℓ '' B m)) := by
   exact?
 
+/-- Geometric Hahn-Banach lemma: in a normed ℝ-space, if D is a dense sequence
+in the continuous dual, then a closed convex bounded set S contains every x
+whose D-image inequalities are bounded by sSup over S. -/
+private lemma closed_convex_mem_of_dense_support_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (D : ℕ → E →L[ℝ] ℝ) (hD : DenseRange D)
+    {S : Set E} {x : E}
+    (hS_closed : IsClosed S)
+    (hS_convex : Convex ℝ S)
+    (hS_nonempty : S.Nonempty)
+    (hS_bounded : Bornology.IsBounded S)
+    (hineq : ∀ n, D n x ≤ sSup ((D n) '' S)) :
+    x ∈ S := by
+  by_contra hx
+  obtain ⟨f, u, hf_lt, hu_lt⟩ :=
+    geometric_hahn_banach_closed_point hS_convex hS_closed hx
+  set δ : ℝ := (f x - u) / 4 with hδ_def
+  have hδ_pos : 0 < δ := by
+    have hsub : 0 < f x - u := by linarith
+    have : 0 < (f x - u) / 4 := by positivity
+    exact this
+  obtain ⟨C₀, hC₀⟩ := hS_bounded.exists_norm_le
+  set R : ℝ := max C₀ ‖x‖ + 1 with hR_def
+  have hR_pos : 0 < R := by
+    have h₁ : 0 ≤ max C₀ ‖x‖ := le_max_iff.mpr (Or.inr (norm_nonneg _))
+    linarith
+  have hx_R : ‖x‖ ≤ R := by
+    have : ‖x‖ ≤ max C₀ ‖x‖ := le_max_right _ _
+    linarith
+  have hS_R : ∀ y ∈ S, ‖y‖ ≤ R := by
+    intro y hy
+    have h₁ : ‖y‖ ≤ C₀ := hC₀ y hy
+    have h₂ : C₀ ≤ max C₀ ‖x‖ := le_max_left _ _
+    linarith
+  have hε_pos : 0 < δ / R := div_pos hδ_pos hR_pos
+  have hf_in_closure : f ∈ closure (Set.range D) := by
+    rw [hD.closure_eq]; exact Set.mem_univ f
+  obtain ⟨g, hg_range, hg_close⟩ :=
+    Metric.mem_closure_iff.mp hf_in_closure (δ / R) hε_pos
+  obtain ⟨n, hn_eq⟩ := hg_range
+  have hn_norm : ‖D n - f‖ < δ / R := by
+    have hdist : dist f (D n) < δ / R := by rw [hn_eq]; exact hg_close
+    rw [dist_eq_norm, ← norm_neg, neg_sub] at hdist
+    exact hdist
+  -- Bound |D n y - f y| ≤ ‖D n - f‖ · ‖y‖
+  have h_pointwise_bound : ∀ y : E, |D n y - f y| ≤ ‖D n - f‖ * ‖y‖ := by
+    intro y
+    have h₁ : D n y - f y = (D n - f) y := by
+      simp [ContinuousLinearMap.sub_apply]
+    have h₂ : ‖(D n - f) y‖ ≤ ‖D n - f‖ * ‖y‖ :=
+      (D n - f).le_opNorm y
+    rw [show |D n y - f y| = ‖D n y - f y‖ from (Real.norm_eq_abs _).symm, h₁]
+    exact h₂
+  -- D n x ≥ (3 f x + u) / 4
+  have hDn_x : (3 * f x + u) / 4 ≤ D n x := by
+    have habs : |D n x - f x| ≤ δ := by
+      calc |D n x - f x|
+          ≤ ‖D n - f‖ * ‖x‖ := h_pointwise_bound x
+        _ ≤ (δ / R) * R := by
+            apply mul_le_mul (le_of_lt hn_norm) hx_R (norm_nonneg _) hε_pos.le
+        _ = δ := by field_simp
+    have h_lo : f x - δ ≤ D n x := by linarith [abs_le.mp habs]
+    have h_eq : f x - δ = (3 * f x + u) / 4 := by rw [hδ_def]; ring
+    linarith
+  -- sSup (D n '' S) ≤ (3 u + f x) / 4
+  have hDn_sup : sSup ((D n) '' S) ≤ (3 * u + f x) / 4 := by
+    have hne : ((D n) '' S).Nonempty := hS_nonempty.image _
+    refine csSup_le hne ?_
+    rintro v ⟨y, hy_S, rfl⟩
+    have habs : |D n y - f y| ≤ δ := by
+      calc |D n y - f y|
+          ≤ ‖D n - f‖ * ‖y‖ := h_pointwise_bound y
+        _ ≤ (δ / R) * R := by
+            apply mul_le_mul (le_of_lt hn_norm) (hS_R y hy_S) (norm_nonneg _) hε_pos.le
+        _ = δ := by field_simp
+    have hf_y : f y < u := hf_lt y hy_S
+    have h_hi : D n y ≤ f y + δ := by linarith [abs_le.mp habs]
+    have h_eq : u + δ = (3 * u + f x) / 4 := by rw [hδ_def]; ring
+    linarith
+  -- Contradiction: D n x > sSup (D n '' S) but hineq says ≤
+  have hgap : (3 * u + f x) / 4 < (3 * f x + u) / 4 := by linarith
+  have hcontra : sSup ((D n) '' S) < D n x := by linarith
+  exact absurd (hineq n) (not_le_of_gt hcontra)
+
 theorem support_function_integrated_Hall_equivalence
     (model : RobustTrustModel)
     (q : Measure model.M)
@@ -4650,24 +4734,15 @@ theorem support_function_integrated_Hall_equivalence
       Step 1: ∀ ℓ, (fun m => ℓ (P m)) ≤ᵐ[q] (fun m => sSup (ℓ '' B m))
         via MeasureTheory.ae_le_of_forall_setIntegral_le + hHall.
 
-      Step 2: Take countable dense D : ℕ → Profile model →L[ℝ] ℝ.
+      Step 2: Take countable dense D : ℕ → Profile model →L[ℝ] ℝ
+        (needs SeparableSpace instance — should follow from finite-dim Profile).
         Get ∀ᵐ m ∂q, ∀ n, D n (P m) ≤ sSup (D n '' B m).
 
-      Step 3: For m in the full-measure set, if P m ∉ B m, use Hahn-Banach
-        + approximation by D n to derive contradiction.
+      Step 3: For m in the full-measure set, apply closed_convex_mem_of_dense_support_le
+        (PROVED above in this file) to conclude P m ∈ B m.
 
-      REMAINING GAP: the geometric lemma
-        closed_convex_mem_of_dense_support_le :
-          ∀ {E} [normed ℝ-space], (D : ℕ → E →L[ℝ] ℝ), DenseRange D →
-          ∀ {S x}, IsClosed S → Convex ℝ S → S.Nonempty → IsBounded S →
-          (∀ n, D n x ≤ sSup (D n '' S)) → x ∈ S
-      requires:
-        • geometric_hahn_banach_closed_point (Mathlib ✓)
-        • dual norm bound for f − D n on bounded S ∪ {x}
-        • DenseRange.exists_lt to pick n with ‖f − D n‖ < δ/(2R)
-
-      Deferred — Pro STUCK on this single geometric lemma. See
-      lean/diagnostics/lean_prover_hahn_banach_response_1.md.
+      Remaining gap: just the Step 1 ae_le_of_forall_setIntegral_le splice +
+      Step 2 SeparableSpace instance. Geometric lemma now available.
     -/
     sorry
 
