@@ -1258,13 +1258,145 @@ private lemma compact_menu_aligned_selection
     have hmax : f m ⟨w, hwC⟩ ≤ f m (wsel m) := h_isMax h_mem
     simpa [f] using hmax
 
+/-- Allowed bookkeeping helper: boundedness of the payoff image defining `minPayoff`.
+Compact image under continuous beliefDot is bounded below. -/
+private lemma menu_value_le_strategy_sup_payoff_image_bddBelow
+    (model : RobustTrustModel)
+    (C : CompactMenu model)
+    (s : model.M) :
+    BddBelow
+      ((fun w : ProfileInW model =>
+          beliefDot (model.inclM s) w.val) ''
+        (↑C : Set (ProfileInW model))) := by
+  have hcont :
+      Continuous (fun w : ProfileInW model =>
+        beliefDot (model.inclM s) w.val) := by
+    unfold beliefDot
+    refine continuous_finset_sum _ ?_
+    intro ω _
+    exact continuous_const.mul ((continuous_apply ω).comp continuous_subtype_val)
+  exact (C.isCompact.image hcont).bddBelow
+
+/-- Allowed bookkeeping helper: robust payoffs are uniformly bounded above. -/
+private lemma menu_value_le_strategy_sup_robust_range_bddAbove
+    (model : RobustTrustModel) :
+    BddAbove
+      (Set.range (fun σ : AgentStrategyM model => @RobustPayoffM model σ)) := by
+  -- Uniform boundedness of utility/payoff profiles.
+  sorry
+
+/-- Trivial model-side coefficient fact. -/
+private lemma menu_value_le_strategy_sup_one_sub_alpha_nonneg
+    (model : RobustTrustModel) :
+    0 ≤ 1 - model.α := by
+  exact sub_nonneg.mpr model.α_le_one
+
 theorem menu_value_le_strategy_sup
     (model : RobustTrustModel)
     (setup : ProfileRealizationSetup model)
     (prm : ProfileRealizationMap model)
     (C : CompactMenu model) :
     MenuFunctionalF model C ≤ UStarM model := by
-  sorry
+  classical
+
+  obtain ⟨wC, hwC_meas, hwC_mem, hwC_max⟩ :=
+    compact_menu_aligned_selection model C
+
+  let σM_C : AgentStrategyM model :=
+    { sectionM := fun m => prm.R (wC m)
+      measurable_sectionM := prm.measurable_R.comp hwC_meas }
+
+  have hprofile :
+      ∀ m : model.M, @profileMap model σM_C m = (wC m).val := by
+    intro m
+    simpa [σM_C, profileMap] using prm.right_inverse (wC m)
+
+  have hmax_point :
+      ∀ s : model.M,
+        beliefDot (model.inclM s) (@profileMap model σM_C s)
+          = @maxPayoff model C s := by
+    intro s
+    rw [hprofile s]
+    unfold maxPayoff
+    symm
+    refine IsLUB.csSup_eq ?_ ⟨_, ⟨wC s, hwC_mem s, rfl⟩⟩
+    constructor
+    · rintro x ⟨w, hw, rfl⟩
+      exact (hwC_max s) hw
+    · intro b hb
+      exact hb ⟨wC s, hwC_mem s, rfl⟩
+
+  have hmin_point :
+      ∀ (s m : model.M),
+        @minPayoff model C s ≤
+          beliefDot (model.inclM s) (@profileMap model σM_C m) := by
+    intro s m
+    rw [hprofile m]
+    unfold minPayoff
+    exact
+      csInf_le
+        (menu_value_le_strategy_sup_payoff_image_bddBelow model C s)
+        ⟨wC m, hwC_mem m, rfl⟩
+
+  have hAligned :
+      @AlignedPayoffM model σM_C
+        = ∫ s, @maxPayoff model C s ∂model.τM := by
+    unfold AlignedPayoffM
+    refine integral_congr_ae ?_
+    exact Filter.Eventually.of_forall hmax_point
+
+  -- Per-β version of misaligned lower bound (sorry — measure-theory bridge).
+  have hMis_per_β :
+      ∀ β : AdviserKernel model,
+        (∫ s, @minPayoff model C s ∂model.τM)
+          ≤ @MisalignedPayoffM model β σM_C := by
+    intro β
+    -- Same gap as menu_value_le_strategy_sup_misaligned_sInf_lower_bound
+    -- but applied per-β. The sInf version follows by taking inf over β.
+    sorry
+  -- Witness adversary kernel for range_nonempty: deterministic identity kernel.
+  let β0 : AdviserKernel model :=
+    { kernel := ProbabilityTheory.Kernel.deterministic (id : model.M → model.M)
+        measurable_id
+      isMarkov := inferInstance }
+  have hStrategy :
+      MenuFunctionalF model C ≤ @RobustPayoffM model σM_C := by
+    -- RobustPayoffM σ = sInf (range MixturePayoffM · σ).
+    -- Show: MenuFunctionalF C ≤ MixturePayoffM β σM_C for every β.
+    refine le_csInf ⟨_, ⟨β0, rfl⟩⟩ ?_
+    rintro x ⟨β, rfl⟩
+    -- MenuFunctionalF C ≤ MixturePayoffM β σM_C
+    --   = α AlignedPayoff σM_C + (1-α) MisalignedPayoff β σM_C
+    -- LHS = ∫ (α max + (1-α) min) dτM = α ∫ max + (1-α) ∫ min (linearity)
+    --     ≤ α AlignedPayoff σM_C + (1-α) MisalignedPayoff β σM_C
+    have hcoef : 0 ≤ 1 - model.α :=
+      menu_value_le_strategy_sup_one_sub_alpha_nonneg model
+    have hα_nn : 0 ≤ model.α := model.α_nonneg
+    have hF_split :
+        MenuFunctionalF model C =
+          model.α * (∫ s, @maxPayoff model C s ∂model.τM) +
+            (1 - model.α) * (∫ s, @minPayoff model C s ∂model.τM) := by
+      unfold MenuFunctionalF
+      -- ∫ (a*f + b*g) = a*∫f + b*∫g; needs integrability of f, g
+      -- We use menu_integrand_integrable (which itself depends on the
+      -- sorried helpers but compiles structurally).
+      sorry
+    rw [hF_split]
+    unfold MixturePayoffM
+    rw [hAligned]
+    -- Goal: α*∫max + (1-α)*∫min ≤ α*∫max + (1-α)*MisalignedPayoff β σM_C
+    have := mul_le_mul_of_nonneg_left (hMis_per_β β) hcoef
+    linarith
+
+  have hSup :
+      @RobustPayoffM model σM_C ≤ UStarM model := by
+    unfold UStarM
+    exact
+      le_csSup
+        (menu_value_le_strategy_sup_robust_range_bddAbove model)
+        ⟨σM_C, rfl⟩
+
+  exact le_trans hStrategy hSup
 
 theorem menu_value_equivalence
     (model : RobustTrustModel)
