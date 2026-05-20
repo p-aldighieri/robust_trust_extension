@@ -1679,15 +1679,69 @@ For compact `C`, this should give AEMeasurable/Measurable for
 and
   s ↦ minPayoff C s.
 -/
+private lemma beliefDot_menu_uncurry_continuous
+    (model : RobustTrustModel) :
+    Continuous (fun x : Belief model.Ω × ProfileInW model =>
+      beliefDot x.1 x.2.val) := by
+  classical
+  unfold beliefDot
+  apply continuous_finset_sum
+  intro ω _
+  have hb : Continuous (fun b : Belief model.Ω => b.val ω) := by
+    exact (continuous_apply ω).comp
+      (continuous_subtype_val : Continuous (fun b : Belief model.Ω => b.val))
+  have hw : Continuous (fun w : ProfileInW model => w.val ω) := by
+    exact (continuous_apply ω).comp
+      (continuous_subtype_val : Continuous (fun w : ProfileInW model => w.val))
+  exact (hb.comp continuous_fst).mul (hw.comp continuous_snd)
+
 private lemma menu_integrand_aemeasurable
     (model : RobustTrustModel)
-    (setup : ProfileRealizationSetup model)
+    (_setup : ProfileRealizationSetup model)
     (C : CompactMenu model) :
     AEMeasurable
       (fun s =>
         model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s)
       model.τM := by
-  sorry
+  classical
+
+  have hdot :
+      Continuous (Function.uncurry
+        (fun b : Belief model.Ω =>
+          fun w : ProfileInW model => beliefDot b w.val)) := by
+    simpa [Function.uncurry] using beliefDot_menu_uncurry_continuous model
+
+  have hK : IsCompact (↑C : Set (ProfileInW model)) := C.isCompact
+
+  have hmax_cont :
+      Continuous (fun b : Belief model.Ω =>
+        sSup ((fun w : ProfileInW model => beliefDot b w.val) ''
+          (↑C : Set (ProfileInW model)))) := by
+    simpa using hK.continuous_sSup hdot
+
+  have hmin_cont :
+      Continuous (fun b : Belief model.Ω =>
+        sInf ((fun w : ProfileInW model => beliefDot b w.val) ''
+          (↑C : Set (ProfileInW model)))) := by
+    simpa using hK.continuous_sInf hdot
+
+  have hmax_meas : Measurable (fun s : model.M => maxPayoff model C s) := by
+    simpa [maxPayoff] using
+      hmax_cont.measurable.comp model.inclM_measurable
+
+  have hmin_meas : Measurable (fun s : model.M => minPayoff model C s) := by
+    simpa [minPayoff] using
+      hmin_cont.measurable.comp model.inclM_measurable
+
+  have hαmax :
+      Measurable (fun s : model.M => model.α * maxPayoff model C s) :=
+    measurable_const.mul hmax_meas
+
+  have hαmin :
+      Measurable (fun s : model.M => (1 - model.α) * minPayoff model C s) :=
+    measurable_const.mul hmin_meas
+
+  exact (hαmax.add hαmin).aemeasurable
 
 /-
 Precise remaining API stub 2.
