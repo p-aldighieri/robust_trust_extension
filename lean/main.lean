@@ -2264,7 +2264,68 @@ theorem geps_graph_measurable
     (hε : 0 < ε) :
     MeasurableSet
       {p : model.M × model.M | p.2 ∈ EpsilonContactGeps model cdagger ε p.1} := by
-  sorry
+  classical
+
+  -- Joint measurability of
+  --   (s,m) ↦ beliefDot (inclM s) (wstar m).val.
+  have hpair_meas :
+      Measurable (fun p : model.M × model.M =>
+        ((model.inclM p.1, wlabel.wstar p.2) :
+          Belief model.Ω × ProfileInW model)) := by
+    refine Measurable.prod ?_ ?_
+    · exact model.inclM_measurable.comp measurable_fst
+    · exact wlabel.measurable_wstar.comp measurable_snd
+
+  have hf_meas :
+      Measurable (fun p : model.M × model.M =>
+        beliefDot (model.inclM p.1) (wlabel.wstar p.2).val) := by
+    simpa using
+      (beliefDot_menu_uncurry_continuous model).measurable.comp hpair_meas
+
+  -- Measurability of s ↦ minPayoff model cdagger.Cdagger s,
+  -- by the same compact-menu sInf continuity argument used for
+  -- menu integrands.
+  have hg_meas :
+      Measurable (fun s : model.M =>
+        minPayoff model cdagger.Cdagger s) := by
+    have hdot :
+        Continuous (Function.uncurry
+          (fun b : Belief model.Ω =>
+            fun w : ProfileInW model => beliefDot b w.val)) := by
+      simpa [Function.uncurry] using
+        beliefDot_menu_uncurry_continuous model
+
+    have hK :
+        IsCompact (↑cdagger.Cdagger : Set (ProfileInW model)) :=
+      cdagger.Cdagger.isCompact
+
+    have hmin_cont :
+        Continuous (fun b : Belief model.Ω =>
+          sInf ((fun w : ProfileInW model => beliefDot b w.val) ''
+            (↑cdagger.Cdagger : Set (ProfileInW model)))) := by
+      simpa [Function.uncurry] using hK.continuous_sInf hdot
+
+    simpa [minPayoff] using
+      hmin_cont.measurable.comp model.inclM_measurable
+
+  have hg_comp :
+      Measurable (fun p : model.M × model.M =>
+        minPayoff model cdagger.Cdagger p.1) := by
+    exact hg_meas.comp measurable_fst
+
+  have hright :
+      Measurable (fun p : model.M × model.M =>
+        minPayoff model cdagger.Cdagger p.1 + ε) := by
+    exact hg_comp.add measurable_const
+
+  have hpre :
+      MeasurableSet
+        {p : model.M × model.M |
+          beliefDot (model.inclM p.1) (wlabel.wstar p.2).val ≤
+            minPayoff model cdagger.Cdagger p.1 + ε} := by
+    exact measurableSet_le hf_meas hright
+
+  simpa [EpsilonContactGeps] using hpre
 
 theorem geps_selector_exists
     (model : RobustTrustModel)
