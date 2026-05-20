@@ -71,7 +71,12 @@ across all support patterns, and impervious to null-message dust
 under atomless~$\tau$. A separate classification result shows the
 witness's trust region is not primitive, so the witness exhibits a
 menu-engine artefact rather than a counterexample to the unrestricted
-infinite Theorem~2.
+infinite Theorem~2. A Tier~1a tightness theorem at the fixed-label
+level shows the $\eps$-adversary of Tier~1a is the genuine ceiling
+whenever exact-contact fails on a $\tau$-positive source set, and a
+companion cleanup theorem reduces the exact-contact hypothesis to
+its substantive content (contact nonemptiness) by absorbing the
+selector clause into Jankov--Von~Neumann descriptive-set machinery.
 \end{abstract}
 
 \section{The setting and the question}\label{sec:setting}
@@ -324,6 +329,140 @@ labeling, hence closed image.
 Under exact-contact, Tier 1b is immediate: $\beta^*(\cdot\mid s) := \delta_{m^*(s)}$
 attains $\min_{w\in C^\dagger}s\cdot w$ pointwise $\tau$-a.e., so
 $U(\beta^*,\sigma^*) = U^*$.
+
+\section{Tier 1a tightness and Tier 1b cleanup}\label{sec:tightness}
+
+Two structural facts complete the Tier~1a/1b picture at the fixed
+optimal $\sigma^*$. Theorem~\ref{thm:tightness} shows that the
+$\eps$-adversary of Lemma~\ref{lem:eps-adv} is the genuine ceiling
+whenever the rowwise contact set $G(s)$ is empty on a $\tau$-positive
+source set; Theorem~\ref{thm:cleanup} shows that the ``Borel
+selector'' clause of the exact-contact condition (\S\ref{sec:tier1b})
+is automatic once contact nonemptiness is granted. Together they
+classify exact-contact as a single, irreducible bridge between
+Tier~1a and Tier~1b (Corollary~\ref{cor:bridge}).
+
+Throughout, write $h(s,m) := s\cdot w^*(m)$ and
+$r(s) := \min_{z\in C^\dagger} s\cdot z = \inf_{m\in M} h(s,m)$ (last
+equality by Lemma~\ref{lem:pruning}); $h$ is bounded Borel, $r$ is
+continuous (lower envelope of a compact family of linear forms over
+compact $C^\dagger$).
+
+\begin{theorem}[Fixed-label tightness]\label{thm:tightness}
+Let $E := \{s\in M : G(s) = \emptyset\}$. The set $E$ is coanalytic,
+hence universally measurable; suppose $\tau(E)>0$ in the
+$\tau$-completion. Then:
+\begin{enumerate}[leftmargin=2em,label=(\roman*)]
+\item For every $\eps>0$ there is $\beta_\eps\in B$ with
+$\int\!\int h(s,m)\,\beta_\eps(dm\mid s)\,\tau(ds) \le \int r\,d\tau + \eps$.
+\item No $\beta\in B$ satisfies
+$\int\!\int h(s,m)\,\beta(dm\mid s)\,\tau(ds) = \int r\,d\tau$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+The graph
+$\Gamma := \{(s,m)\in M\times M : h(s,m) = r(s)\}$ is Borel (zero
+set of the bounded Borel function $f(s,m) := h(s,m) - r(s)$ on the
+standard Borel space $M\times M$). Its $s$-projection
+$E^c = \pi_M(\Gamma)$ is analytic; $E$ is coanalytic; both are
+universally measurable.
+
+\emph{(ii).} Suppose some $\beta\in B$ attains the infimum. With
+$\nu(ds,dm) := \tau(ds)\,\beta(dm\mid s)$,
+$0 = \int f\,d\nu$ and $f\ge 0$ Borel, so $f = 0$ $\nu$-a.e., i.e.\
+$\int_M \beta(G(s)^c\mid s)\,\tau(ds) = 0$. The integrand is
+nonnegative Borel, so $\beta(G(s)\mid s) = 1$ for $\tau$-a.e.\ $s$.
+On $E$ this forces $\beta(\emptyset\mid s) = 1$, contradicting
+$\tau(E) > 0$.
+
+\emph{(i).} $G_\eps := \{f\le\eps\}$ is Borel with nonempty
+sections by definition of $\inf$. $M$ compact metric is standard
+Borel, so Jankov--Von~Neumann
+\cite[Thm.~18.13]{AliprantisBorder2006} yields a universally
+measurable selector $m_\eps^u$. Since $\tau$ is a probability on a
+standard Borel space, $m_\eps^u$ admits a Borel modification
+$\tilde m_\eps$ equal $\tau$-a.e.\ (see \cite{Bogachev2007}). Set
+$\beta_\eps(\cdot\mid s) := \delta_{\tilde m_\eps(s)}$.
+Then $\int h(s,\tilde m_\eps(s))\,\tau(ds)\le \int(r(s)+\eps)\,\tau(ds)
+= \int r\,d\tau + \eps$.
+\end{proof}
+
+\begin{remark}[Dust does not repair the obstruction]
+The $q_\beta$-a.e.\ reading of Definition~2 (\S\ref{sec:setting})
+allows $\beta$ to place positive mass on $\tau$-null messages, which
+affects the per-message Bayes-optimality requirement but \emph{not}
+the rowwise equality $h(s,m) = r(s)$ used here. Routing $\beta$-mass
+to a $\tau$-null dust point cannot create a rowwise minimizer for a
+source $s\in E$ if no message in $M$ satisfies the equality. Hence
+Theorem~\ref{thm:tightness} is robust to the $q_\beta$-a.e.\ reading.
+\end{remark}
+
+\begin{theorem}[Selector is automatic]\label{thm:cleanup}
+Under the standing hypotheses, with $M$ standard Borel and $w^*$
+Borel, the following are equivalent:
+\begin{enumerate}[leftmargin=2em,label=(\alph*)]
+\item (exact-contact, \S\ref{sec:tier1b}) $G(s)\ne\emptyset$
+$\tau$-a.e., and there exists a Borel selector $m^*:M\to M$ with
+$m^*(s)\in G(s)$ $\tau$-a.e.;
+\item (cleanup) $G(s)\ne\emptyset$ $\tau$-a.e.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}[Sketch]
+(a)$\Rightarrow$(b) trivial. (b)$\Rightarrow$(a): $\Gamma$ is Borel
+with $\tau$-a.e.\ nonempty sections; Jankov--Von~Neumann gives a
+universally measurable selector on $P := \{s : G(s)\ne\emptyset\}$;
+the standard $\tau$-a.e.\ Borel-modification lemma on a standard
+Borel space supplies a Borel selector. Extend by any Borel default
+on $M\setminus P$ (a $\tau$-null set).
+\end{proof}
+
+Theorem~\ref{thm:cleanup} reduces the three sufficient routes of
+\S\ref{sec:tier1b} (closed image, closed-graph correspondence, u.h.c.\
+Bayes-action) to a single substantive content: each acts through
+contact nonemptiness, while the ``Borel selector'' half is
+descriptive-set machinery rather than a primitive structural
+hypothesis.
+
+\begin{corollary}[The bridge is one condition]\label{cor:bridge}
+For the chosen optimal $\sigma^*$, with $w^*$ Borel and $M$ standard
+Borel,
+\[
+  \exists\,\beta^*\in B:\
+  \int\!\!\int h(s,m)\,\beta^*(dm\mid s)\,\tau(ds) = \int r\,d\tau
+  \;\Longleftrightarrow\;
+  G(s)\ne\emptyset \text{ for $\tau$-a.e.\ }s.
+\]
+\end{corollary}
+
+\begin{proof}[Sketch]
+($\Rightarrow$) Theorem~\ref{thm:tightness}\,(ii) contrapositive.
+($\Leftarrow$) Theorem~\ref{thm:cleanup} provides a Borel
+$m^*(s)\in G(s)$ $\tau$-a.e.; then
+$\beta^*(\cdot\mid s) := \delta_{m^*(s)}$ attains the infimum.
+\end{proof}
+
+\paragraph{What this does \emph{not} establish.}
+Theorem~\ref{thm:tightness} is fixed-label: it concerns a specific
+optimal $\sigma^*$ and its labeling $w^*$. A \emph{primitive}
+obstruction --- showing that for some primitive
+$(\Om,\mu_0,\tau,A,\Th,u,\alpha)$ \emph{every} value-optimal
+$\sigma^*$ has $\tau$-positive contact failure --- is not proved
+here and remains the right open question for certifying Tier~1a's
+ceiling as primitively sharp. Tier~1a's value-side conclusion and
+Tier~2's menu-Hall requirement are unaffected. The
+deletion-compatible Hall duality theorem flagged in the project
+record remains the right open question for Tier~2.
+
+\paragraph{What \emph{not} to substitute for exact-contact.}
+$\tau$-a.e.\ continuity of $w^*$ is the wrong regularity notion: a
+single $\tau$-null discontinuity can be the rowwise minimizer for a
+$\tau$-positive source set, and the adversary may carry positive
+$q_\beta$-mass to it. Strict concavity in the agent's action plus
+a.e.\ unique-argmax hypotheses do not, by themselves, bypass
+exact-contact; only $w^*$ continuous on all of~$M$ (not just
+$\tau$-a.e.) reduces exact-contact to a free consequence.
 
 \section{Tier 2: menu-Hall calibration}\label{sec:tier2}
 
