@@ -162,3 +162,9 @@ All three formalize gates are now green: **Gate 1 PASS, Gate 2 PASS, Gate 3 PASS
 - hMis_per_β inline → https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d74a1-7010-83ea-ab93-e7275c19d290
 - State unchanged: 20 substantive sorries until splices land
 - Commit: 16bf9f1
+
+## Heartbeat 2026-05-20 (b): adversary_infimum_pointwise Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d83b4-1a40-83ea-8c6b-e50e4832dc7d
+- This is the foundational sInf-swap; unlocks 1240, 2796 if PROVED.
+- State: 18 sorries, commit 16549f1.
+- Tried geps_selector_exists but blocked by closed_valued hypothesis (wstar measurable not continuous).

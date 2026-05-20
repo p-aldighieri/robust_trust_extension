@@ -1230,7 +1230,53 @@ theorem adversary_infimum_pointwise
       ∫ s, ∫ m, beliefDot (model.inclM s) (w m).val ∂(β.kernel s) ∂model.τM) =
         ∫ s, sInf (Set.range fun m : model.M =>
           beliefDot (model.inclM s) (w m).val) ∂model.τM := by
-  sorry
+  classical
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  haveI : IsFiniteMeasure model.τM := inferInstance
+  let g : model.M → model.M → ℝ :=
+    fun s m => beliefDot (model.inclM s) (w m).val
+  let I : ℝ :=
+    ∫ s, sInf (Set.range fun m : model.M => g s m) ∂model.τM
+  let A : Set ℝ :=
+    Set.range fun β : AdviserKernel model =>
+      ∫ s, ∫ m, g s m ∂(β.kernel s) ∂model.τM
+  have hg_meas' :
+      Measurable fun p : model.M × model.M => g p.1 p.2 := by
+    simpa [g] using hg_meas
+  have hg_bdd' :
+      ∃ C : ℝ, ∀ s m : model.M, |g s m| ≤ C := by
+    simpa [g] using hw_bdd
+  have hinf_meas' :
+      Measurable fun s : model.M => sInf (Set.range (g s)) := by
+    simpa [g] using hinf_meas
+  obtain ⟨hε, hlower⟩ :=
+    Inventory.kernel_infimum_epsilon_selection
+      (S := model.M) (M := model.M)
+      (τ := model.τM) (g := g)
+      hg_meas' hg_bdd' hinf_meas'
+  have hA_lower : ∀ x ∈ A, I ≤ x := by
+    intro x hx
+    rcases hx with ⟨β, rfl⟩
+    simpa [I] using hlower β.kernel β.isMarkov
+  have hA_bddBelow : BddBelow A := ⟨I, hA_lower⟩
+  have hA_nonempty : A.Nonempty := by
+    obtain ⟨β, hβ_markov, _hβ_le⟩ := hε 1 zero_lt_one
+    refine ⟨∫ s, ∫ m, g s m ∂(β s) ∂model.τM, ?_⟩
+    exact ⟨{ kernel := β, isMarkov := hβ_markov }, rfl⟩
+  have h_lower : I ≤ sInf A := le_csInf hA_nonempty hA_lower
+  have h_upper_eps : ∀ ε : ℝ, 0 < ε → sInf A ≤ I + ε := by
+    intro ε hεpos
+    obtain ⟨β, hβ_markov, hβ_le⟩ := hε ε hεpos
+    have hmem :
+        (∫ s, ∫ m, g s m ∂(β s) ∂model.τM) ∈ A :=
+      ⟨{ kernel := β, isMarkov := hβ_markov }, rfl⟩
+    have hsInf_le :
+        sInf A ≤ ∫ s, ∫ m, g s m ∂(β s) ∂model.τM :=
+      csInf_le hA_bddBelow hmem
+    exact le_trans hsInf_le hβ_le
+  have h_upper : sInf A ≤ I := le_of_forall_pos_le_add h_upper_eps
+  have h_eq : sInf A = I := le_antisymm h_upper h_lower
+  simpa [A, I, g] using h_eq
 
 theorem strategy_value_le_menu_sup
     (model : RobustTrustModel)
