@@ -1,3 +1,58 @@
+AUDIT REQUEST — please be skeptical and adversarial.
+
+We've just finished a Lean 4 / Mathlib 4.29 formalization of an extension of Theorem 2 in Dworczak & Smolin's "Robust Trust" paper. The final main.lean is pasted below in full. There are exactly 3 `sorry`s remaining, all inside a top-level `namespace Inventory` block (lines 1-~80). The rest of the file is the `namespace RobustTrustV8` proof and is closed (no sorry, no axiom).
+
+I need TWO independent assessments:
+
+## Part A — Audit `namespace RobustTrustV8` (everything BELOW the Inventory block)
+
+Look at the V8 namespace and answer:
+
+1. **Are there any `axiom` declarations?** (There should be zero.)
+2. **Is there any hypothesis smuggling?** That is, are any "free hypotheses" being assumed inside proofs that aren't part of the theorem statements being claimed? Look for: `(h_secret : SomeStrongThing)` parameters, `haveI : SomeClass := sorry`, unrealistic typeclass instances being conjured up, terminal `cases` matches that hide cases, structures with vacuous fields.
+3. **Any trickery?** Examples: definitions that secretly already contain the conclusion; `by exact?`-style appeals that hide non-trivial dependencies; theorems whose conclusion is definitionally `True`; `convert` chains that secretly change the goal.
+4. **Tier-2 hypotheses (EXACT-CONTACT + MENU-HALL)**: these are *bound assumptions* to the Tier-2 theorem, not blanket axioms. Confirm this is the case.
+5. **Atomlessness of τ**: this should be scoped to the sharpness package only (used in `wta_no_free_dust`-style statements), NEVER inherited by Tier 1a/1b/2. Confirm.
+
+Output a brief verdict: PASS (clean) or list specific concerns with line numbers.
+
+## Part B — Audit the `namespace Inventory` block (top of file)
+
+The Inventory section has 3 `sorry`s remaining:
+- `Inventory.measurable_argmax_selector`
+- `Inventory.krn_borel_right_inverse`
+- `Inventory.kernel_infimum_epsilon_selection`
+
+For each one, answer:
+
+1. **Is this a legitimate "Mathlib-axiom-style external invocation"?** I.e., a standard measure-theory / descriptive set theory result that any working measure-theory library would supply, and that is well-known to be true?
+2. **Or is this hiding substantive proof content** that should have been proved as part of the v8 proof itself, not outsourced?
+
+For each, classify: LEGIT-EXTERNAL / HIDDEN-WORK / BORDERLINE — with one-paragraph justification.
+
+If LEGIT-EXTERNAL: cite the closest Mathlib lemma name (if known) or the textbook reference (e.g., "Kuratowski-Ryll-Nardzewski 1965", "Bertsekas-Shreve Prop. 7.50").
+
+If HIDDEN-WORK: say what part of the v8 proof is being sneaked in via this stub.
+
+## Output format
+
+```
+PART A — namespace RobustTrustV8 audit
+  verdict: PASS | FAIL
+  findings: ...
+
+PART B — namespace Inventory audit
+  measurable_argmax_selector: LEGIT-EXTERNAL | HIDDEN-WORK | BORDERLINE
+    justification: ...
+  krn_borel_right_inverse: ...
+    justification: ...
+  kernel_infimum_epsilon_selection: ...
+    justification: ...
+```
+
+## The file (`lean/main.lean`)
+
+```lean
 import Mathlib
 
 /-!
@@ -732,15 +787,19 @@ structure Tier1bResult (model : RobustTrustModel)
 def Tier2Result (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
-    (_ec : ExactContact model σstar)
+    (ec : ExactContact model σstar)
     (κ : AdviserKernel model)
-    (_mh : MenuHall model pd σstar _ec κ) : Prop :=
-  IsAdversarialFull model κ σstar ∧
-  MixturePayoffFull model κ σstar = UStarFull model ∧
-  Definition2QAEPredicate model pd κ σstar ∧
-  (0 < model.α →
-    ∀ᵐ m ∂model.τM,
-      IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m))
+    (mh : MenuHall model pd σstar ec κ) : Prop :=
+  (let βstar : AdviserKernel model := κ;
+    βstar = κ ∧
+      mh.q = MixtureMessageLaw model κ ∧
+      mh.q = (MixtureCouplingGammaAlpha model κ).map Prod.snd ∧
+      IsAdversarialFull model κ σstar ∧
+      MixturePayoffFull model κ σstar = UStarFull model ∧
+      Definition2QAEPredicate model pd κ σstar ∧
+      (0 < model.α →
+        ∀ᵐ m ∂model.τM,
+          IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m)))
 
 def WTA_ConeIntersectionStatement : Prop :=
   ∀ (wta : WTATernaryAlgebra) (I : Set WTAΩ) (lam : WTAΩ → ℝ),
@@ -4223,7 +4282,7 @@ theorem tier2_qae_robust_rationalizability_under_menu_Hall
     refine ⟨hadv, ?_⟩
     filter_upwards [h_bayes_q, h_coincide] with m hb hc
     rw [hc]; exact hb
-  exact ⟨hadv, hmix, h_def2, h_pm.2⟩
+  exact ⟨rfl, mh.q_eq_qκ, mh.q_eq_gamma_second, hadv, hmix, h_def2, h_pm.2⟩
 
 theorem wta_payoff_dot_product_identity
     (lam : WTAΩ → ℝ)
@@ -4979,3 +5038,5 @@ theorem robust_trust_infinite_extension_v8_package
 end
 
 end RobustTrustV8
+
+```

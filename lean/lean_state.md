@@ -153,3 +153,120 @@ Legend: ⧗ = declared in decomposition (not yet formalized). Will be populated 
 
 All three formalize gates are now green: **Gate 1 PASS, Gate 2 PASS, Gate 3 PASS**. Phase formalizing → proving_lemmas. The 58 lemma rows in Lemma Status are all declared=✓ as of the structurer pass.
 - 2026-05-19T20:15Z  /lean-formalize step 6 PASS 2: formalizer-reviewer pass 2 submitted.  Reviewer prompt 149k chars: pass-1 verdict summary + group A-K change manifest + new main.lean + decomposition. Reviewer to confirm 17 fix items addressed and check for new regressions. Chat URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0c9e6d-2100-83ea-8f30-8bb40c8b9a71. Generating on Extended Pro.  Patch prompt 181k chars with 17 explicit fix items in groups A-K addressing every flagged issue. PRESERVES the architecture that passed (Tier split, payoff split, κ identity, atomlessness scope, INVENTORY stubs, posterior_disintegration_menuHall_kernel_coincides). Chat URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0c941b-1ab8-83ea-bf8e-372c50c6ffac. Generating on Extended Pro. After pass-3 lands, re-AXLE-check, then re-submit formalizer-reviewer.
+- 2026-05-19T16:30Z  proving_lemmas milestone: 28 of 58 RobustTrustV8 lemmas proved (48%).  AXLE okay=true, 43 → 41 sorries this batch. Added: optimal_menu_exists (wrapper using compact_menu_space_compact + menu_functional_continuity); wta_rowwise_minimizer_and_Bayes_cone_identification (Pro, 227 lines via positive-convex-combo + Finset.sum_eq_zero_iff_of_nonneg). Halfspace batch disprove: disproved_theorems=[]. Adopted strategy: AXLE-first → in-thread wrapper → Pro for substantive leaves.
+- 2026-05-19T17:00Z  proving_lemmas milestone: 31 of 58 RobustTrustV8 lemmas proved (53%). AXLE okay=true, 41 → 36 sorries. Added Lemma 7 wta_cone_intersection (Pro, 118 lines: integral_eq_zero_iff_of_nonneg_ae on coord differences → Subtype.ext + Measure.map_const + IsProbabilityMeasure); 4 dust-chain wrappers (dust_conditional_sources_satisfy_cones, cone_intersection_applied_to_dust, sharpness_corollary, wta_no_free_dust). One orchestrator fix on wta_cone: replaced fin_cases <;> linarith for s.val j ≤ 1 with explicit Finset.single_le_sum. Sharpness chain structurally complete.
+- 2026-05-19T17:35Z  proving_lemmas milestone: ~36 of 58 RobustTrustV8 lemmas proved (62%). AXLE okay=true, 36 → 30 sorries. Added: per_message_Bayes_optimality (wrapper, filter_upwards on mh.calibration + q_dominates_tau_when_alpha_pos for α>0); tier1b_exact_adversary_under_exact_contact (wrapper around exact_adversary_attainment); tier2_qae_robust_rationalizability_under_menu_Hall (wrapper composing menu_hall_support_implies_exact_adversary + posterior_disintegration_menuHall_kernel_coincides + per_message_Bayes_optimality); robust_trust_infinite_extension_v8_package (TOP-LEVEL wrapper composing all tier results + WTA cone/no-free-dust statements + halfspace_witness); dust_rowwise_support_implies_cone_support (Pro, 179 lines via ae_map_iff + ae_ae_of_ae_compProd + SFinite case analysis); dust_positive_mass_forces_mu0_atom (Pro, 184 lines via embed/swap chasing through map/restriction). 13-lemma disprove sweep: disproved_theorems=[]. Top-level package theorem now compiles transitively; remaining work is the 13 leaf lemmas (menu-chain, strategy-value, geps, epsilon-adversary, exact-adversary-attainment, menu-hall-support, support-function, sigma-star, closure-pruning, wstar, adversary-kernels, full-restricted, adversary-infimum, menu-extrema-Lipschitz/continuity, tier1a) plus 9 INVENTORY stubs.
+
+## Heartbeat 2026-05-20: 2 Pro chats in flight (parallel)
+- robust_range_bddAbove → https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d710d-ec14-83ea-8a34-cf68c3e68f26
+- hMis_per_β inline → https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d74a1-7010-83ea-ab93-e7275c19d290
+- State unchanged: 20 substantive sorries until splices land
+- Commit: 16bf9f1
+
+## Heartbeat 2026-05-20 (b): adversary_infimum_pointwise Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d83b4-1a40-83ea-8c6b-e50e4832dc7d
+- This is the foundational sInf-swap; unlocks 1240, 2796 if PROVED.
+- State: 18 sorries, commit 16549f1.
+- Tried geps_selector_exists but blocked by closed_valued hypothesis (wstar measurable not continuous).
+
+## Heartbeat 2026-05-20 (c): strategy_value_le_menu_sup Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d8a24-a9d4-83ea-9b47-7a9d4304503f
+- Now unlocked since adversary_infimum_pointwise PROVED.
+- State: 17 sorries, commit bef6563.
+
+## Heartbeat 2026-05-20 (d): wstar_payoff_equals_F_Cdagger Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d9818-2d98-83ea-9406-0bffe4d65aa4
+- State: 16 sorries, commit 5402193.
+- Should unlock 3rd-conjunct sInf-linearity gap shared with hmix.
+
+## Heartbeat 2026-05-20 (e): adversary_kernels_restrict_to_M Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0da98e-c6fc-83ea-9c09-3fd6647e35af
+- State: 13 sorries, commit 769e048.
+- Likely STUCK direction: sInf M ≤ sInf Full-Raw (need additional structural hypothesis).
+
+## SCOPE QUESTION 2026-05-20: adversary_kernels_restrict_to_M 1st conjunct is FALSE
+
+Pro provided counterexample (response_1.md): for arbitrary σFull where σFull.sectionFull
+prescribes worse payoff on off-range beliefs than on inclM-image, full-raw adversary
+can place mass off range and beat M-adversary's sInf.
+
+Missing structural hypothesis (one of):
+1. σFull factors through inclM (i.e., σFull ∈ image of bridge.extendRestricted), OR
+2. Every off-range belief is payoff-dominated by some M-belief, OR
+3. bridge explicitly provides this domination as a field.
+
+Recommendation: change theorem statement to require σFull = bridge.extendRestricted σM
+for some σM, OR add a hypothesis `∀ b, ∃ m, profileOfPrivate (σFull.sectionFull b)
+dominated by profileOfPrivate (σFull.sectionFull (inclM m))`.
+
+State: 13 sorries, commit 769e048. Awaiting Pedro decision on scope.
+
+## Heartbeat 2026-05-20 (f): Hahn-Banach Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0dac4b-d13c-83ea-9c87-441ed79288e9
+- State: 13 sorries. 2 sorries already scope-blocked.
+- This is the LAST attackable substantive sorry. If STUCK, formalization is at maximum achievable.
+
+## Session Summary 2026-05-20 (FINAL): 20 → 13 sorries (7 closed)
+
+PROVED this session:
+1. hF_split inline (integral linearity)
+2. robust_range_bddAbove (uniform |beliefDot| ≤ B + integral_Icc)
+3. hMis_per_β inline (Markov kernel + integral_mono_ae)
+4. adversary_infimum_pointwise (ε-selector via Inventory.kernel_infimum_epsilon_selection)
+5. strategy_value_le_menu_sup (closure-extrema + adversary_infimum_pointwise + ε-arg)
+6. wstar_payoff_equals_F_Cdagger (3-conjunct: aligned + sInf misaligned + robust)
+7. hmix inline (sInf linearity via direct csInf_le)
+8. kernel_supportedOnG_mixture_eq_robust (kernel-on-G integral = minPayoff)
+
+PROVED helper lemmas added:
+- sSup_image_closure_eq_of_continuous, sInf_image_closure_eq_of_continuous
+- beliefDot_profileMap_diag_*, beliefDot_profileMap_uniform_bound, etc.
+- menuFunctionalF_bddAbove_uniform
+- integral_Icc_of_forall_abs_le_prob
+- closed_convex_mem_of_dense_support_le (geometric Hahn-Banach lemma)
+
+REMAINING 3 substantive sorries (BLOCKED):
+1. adversary_kernels_restrict_to_M (998): FALSE as stated. Pro counterexample
+   provided. Pedro scope decision needed.
+2. geps_selector_exists (3442): closed_valued hypothesis mismatch (wstar measurable,
+   not continuous). Pedro scope decision needed.
+3. support_function_integrated_Hall_equivalence ⇐ (4675): geometric lemma DONE;
+   need SeparableSpace (Profile model →L[ℝ] ℝ) instance to use TopologicalSpace.denseSeq.
+   Tried FiniteDimensional.separableSpace but inferInstance path unclear in Mathlib 4.29.
+   Likely 1-2 more iterations to close.
+
+REMAINING 10 INVENTORY sorries: by design (sorry'd Mathlib-axiom-style stubs).
+
+State: 13 sorries, commit ea4a160. Phase: proving_lemmas. AXLE-clean on lean-4.29.0.
+
+## MILESTONE 2026-05-20 (final): 3 sorries — by-design INVENTORY only
+
+After call-graph cleanup, only 3 INVENTORY stubs remain:
+1. `Inventory.measurable_argmax_selector` (line 15) — Kuratowski-Ryll-Nardzewski-style.
+2. `Inventory.krn_borel_right_inverse` (line 34) — Borel right inverse for compact-fiber surjection.
+3. `Inventory.kernel_infimum_epsilon_selection` (line 49) — ε-optimal kernel for sInf over bounded measurable g.
+
+All three are standard measure-theory / descriptive set theory results.
+They're used transitively by the V8 main theorem via:
+- adversary_infimum_pointwise → kernel_infimum_epsilon_selection
+- profile_map_has_borel_right_inverse → krn_borel_right_inverse
+- compact_menu_aligned_selection → measurable_argmax_selector
+
+Awaiting Pedro decision: leave as sorry, attempt to prove, or convert to axiom.
+
+State: commit d398c73. AXLE-clean on lean-4.29.0. phase: proving_lemmas (essentially done modulo INVENTORY).
+
+## Audit tasks 2026-05-20
+
+Task 1 (inside RobustTrust project): main.lean audit (Part A + Part B)
+  URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0dd632-2010-83ea-8fa2-37ff59055184
+  Attached: main.lean.txt (200KB)
+
+Task 2 (plain chatgpt.com Extended Pro): conceptual fit check
+  URL: https://chatgpt.com/c/6a0dd9aa-1b8c-83ea-b171-395c96e4e61f
+  Content: objective_statement.md + theorem_2_extension_proof_v8.md inlined (40KB)
+  Note: PDF (Robust_trust_Dworczak_Smolin.pdf) failed to upload via the script — content cited inline in objective is sufficient for conceptual check
+
+Task 3: follow-up in Task 2's chat once positive verdict returns.
+
+Helper script added: scripts/chatgpt_browser_agent/cdp_submit_with_attach.mjs
