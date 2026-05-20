@@ -205,3 +205,36 @@ State: 13 sorries, commit 769e048. Awaiting Pedro decision on scope.
 - URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0dac4b-d13c-83ea-9c87-441ed79288e9
 - State: 13 sorries. 2 sorries already scope-blocked.
 - This is the LAST attackable substantive sorry. If STUCK, formalization is at maximum achievable.
+
+## Session Summary 2026-05-20 (FINAL): 20 → 13 sorries (7 closed)
+
+PROVED this session:
+1. hF_split inline (integral linearity)
+2. robust_range_bddAbove (uniform |beliefDot| ≤ B + integral_Icc)
+3. hMis_per_β inline (Markov kernel + integral_mono_ae)
+4. adversary_infimum_pointwise (ε-selector via Inventory.kernel_infimum_epsilon_selection)
+5. strategy_value_le_menu_sup (closure-extrema + adversary_infimum_pointwise + ε-arg)
+6. wstar_payoff_equals_F_Cdagger (3-conjunct: aligned + sInf misaligned + robust)
+7. hmix inline (sInf linearity via direct csInf_le)
+8. kernel_supportedOnG_mixture_eq_robust (kernel-on-G integral = minPayoff)
+
+PROVED helper lemmas added:
+- sSup_image_closure_eq_of_continuous, sInf_image_closure_eq_of_continuous
+- beliefDot_profileMap_diag_*, beliefDot_profileMap_uniform_bound, etc.
+- menuFunctionalF_bddAbove_uniform
+- integral_Icc_of_forall_abs_le_prob
+- closed_convex_mem_of_dense_support_le (geometric Hahn-Banach lemma)
+
+REMAINING 3 substantive sorries (BLOCKED):
+1. adversary_kernels_restrict_to_M (998): FALSE as stated. Pro counterexample
+   provided. Pedro scope decision needed.
+2. geps_selector_exists (3442): closed_valued hypothesis mismatch (wstar measurable,
+   not continuous). Pedro scope decision needed.
+3. support_function_integrated_Hall_equivalence ⇐ (4675): geometric lemma DONE;
+   need SeparableSpace (Profile model →L[ℝ] ℝ) instance to use TopologicalSpace.denseSeq.
+   Tried FiniteDimensional.separableSpace but inferInstance path unclear in Mathlib 4.29.
+   Likely 1-2 more iterations to close.
+
+REMAINING 10 INVENTORY sorries: by design (sorry'd Mathlib-axiom-style stubs).
+
+State: 13 sorries, commit ea4a160. Phase: proving_lemmas. AXLE-clean on lean-4.29.0.
