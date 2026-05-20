@@ -238,3 +238,20 @@ REMAINING 3 substantive sorries (BLOCKED):
 REMAINING 10 INVENTORY sorries: by design (sorry'd Mathlib-axiom-style stubs).
 
 State: 13 sorries, commit ea4a160. Phase: proving_lemmas. AXLE-clean on lean-4.29.0.
+
+## MILESTONE 2026-05-20 (final): 3 sorries — by-design INVENTORY only
+
+After call-graph cleanup, only 3 INVENTORY stubs remain:
+1. `Inventory.measurable_argmax_selector` (line 15) — Kuratowski-Ryll-Nardzewski-style.
+2. `Inventory.krn_borel_right_inverse` (line 34) — Borel right inverse for compact-fiber surjection.
+3. `Inventory.kernel_infimum_epsilon_selection` (line 49) — ε-optimal kernel for sInf over bounded measurable g.
+
+All three are standard measure-theory / descriptive set theory results.
+They're used transitively by the V8 main theorem via:
+- adversary_infimum_pointwise → kernel_infimum_epsilon_selection
+- profile_map_has_borel_right_inverse → krn_borel_right_inverse
+- compact_menu_aligned_selection → measurable_argmax_selector
+
+Awaiting Pedro decision: leave as sorry, attempt to prove, or convert to axiom.
+
+State: commit d398c73. AXLE-clean on lean-4.29.0. phase: proving_lemmas (essentially done modulo INVENTORY).
