@@ -1174,6 +1174,90 @@ theorem strategy_value_le_menu_sup
     RobustPayoffM model σM ≤ sSup (Set.range (MenuFunctionalF model)) := by
   sorry
 
+/-- Helper: measurable aligned-best selector over an arbitrary compact menu.
+Generalization of `aligned_best_labeling_selection` from `OptimalMenuCstar`
+to arbitrary `CompactMenu`. Proof is copy of `aligned_best_labeling_selection`
+with `opt.Cstar` replaced by `C`. -/
+private lemma compact_menu_aligned_selection
+    (model : RobustTrustModel)
+    (C : CompactMenu model) :
+    ∃ wC : model.M → ProfileInW model,
+      Measurable wC ∧
+      (∀ m, wC m ∈ (↑C : Set (ProfileInW model))) ∧
+      (∀ m,
+        IsMaxOn (fun w : ProfileInW model => beliefDot (model.inclM m) w.val)
+          (↑C : Set (ProfileInW model)) (wC m)) := by
+  classical
+  set Cset : Set (ProfileInW model) := (↑C : Set (ProfileInW model)) with hCset_def
+  haveI hCne : Nonempty Cset := by
+    rcases C.nonempty with ⟨w, hw⟩
+    exact ⟨⟨w, by simpa [hCset_def] using hw⟩⟩
+  have hC_cpt : IsCompact Cset := by
+    simpa [hCset_def] using C.isCompact
+  haveI hCcs : CompactSpace Cset :=
+    isCompact_iff_compactSpace.mp hC_cpt
+  let Γ : model.M → Set Cset := fun _ => Set.univ
+  let f : model.M → Cset → ℝ := fun m w =>
+    beliefDot (model.inclM m) w.val.val
+  have hΓ_meas : MeasurableSet {p : model.M × Cset | p.2 ∈ Γ p.1} := by
+    simpa [Γ] using
+      (MeasurableSet.univ : MeasurableSet (Set.univ : Set (model.M × Cset)))
+  have hΓ_ne : ∀ x : model.M, (Γ x).Nonempty := by
+    intro x
+    simpa [Γ] using (Set.univ_nonempty : (Set.univ : Set Cset).Nonempty)
+  have hΓ_compact : ∀ x : model.M, IsCompact (Γ x) := by
+    intro x
+    simpa [Γ] using (isCompact_univ : IsCompact (Set.univ : Set Cset))
+  have hf_meas : Measurable fun p : model.M × Cset => f p.1 p.2 := by
+    dsimp [f, beliefDot]
+    refine Finset.measurable_sum _ ?_
+    intro ω _
+    have hμ : Measurable (fun p : model.M × Cset => (model.inclM p.1).val) := by
+      exact measurable_subtype_coe.comp
+        (model.inclM_measurable.comp measurable_fst)
+    have hw : Measurable (fun p : model.M × Cset => p.2.val.val) := by
+      exact measurable_subtype_coe.comp
+        (measurable_subtype_coe.comp measurable_snd)
+    have h1 : Measurable
+        (fun p : model.M × Cset => (model.inclM p.1).val ω) := by
+      exact
+        ((measurable_pi_apply ω :
+            Measurable (fun g : model.Ω → ℝ => g ω))).comp hμ
+    have h2 : Measurable
+        (fun p : model.M × Cset => p.2.val.val ω) := by
+      exact
+        ((measurable_pi_apply ω :
+            Measurable (fun g : model.Ω → ℝ => g ω))).comp hw
+    exact h1.mul h2
+  have hf_cont :
+      ∀ x : model.M, ContinuousOn (fun y : Cset => f x y) (Γ x) := by
+    intro x
+    have hcont : Continuous (fun y : Cset => f x y) := by
+      dsimp [f, beliefDot]
+      refine continuous_finset_sum _ ?_
+      intro ω _
+      have hval : Continuous (fun y : Cset => y.val.val) := by
+        exact continuous_subtype_val.comp continuous_subtype_val
+      exact continuous_const.mul ((continuous_apply ω).comp hval)
+    exact hcont.continuousOn
+  obtain ⟨wsel, hwsel_meas, hwsel⟩ :=
+    Inventory.measurable_argmax_selector
+      (Γ := Γ) (f := f)
+      hΓ_meas hΓ_ne hΓ_compact hf_meas hf_cont
+  refine ⟨fun m => (wsel m).val,
+    measurable_subtype_coe.comp hwsel_meas, ?_, ?_⟩
+  · intro m
+    simpa [hCset_def] using (wsel m).property
+  · intro m
+    rw [isMaxOn_iff]
+    intro w hw
+    have hwC : w ∈ Cset := by
+      simpa [hCset_def] using hw
+    have h_isMax : IsMaxOn (fun y : Cset => f m y) (Γ m) (wsel m) := (hwsel m).2
+    have h_mem : (⟨w, hwC⟩ : Cset) ∈ Γ m := by simp [Γ]
+    have hmax : f m ⟨w, hwC⟩ ≤ f m (wsel m) := h_isMax h_mem
+    simpa [f] using hmax
+
 theorem menu_value_le_strategy_sup
     (model : RobustTrustModel)
     (setup : ProfileRealizationSetup model)
