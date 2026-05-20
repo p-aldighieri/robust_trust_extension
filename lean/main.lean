@@ -1854,7 +1854,34 @@ theorem tier1a_value_optimality_and_epsilon_adversary
     (bridge : MessageRestrictionBridge model msupp)
     (prs : ProfileRealizationSetup model) :
     ∃ σstar : AgentStrategyFull model, Tier1aResult model σstar := by
-  sorry
+  obtain ⟨R, hR_meas, hR_right⟩ := profile_map_has_borel_right_inverse model prs
+  let prm : ProfileRealizationMap model := ⟨R, hR_meas, hR_right⟩
+  obtain ⟨Cstar, hCstar_max⟩ := optimal_menu_exists model prs
+  have hbdd : BddAbove (Set.range (MenuFunctionalF model)) :=
+    ⟨MenuFunctionalF model Cstar, by rintro x ⟨C, rfl⟩; exact hCstar_max C⟩
+  have hF_eq_sSup :
+      MenuFunctionalF model Cstar = sSup (Set.range (MenuFunctionalF model)) := by
+    apply le_antisymm
+    · exact le_csSup hbdd ⟨Cstar, rfl⟩
+    · refine csSup_le ⟨_, ⟨Cstar, rfl⟩⟩ ?_
+      rintro x ⟨C, rfl⟩
+      exact hCstar_max C
+  have hF_eq : MenuFunctionalF model Cstar = UStarM model := by
+    rw [menu_value_equivalence model prs prm]; exact hF_eq_sSup
+  let opt : OptimalMenuCstar model := ⟨Cstar, hCstar_max, hF_eq⟩
+  obtain ⟨wlabel, _, _⟩ := aligned_best_labeling_selection model opt
+  obtain ⟨cdagger, _hsubset, hF_cdagger_eq, hF_Cstar_eq_U⟩ :=
+    closure_pruning_value_preservation model opt wlabel
+  obtain ⟨σM, hprofile⟩ :=
+    wstar_profile_map_implemented model prs prm opt wlabel cdagger
+  obtain ⟨_, _, hRobust⟩ :=
+    wstar_payoff_equals_F_Cdagger model opt wlabel cdagger σM hprofile
+  have hRobustM_eq_U : RobustPayoffM model σM = UStarM model := by
+    rw [hRobust, hF_cdagger_eq, hF_Cstar_eq_U]
+  obtain ⟨σstar, hσstar_full, _⟩ :=
+    sigma_star_robust_optimal model msupp bridge σM hRobustM_eq_U
+  exact ⟨σstar, hσstar_full,
+    epsilon_adversary_realization model σstar hσstar_full⟩
 
 theorem tier1b_exact_adversary_under_exact_contact
     (model : RobustTrustModel)
