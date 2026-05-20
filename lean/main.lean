@@ -2745,6 +2745,18 @@ theorem menu_hall_posterior_calibration_unpack
     ∀ᵐ m ∂mh.q, pd.Pγα κ m ∈ BayesOptimalityBeliefCorrespondenceBm model σstar m := by
   exact?
 
+/-- Bridge: κ supported on rowwise contact G ⟹ MixturePayoffFull κ σstar = RobustPayoff.
+The substantive measure-theory step: kernel integral equals minPayoff on supported set
+(uses Markov kernel + κ.kernel s (G s) = 1 a.e.), and every β bounded below by minPayoff. -/
+private lemma kernel_supportedOnG_mixture_eq_robust
+    (model : RobustTrustModel)
+    (σstar : AgentStrategyFull model)
+    (ec : ExactContact model σstar)
+    (κ : AdviserKernel model)
+    (hsupp : KernelSupportedOnG model ec.cdagger κ) :
+    MixturePayoffFull model κ σstar = RobustPayoffFull model σstar := by
+  sorry
+
 theorem menu_hall_support_implies_exact_adversary
     (model : RobustTrustModel)
     (σstar : AgentStrategyFull model)
@@ -2754,7 +2766,11 @@ theorem menu_hall_support_implies_exact_adversary
     (hsupp : KernelSupportedOnG model ec.cdagger κ) :
     IsAdversarialFull model κ σstar ∧
       MixturePayoffFull model κ σstar = UStarFull model := by
-  sorry
+  have hAdvEq : MixturePayoffFull model κ σstar = RobustPayoffFull model σstar :=
+    kernel_supportedOnG_mixture_eq_robust model σstar ec κ hsupp
+  refine ⟨?_, ?_⟩
+  · simpa [IsAdversarialFull] using hAdvEq
+  · rw [hAdvEq, hσstar]
 
 theorem per_message_Bayes_optimality
     (model : RobustTrustModel)
