@@ -1697,7 +1697,6 @@ private lemma beliefDot_menu_uncurry_continuous
 
 private lemma menu_integrand_aemeasurable
     (model : RobustTrustModel)
-    (_setup : ProfileRealizationSetup model)
     (C : CompactMenu model) :
     AEMeasurable
       (fun s =>
@@ -1765,7 +1764,6 @@ Then:
 -/
 private lemma menu_integrand_mem_Icc_ae
     (model : RobustTrustModel)
-    (setup : ProfileRealizationSetup model)
     (C : CompactMenu model) :
     ∃ B : ℝ,
       ∀ᵐ s ∂model.τM,
@@ -1873,17 +1871,16 @@ private lemma menu_integrand_mem_Icc_ae
 
 private lemma menu_integrand_integrable
     (model : RobustTrustModel)
-    (setup : ProfileRealizationSetup model)
     (C : CompactMenu model) :
     Integrable
       (fun s =>
         model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s)
       model.τM := by
   haveI : IsProbabilityMeasure model.τM := model.τM_prob
-  rcases menu_integrand_mem_Icc_ae model setup C with ⟨B, hB⟩
+  rcases menu_integrand_mem_Icc_ae model C with ⟨B, hB⟩
   exact
     Integrable.of_mem_Icc (-B) B
-      (menu_integrand_aemeasurable model setup C)
+      (menu_integrand_aemeasurable model C)
       hB
 
 theorem menu_functional_continuity
@@ -1904,9 +1901,9 @@ theorem menu_functional_continuity
       model.α * maxPayoff model D s + (1 - model.α) * minPayoff model D s
 
   have hC : Integrable fC model.τM := by
-    simpa [fC] using menu_integrand_integrable model setup C
+    simpa [fC] using menu_integrand_integrable model C
   have hD : Integrable fD model.τM := by
-    simpa [fD] using menu_integrand_integrable model setup D
+    simpa [fD] using menu_integrand_integrable model D
 
   have hBound :
       ∀ᵐ s ∂model.τM, ‖fC s - fD s‖ ≤ L * dist C D := by
@@ -2074,7 +2071,97 @@ private lemma MenuFunctionalF_le_of_contains_aligned_argmax
     (hrange_sub : Set.range wlabel.wstar ⊆
         (↑C : Set (ProfileInW model))) :
     MenuFunctionalF model opt.Cstar ≤ MenuFunctionalF model C := by
-  sorry
+  classical
+
+  have h1α : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+
+  let lin (s : model.M) : ProfileInW model → ℝ :=
+    fun w => beliefDot (model.inclM s) w.val
+
+  have hlin_cont : ∀ s : model.M, Continuous (lin s) := by
+    intro s
+    dsimp [lin]
+    have hpair : Continuous (fun w : ProfileInW model =>
+        ((model.inclM s, w) : Belief model.Ω × ProfileInW model)) :=
+      continuous_const.prodMk continuous_id
+    simpa using
+      (beliefDot_menu_uncurry_continuous model).comp hpair
+
+  have hbddAbove :
+      ∀ (D : CompactMenu model) (s : model.M),
+        BddAbove ((lin s) '' (↑D : Set (ProfileInW model))) := by
+    intro D s
+    exact (D.isCompact.image (hlin_cont s)).bddAbove
+
+  have hbddBelow :
+      ∀ (D : CompactMenu model) (s : model.M),
+        BddBelow ((lin s) '' (↑D : Set (ProfileInW model))) := by
+    intro D s
+    exact (D.isCompact.image (hlin_cont s)).bddBelow
+
+  have hpointwise :
+      ∀ s : model.M,
+        model.α * maxPayoff model opt.Cstar s
+            + (1 - model.α) * minPayoff model opt.Cstar s
+          ≤
+        model.α * maxPayoff model C s
+            + (1 - model.α) * minPayoff model C s := by
+    intro s
+
+    have hmax_eq : maxPayoff model opt.Cstar s = maxPayoff model C s := by
+      apply le_antisymm
+      · -- `C` contains the aligned argmax, so the larger menu has no larger max.
+        unfold maxPayoff
+        refine csSup_le ?_ ?_
+        · rcases opt.Cstar.nonempty with ⟨w, hw⟩
+          exact ⟨_, ⟨w, hw, rfl⟩⟩
+        · rintro x ⟨w, hw, rfl⟩
+          have h_wstar_max :
+              beliefDot (model.inclM s) w.val
+                ≤ beliefDot (model.inclM s) (wlabel.wstar s).val := by
+            exact (wlabel.is_argmax s) hw
+          have h_wstar_in_C :
+              wlabel.wstar s ∈ (↑C : Set (ProfileInW model)) := by
+            exact hrange_sub (Set.mem_range_self s)
+          have h_wstar_le :
+              beliefDot (model.inclM s) (wlabel.wstar s).val
+                ≤ maxPayoff model C s := by
+            unfold maxPayoff
+            exact le_csSup
+              (by simpa [lin] using hbddAbove C s)
+              ⟨wlabel.wstar s, h_wstar_in_C, rfl⟩
+          exact le_trans h_wstar_max h_wstar_le
+      · -- `C ⊆ Cstar`, so the smaller menu's max is bounded by the larger menu's max.
+        unfold maxPayoff
+        refine csSup_le ?_ ?_
+        · rcases C.nonempty with ⟨w, hw⟩
+          exact ⟨_, ⟨w, hw, rfl⟩⟩
+        · rintro x ⟨w, hw, rfl⟩
+          exact le_csSup
+            (by simpa [lin] using hbddAbove opt.Cstar s)
+            ⟨w, hC_sub hw, rfl⟩
+
+    have hmin_le : minPayoff model opt.Cstar s ≤ minPayoff model C s := by
+      -- Infimum over the larger set is no larger than infimum over the subset.
+      unfold minPayoff
+      refine le_csInf ?_ ?_
+      · rcases C.nonempty with ⟨w, hw⟩
+        exact ⟨_, ⟨w, hw, rfl⟩⟩
+      · rintro x ⟨w, hw, rfl⟩
+        exact csInf_le
+          (by simpa [lin] using hbddBelow opt.Cstar s)
+          ⟨w, hC_sub hw, rfl⟩
+
+    rw [hmax_eq]
+    have := mul_le_mul_of_nonneg_left hmin_le h1α
+    linarith
+
+  unfold MenuFunctionalF
+  refine integral_mono_ae
+    (menu_integrand_integrable model opt.Cstar)
+    (menu_integrand_integrable model C) ?_
+  filter_upwards with s
+  exact hpointwise s
 
 theorem closure_pruning_value_preservation
     (model : RobustTrustModel)
@@ -2737,12 +2824,80 @@ theorem support_function_integrated_Hall_equivalence
     (hB_nonempty : ∀ m, (B m).Nonempty)
     (hB_bounded : ∀ m, Bornology.IsBounded (B m))
     (hB_meas_graph : MeasurableSet {p : model.M × Profile model | p.2 ∈ B p.1})
-    (hsupp_meas : ∀ ℓ : Profile model →L[ℝ] ℝ, Measurable fun m => sSup (ℓ '' B m))
-    (hsupp_int : ∀ ℓ : Profile model →L[ℝ] ℝ, Integrable (fun m => sSup (ℓ '' B m)) q)
-    (hP_int : ∀ ℓ : Profile model →L[ℝ] ℝ, Integrable (fun m => ℓ (P m)) q) :
+    (hsupp_meas : ∀ ℓ : Profile model →L[ℝ] ℝ,
+        Measurable fun m => sSup (ℓ '' B m))
+    (hsupp_int : ∀ ℓ : Profile model →L[ℝ] ℝ,
+        Integrable (fun m => sSup (ℓ '' B m)) q)
+    (hP_int : ∀ ℓ : Profile model →L[ℝ] ℝ,
+        Integrable (fun m => ℓ (P m)) q) :
     PosteriorCalibrationProfiles model q B P ↔
       SupportFunctionHallInequalities model q B P := by
-  sorry
+  constructor
+  · intro hCalib
+    intro E hE_meas hE_pos ℓ
+
+    -- Global integrability implies integrability over every restricted set.
+    have hP_int_E :
+        IntegrableOn (fun m => ℓ (P m)) E q :=
+      (hP_int ℓ).integrableOn
+    have hsupp_int_E :
+        IntegrableOn (fun m => sSup (ℓ '' B m)) E q :=
+      (hsupp_int ℓ).integrableOn
+
+    -- Pointwise support-function domination on the calibration event.
+    have hpoint :
+        (fun m => ℓ (P m)) ≤ᶠ[ae q]
+          fun m => sSup (ℓ '' B m) := by
+      filter_upwards [hCalib] with m hm
+
+      -- Since `P m ∈ B m`, its ℓ-value is an element of the support set.
+      have hmem : ℓ (P m) ∈ ℓ '' B m := by
+        exact ⟨P m, hm, rfl⟩
+
+      -- A continuous linear map sends bounded sets to bounded sets; in ℝ,
+      -- bornology-bounded sets are order-bounded above.
+      have hbdd_image : Bornology.IsBounded (ℓ '' B m) := by
+        exact Bornology.IsBounded.image ℓ (hB_bounded m)
+      have hbdd_above : BddAbove (ℓ '' B m) := by
+        exact hbdd_image.bddAbove
+
+      -- Any member of a bounded-above real set is at most its `sSup`.
+      exact le_csSup hbdd_above hmem
+
+    -- Integrate the a.e. pointwise inequality over `E`.
+    exact MeasureTheory.setIntegral_mono_ae hP_int_E hsupp_int_E hpoint
+
+  · intro hHall
+    classical
+
+    /-
+      Remaining gap: Hall inequalities → posterior calibration.
+
+      Mathematical route:
+      1. For each fixed continuous linear functional `ℓ`, use the Hall
+         inequalities on measurable positive-measure sets to show
+           ℓ (P m) ≤ sSup (ℓ '' B m)
+         for q-a.e. `m`.
+
+      2. Upgrade from “for each fixed ℓ, a.e.” to “for q-a.e. m, for all ℓ”.
+         Since `Profile model` is finite-dimensional, choose a countable dense
+         subset of the dual unit sphere, intersect the corresponding full-measure
+         sets, and use continuity of
+           ℓ ↦ ℓ (P m)
+         and
+           ℓ ↦ sSup (ℓ '' B m)
+         on bounded closed convex fibers.
+
+      3. For a remaining bad point with `P m ∉ B m`, use finite-dimensional
+         Hahn-Banach separation for the closed convex set `B m` to find `ℓ`
+         with
+           ℓ (P m) > sSup (ℓ '' B m),
+         then approximate `ℓ` by the countable dense family to contradict
+         the pointwise inequalities.
+
+      This is the substantive measurable Hahn-Banach / separability step.
+    -/
+    sorry
 
 theorem tier1a_value_optimality_and_epsilon_adversary
     (model : RobustTrustModel)
