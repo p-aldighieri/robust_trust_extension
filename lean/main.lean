@@ -1002,7 +1002,67 @@ theorem full_restricted_Ustar_equivalence
       ∀ (σFull : AgentStrategyFull model) (σM : AgentStrategyM model),
         (∀ m : model.M, σFull.sectionFull (model.inclM m) = σM.sectionM m) →
           RobustPayoffFull model σFull = RobustPayoffM model σM := by
-  sorry
+  classical
+
+  -- The reusable payoff equivalence: once the full and restricted sections
+  -- agree on `inclM`, the full payoff definitions collapse to the M-payoff
+  -- definitions through `restrictFullToM`.
+  have payoff_equiv :
+      ∀ (σFull : AgentStrategyFull model) (σM : AgentStrategyM model),
+        (∀ m : model.M, σFull.sectionFull (model.inclM m) = σM.sectionM m) →
+          RobustPayoffFull model σFull = RobustPayoffM model σM := by
+    intro σFull σM hsec
+
+    have hrestrict_eq : restrictFullToM model σFull = σM := by
+      obtain ⟨secM, hmeasM⟩ := σM
+      have hsect_eq : (restrictFullToM model σFull).sectionM = secM := by
+        funext m
+        simpa [restrictFullToM] using hsec m
+      cases hsect_eq
+      rfl
+
+    have hmix :
+        (fun β : AdviserKernel model => MixturePayoffFull model β σFull) =
+          (fun β : AdviserKernel model => MixturePayoffM model β σM) := by
+      funext β
+      simp [MixturePayoffFull, MixturePayoffM,
+        AlignedPayoffFull, MisalignedPayoffFull, hrestrict_eq]
+
+    simpa [RobustPayoffFull, RobustPayoffM] using
+      congrArg (fun f : AdviserKernel model → ℝ => sInf (Set.range f)) hmix
+
+  constructor
+  · -- Prove equality of values by proving equality of the two payoff ranges.
+    -- This avoids any `csSup` boundedness bookkeeping.
+    have hrange :
+        (Set.range (fun σFull : AgentStrategyFull model =>
+          RobustPayoffFull model σFull)) =
+        (Set.range (fun σM : AgentStrategyM model =>
+          RobustPayoffM model σM)) := by
+      ext x
+      constructor
+      · rintro ⟨σFull, rfl⟩
+        let σM0 : AgentStrategyM model := bridge.restrictFull σFull
+        refine ⟨σM0, ?_⟩
+        have hsec : ∀ m : model.M,
+            σFull.sectionFull (model.inclM m) = σM0.sectionM m := by
+          intro m
+          simpa [σM0] using (bridge.restrictFull_eq σFull m).symm
+        exact (payoff_equiv σFull σM0 hsec).symm
+
+      · rintro ⟨σM, rfl⟩
+        let σFull0 : AgentStrategyFull model := bridge.extendRestricted σM
+        refine ⟨σFull0, ?_⟩
+        have hsec : ∀ m : model.M,
+            σFull0.sectionFull (model.inclM m) = σM.sectionM m := by
+          intro m
+          simpa [σFull0] using bridge.extendRestricted_eq σM m
+        exact payoff_equiv σFull0 σM hsec
+
+    simpa [UStarFull, UStarM] using
+      congrArg (fun S : Set ℝ => sSup S) hrange
+
+  · exact payoff_equiv
 
 theorem q_dominates_tau_when_alpha_pos
     (model : RobustTrustModel)
