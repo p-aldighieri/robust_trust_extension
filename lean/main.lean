@@ -992,7 +992,12 @@ theorem adversary_kernels_restrict_to_M
         MixturePayoffFull model βM σFull) ∧
     RobustPayoffFull model σFull =
       RobustPayoffM model (restrictFullToM model σFull) := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · -- 1st conjunct: full-message adversary kernel sInf = restricted-kernel sInf.
+    -- Substantive restriction theory; same gap as Pro chats hit on this cluster.
+    sorry
+  · -- 2nd conjunct: definitional — both sides unfold to the same sInf.
+    rfl
 
 theorem full_restricted_Ustar_equivalence
     (model : RobustTrustModel)
