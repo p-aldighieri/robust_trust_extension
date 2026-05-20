@@ -1712,7 +1712,105 @@ private lemma menu_integrand_mem_Icc_ae
       ∀ᵐ s ∂model.τM,
         model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s ∈
           Set.Icc (-B) B := by
-  sorry
+  classical
+  -- Per-coordinate bound via compactness.
+  have hper :
+      ∀ ω : model.Ω, ∃ Mω : ℝ,
+        ∀ w ∈ (↑C : Set (ProfileInW model)), |w.val ω| ≤ Mω := by
+    intro ω
+    have hcont : Continuous (fun w : ProfileInW model => |w.val ω|) :=
+      continuous_abs.comp ((continuous_apply ω).comp continuous_subtype_val)
+    obtain ⟨wmax, _hmem, hwmax⟩ :=
+      C.isCompact.exists_isMaxOn C.nonempty hcont.continuousOn
+    exact ⟨|wmax.val ω|, fun w hw => hwmax hw⟩
+  choose Mω hMω using hper
+  haveI := model.Ω_nonempty
+  let M : ℝ := (Finset.univ : Finset model.Ω).sup' Finset.univ_nonempty Mω
+  have hM_nn : 0 ≤ M := by
+    obtain ⟨ω0⟩ := model.Ω_nonempty
+    rcases C.nonempty with ⟨w0, hw0⟩
+    have h1 : 0 ≤ Mω ω0 := (abs_nonneg _).trans (hMω ω0 w0 hw0)
+    exact h1.trans (Finset.le_sup' (s := Finset.univ) Mω (Finset.mem_univ ω0))
+  -- Bound |beliefDot s w| ≤ M for all s and w ∈ ↑C.
+  have hbnd :
+      ∀ s : model.M, ∀ w ∈ (↑C : Set (ProfileInW model)),
+        |beliefDot (model.inclM s) w.val| ≤ M := by
+    intro s w hw
+    have h_w_bd : ∀ ω : model.Ω, |w.val ω| ≤ M := by
+      intro ω
+      exact (hMω ω w hw).trans
+        (Finset.le_sup' (s := Finset.univ) Mω (Finset.mem_univ ω))
+    have h_nonneg : ∀ ω : model.Ω, 0 ≤ (model.inclM s).val ω :=
+      (model.inclM s).property.1
+    have h_sum : ∑ ω : model.Ω, (model.inclM s).val ω = 1 :=
+      (model.inclM s).property.2
+    calc
+      |beliefDot (model.inclM s) w.val|
+          = |∑ ω : model.Ω, (model.inclM s).val ω * w.val ω| := rfl
+      _ ≤ ∑ ω : model.Ω, |(model.inclM s).val ω * w.val ω| :=
+            Finset.abs_sum_le_sum_abs _ _
+      _ ≤ ∑ ω : model.Ω, (model.inclM s).val ω * M := by
+            apply Finset.sum_le_sum
+            intro ω _
+            rw [abs_mul, abs_of_nonneg (h_nonneg ω)]
+            exact mul_le_mul_of_nonneg_left (h_w_bd ω) (h_nonneg ω)
+      _ = (∑ ω : model.Ω, (model.inclM s).val ω) * M := by
+            rw [← Finset.sum_mul]
+      _ = M := by rw [h_sum]; ring
+  -- Bound on maxPayoff/minPayoff per s.
+  have hmax_le : ∀ s : model.M, maxPayoff model C s ≤ M := by
+    intro s
+    unfold maxPayoff
+    refine csSup_le ?_ ?_
+    · rcases C.nonempty with ⟨w0, hw0⟩
+      exact ⟨_, ⟨w0, hw0, rfl⟩⟩
+    · rintro x ⟨w, hw, rfl⟩
+      exact (le_abs_self _).trans (hbnd s w hw)
+  have hmax_ge : ∀ s : model.M, -M ≤ maxPayoff model C s := by
+    intro s
+    unfold maxPayoff
+    rcases C.nonempty with ⟨w0, hw0⟩
+    have hb : BddAbove ((fun w : ProfileInW model =>
+        beliefDot (model.inclM s) w.val) '' (↑C : Set (ProfileInW model))) :=
+      ⟨M, by rintro x ⟨w, hw, rfl⟩; exact (le_abs_self _).trans (hbnd s w hw)⟩
+    refine le_csSup_of_le hb ⟨w0, hw0, rfl⟩ ?_
+    have := hbnd s w0 hw0
+    linarith [neg_abs_le (beliefDot (model.inclM s) w0.val)]
+  have hmin_le : ∀ s : model.M, minPayoff model C s ≤ M := by
+    intro s
+    unfold minPayoff
+    rcases C.nonempty with ⟨w0, hw0⟩
+    have hb : BddBelow ((fun w : ProfileInW model =>
+        beliefDot (model.inclM s) w.val) '' (↑C : Set (ProfileInW model))) :=
+      menu_value_le_strategy_sup_payoff_image_bddBelow model C s
+    refine csInf_le_of_le hb ⟨w0, hw0, rfl⟩ ?_
+    exact (le_abs_self _).trans (hbnd s w0 hw0)
+  have hmin_ge : ∀ s : model.M, -M ≤ minPayoff model C s := by
+    intro s
+    unfold minPayoff
+    refine le_csInf ?_ ?_
+    · rcases C.nonempty with ⟨w0, hw0⟩
+      exact ⟨_, ⟨w0, hw0, rfl⟩⟩
+    · rintro x ⟨w, hw, rfl⟩
+      have := hbnd s w hw
+      linarith [neg_abs_le (beliefDot (model.inclM s) w.val)]
+  refine ⟨M, ?_⟩
+  filter_upwards with s
+  have hα_nn : 0 ≤ model.α := model.α_nonneg
+  have h1α_nn : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+  refine ⟨?_, ?_⟩
+  · -- -M ≤ α*max + (1-α)*min
+    have h1 : model.α * (-M) ≤ model.α * maxPayoff model C s :=
+      mul_le_mul_of_nonneg_left (hmax_ge s) hα_nn
+    have h2 : (1 - model.α) * (-M) ≤ (1 - model.α) * minPayoff model C s :=
+      mul_le_mul_of_nonneg_left (hmin_ge s) h1α_nn
+    nlinarith
+  · -- α*max + (1-α)*min ≤ M
+    have h1 : model.α * maxPayoff model C s ≤ model.α * M :=
+      mul_le_mul_of_nonneg_left (hmax_le s) hα_nn
+    have h2 : (1 - model.α) * minPayoff model C s ≤ (1 - model.α) * M :=
+      mul_le_mul_of_nonneg_left (hmin_le s) h1α_nn
+    nlinarith
 
 private lemma menu_integrand_integrable
     (model : RobustTrustModel)
