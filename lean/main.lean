@@ -732,19 +732,15 @@ structure Tier1bResult (model : RobustTrustModel)
 def Tier2Result (model : RobustTrustModel)
     (pd : PosteriorDisintegration model)
     (σstar : AgentStrategyFull model)
-    (ec : ExactContact model σstar)
+    (_ec : ExactContact model σstar)
     (κ : AdviserKernel model)
-    (mh : MenuHall model pd σstar ec κ) : Prop :=
-  (let βstar : AdviserKernel model := κ;
-    βstar = κ ∧
-      mh.q = MixtureMessageLaw model κ ∧
-      mh.q = (MixtureCouplingGammaAlpha model κ).map Prod.snd ∧
-      IsAdversarialFull model κ σstar ∧
-      MixturePayoffFull model κ σstar = UStarFull model ∧
-      Definition2QAEPredicate model pd κ σstar ∧
-      (0 < model.α →
-        ∀ᵐ m ∂model.τM,
-          IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m)))
+    (_mh : MenuHall model pd σstar _ec κ) : Prop :=
+  IsAdversarialFull model κ σstar ∧
+  MixturePayoffFull model κ σstar = UStarFull model ∧
+  Definition2QAEPredicate model pd κ σstar ∧
+  (0 < model.α →
+    ∀ᵐ m ∂model.τM,
+      IsBayesOptimal model (σstar.sectionFull (model.inclM m)) (pd.Pγα κ m))
 
 def WTA_ConeIntersectionStatement : Prop :=
   ∀ (wta : WTATernaryAlgebra) (I : Set WTAΩ) (lam : WTAΩ → ℝ),
@@ -4227,7 +4223,7 @@ theorem tier2_qae_robust_rationalizability_under_menu_Hall
     refine ⟨hadv, ?_⟩
     filter_upwards [h_bayes_q, h_coincide] with m hb hc
     rw [hc]; exact hb
-  exact ⟨rfl, mh.q_eq_qκ, mh.q_eq_gamma_second, hadv, hmix, h_def2, h_pm.2⟩
+  exact ⟨hadv, hmix, h_def2, h_pm.2⟩
 
 theorem wta_payoff_dot_product_identity
     (lam : WTAΩ → ℝ)
