@@ -1442,11 +1442,138 @@ theorem menu_extrema_Hausdorff_Lipschitz
   · simpa [minPayoff, f, one_mul] using
       menu_sInf_image_lipschitz_nonemptyCompacts hf C D
 
+/-
+Precise remaining API stub 1.
+
+Needed lemma:
+  compact-extremum measurability for a Carathéodory/support-function map.
+
+In this application:
+  F s w = beliefDot (model.inclM s) w.val
+
+For fixed `w`, `s ↦ F s w` is measurable.
+For fixed `s`, `w ↦ F s w` is continuous.
+For compact `C`, this should give AEMeasurable/Measurable for
+  s ↦ maxPayoff C s
+and
+  s ↦ minPayoff C s.
+-/
+private lemma menu_integrand_aemeasurable
+    (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
+    (C : CompactMenu model) :
+    AEMeasurable
+      (fun s =>
+        model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s)
+      model.τM := by
+  sorry
+
+/-
+Precise remaining API stub 2.
+
+Needed lemma:
+  uniform boundedness of the menu integrand.
+
+A sufficient route is:
+  ∃ B, ∀ w : ProfileInW model, ∀ ω, |w.val ω| ≤ B
+
+from compactness of the payoff-profile set, plus:
+  0 ≤ (model.inclM s).val ω,
+  ∑ ω, (model.inclM s).val ω = 1,
+  0 ≤ model.α,
+  model.α ≤ 1.
+
+Then:
+  |maxPayoff model C s| ≤ B,
+  |minPayoff model C s| ≤ B,
+  |model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s| ≤ B.
+-/
+private lemma menu_integrand_mem_Icc_ae
+    (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
+    (C : CompactMenu model) :
+    ∃ B : ℝ,
+      ∀ᵐ s ∂model.τM,
+        model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s ∈
+          Set.Icc (-B) B := by
+  sorry
+
+private lemma menu_integrand_integrable
+    (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
+    (C : CompactMenu model) :
+    Integrable
+      (fun s =>
+        model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s)
+      model.τM := by
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  rcases menu_integrand_mem_Icc_ae model setup C with ⟨B, hB⟩
+  exact
+    Integrable.of_mem_Icc (-B) B
+      (menu_integrand_aemeasurable model setup C)
+      hB
+
 theorem menu_functional_continuity
     (model : RobustTrustModel)
     (setup : ProfileRealizationSetup model) :
     Continuous (MenuFunctionalF model) := by
-  sorry
+  obtain ⟨L, _hL_nonneg, hL⟩ := menu_extrema_Hausdorff_Lipschitz model
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+
+  refine (LipschitzWith.of_dist_le' (K := L) ?_).continuous
+  intro C D
+
+  let fC :=
+    fun s =>
+      model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s
+  let fD :=
+    fun s =>
+      model.α * maxPayoff model D s + (1 - model.α) * minPayoff model D s
+
+  have hC : Integrable fC model.τM := by
+    simpa [fC] using menu_integrand_integrable model setup C
+  have hD : Integrable fD model.τM := by
+    simpa [fD] using menu_integrand_integrable model setup D
+
+  have hBound :
+      ∀ᵐ s ∂model.τM, ‖fC s - fD s‖ ≤ L * dist C D := by
+    filter_upwards with s
+    obtain ⟨hmax, hmin⟩ := hL C D s
+    have hα : 0 ≤ model.α := model.α_nonneg
+    have h1α : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+    show |fC s - fD s| ≤ L * dist C D
+    have hexpand :
+        fC s - fD s =
+          model.α * (maxPayoff model C s - maxPayoff model D s) +
+            (1 - model.α) * (minPayoff model C s - minPayoff model D s) := by
+      simp [fC, fD]; ring
+    calc
+      |fC s - fD s|
+          = |model.α * (maxPayoff model C s - maxPayoff model D s) +
+              (1 - model.α) * (minPayoff model C s - minPayoff model D s)| := by
+            rw [hexpand]
+      _ ≤ |model.α * (maxPayoff model C s - maxPayoff model D s)| +
+            |(1 - model.α) * (minPayoff model C s - minPayoff model D s)| :=
+              abs_add_le _ _
+      _ = model.α * |maxPayoff model C s - maxPayoff model D s| +
+            (1 - model.α) * |minPayoff model C s - minPayoff model D s| := by
+            rw [abs_mul, abs_mul, abs_of_nonneg hα, abs_of_nonneg h1α]
+      _ ≤ model.α * (L * dist C D) + (1 - model.α) * (L * dist C D) := by
+            gcongr
+      _ = L * dist C D := by ring
+
+  rw [Real.dist_eq]
+  calc
+    |MenuFunctionalF model C - MenuFunctionalF model D|
+        = |∫ s, fC s - fD s ∂model.τM| := by
+            simp [MenuFunctionalF, fC, fD,
+              MeasureTheory.integral_sub hC hD]
+    _ = ‖∫ s, fC s - fD s ∂model.τM‖ := by
+            simp [Real.norm_eq_abs]
+    _ ≤ (L * dist C D) * model.τM.real Set.univ := by
+            exact MeasureTheory.norm_integral_le_of_norm_le_const hBound
+    _ = L * dist C D := by
+            simp
 
 theorem optimal_menu_exists
     (model : RobustTrustModel)
@@ -1671,7 +1798,74 @@ theorem exact_adversary_attainment
         IsAdversarialFull model βstar σstar ∧
         MixturePayoffFull model βstar σstar = RobustPayoffFull model σstar ∧
         RobustPayoffFull model σstar = UStarFull model := by
-  sorry
+  let βstar : AdviserKernel model :=
+    { kernel := Kernel.deterministic ec.selector ec.selector_measurable
+      isMarkov := by infer_instance }
+
+  have hdet : ∀ s : model.M, βstar.kernel s = Measure.dirac (ec.selector s) := by
+    intro s
+    exact Kernel.deterministic_apply ec.selector_measurable s
+
+  have hsupp : KernelSupportedOnG model ec.cdagger βstar := by
+    unfold KernelSupportedOnG
+    filter_upwards [ec.selector_mem] with s hs
+    rw [hdet s]
+    exact Measure.dirac_apply_of_mem hs
+
+  have hpay :=
+    wstar_payoff_equals_F_Cdagger
+      model ec.opt ec.wlabel ec.cdagger
+      (restrictFullToM model σstar)
+      ec.sigma_implements_wlabel
+
+  have hmis_beta :
+      MisalignedPayoffFull model βstar σstar =
+        ∫ s, minPayoff model ec.cdagger.Cdagger s ∂model.τM := by
+    unfold MisalignedPayoffFull MisalignedPayoffM
+    apply integral_congr_ae
+    filter_upwards [ec.selector_mem] with s hs
+    calc
+      (∫ m, beliefDot (model.inclM s)
+          (profileMap model (restrictFullToM model σstar) m) ∂(βstar.kernel s))
+          =
+        ∫ m, beliefDot (model.inclM s)
+          (profileMap model (restrictFullToM model σstar) m)
+            ∂(Measure.dirac (ec.selector s)) := by
+          rw [hdet s]
+      _ =
+        beliefDot (model.inclM s)
+          (profileMap model (restrictFullToM model σstar) (ec.selector s)) := by
+          simp
+      _ =
+        beliefDot (model.inclM s)
+          ((ec.wlabel.wstar (ec.selector s)).val) := by
+          rw [ec.sigma_implements_wlabel (ec.selector s)]
+      _ = minPayoff model ec.cdagger.Cdagger s := by
+          simpa [RowwiseContactG] using hs
+
+  have hmis_inf :
+      sInf (Set.range fun β : AdviserKernel model =>
+        MisalignedPayoffFull model β σstar) =
+        ∫ s, minPayoff model ec.cdagger.Cdagger s ∂model.τM := by
+    simpa [MisalignedPayoffFull] using hpay.2.1
+
+  have hmis_attains :
+      MisalignedPayoffFull model βstar σstar =
+        sInf (Set.range fun β : AdviserKernel model =>
+          MisalignedPayoffFull model β σstar) := by
+    rw [hmis_beta, hmis_inf]
+
+  have hmix :
+      MixturePayoffFull model βstar σstar =
+        RobustPayoffFull model σstar := by
+    -- Algebraic linearity: sInf_β (α·A + (1-α)·M β) = α·A + (1-α)·sInf_β M β when
+    -- (1-α) ≥ 0. Combined with hmis_attains (Mis βstar = sInf range Mis), gives equality.
+    -- Establishing this requires Real.iInf_const_add + Real.iInf_const_mul-style API
+    -- + BddBelow of MisalignedPayoffFull range. Deferred to a future Pro pass.
+    sorry
+
+  refine ⟨βstar, hdet, hsupp, ?_, hmix, hσstar⟩
+  simpa [IsAdversarialFull] using hmix
 
 theorem menuHall_adversary_kernel_identity
     (model : RobustTrustModel)
