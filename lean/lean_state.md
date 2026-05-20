@@ -178,3 +178,25 @@ All three formalize gates are now green: **Gate 1 PASS, Gate 2 PASS, Gate 3 PASS
 - URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d9818-2d98-83ea-9406-0bffe4d65aa4
 - State: 16 sorries, commit 5402193.
 - Should unlock 3rd-conjunct sInf-linearity gap shared with hmix.
+
+## Heartbeat 2026-05-20 (e): adversary_kernels_restrict_to_M Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0da98e-c6fc-83ea-9c09-3fd6647e35af
+- State: 13 sorries, commit 769e048.
+- Likely STUCK direction: sInf M ≤ sInf Full-Raw (need additional structural hypothesis).
+
+## SCOPE QUESTION 2026-05-20: adversary_kernels_restrict_to_M 1st conjunct is FALSE
+
+Pro provided counterexample (response_1.md): for arbitrary σFull where σFull.sectionFull
+prescribes worse payoff on off-range beliefs than on inclM-image, full-raw adversary
+can place mass off range and beat M-adversary's sInf.
+
+Missing structural hypothesis (one of):
+1. σFull factors through inclM (i.e., σFull ∈ image of bridge.extendRestricted), OR
+2. Every off-range belief is payoff-dominated by some M-belief, OR
+3. bridge explicitly provides this domination as a field.
+
+Recommendation: change theorem statement to require σFull = bridge.extendRestricted σM
+for some σM, OR add a hypothesis `∀ b, ∃ m, profileOfPrivate (σFull.sectionFull b)
+dominated by profileOfPrivate (σFull.sectionFull (inclM m))`.
+
+State: 13 sorries, commit 769e048. Awaiting Pedro decision on scope.
