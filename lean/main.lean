@@ -4644,33 +4644,30 @@ theorem support_function_integrated_Hall_equivalence
 
   · intro hHall
     classical
-
     /-
-      Remaining gap: Hall inequalities → posterior calibration.
+      Pro reduction (lean_prover_hahn_banach_response_1.md):
 
-      Mathematical route:
-      1. For each fixed continuous linear functional `ℓ`, use the Hall
-         inequalities on measurable positive-measure sets to show
-           ℓ (P m) ≤ sSup (ℓ '' B m)
-         for q-a.e. `m`.
+      Step 1: ∀ ℓ, (fun m => ℓ (P m)) ≤ᵐ[q] (fun m => sSup (ℓ '' B m))
+        via MeasureTheory.ae_le_of_forall_setIntegral_le + hHall.
 
-      2. Upgrade from “for each fixed ℓ, a.e.” to “for q-a.e. m, for all ℓ”.
-         Since `Profile model` is finite-dimensional, choose a countable dense
-         subset of the dual unit sphere, intersect the corresponding full-measure
-         sets, and use continuity of
-           ℓ ↦ ℓ (P m)
-         and
-           ℓ ↦ sSup (ℓ '' B m)
-         on bounded closed convex fibers.
+      Step 2: Take countable dense D : ℕ → Profile model →L[ℝ] ℝ.
+        Get ∀ᵐ m ∂q, ∀ n, D n (P m) ≤ sSup (D n '' B m).
 
-      3. For a remaining bad point with `P m ∉ B m`, use finite-dimensional
-         Hahn-Banach separation for the closed convex set `B m` to find `ℓ`
-         with
-           ℓ (P m) > sSup (ℓ '' B m),
-         then approximate `ℓ` by the countable dense family to contradict
-         the pointwise inequalities.
+      Step 3: For m in the full-measure set, if P m ∉ B m, use Hahn-Banach
+        + approximation by D n to derive contradiction.
 
-      This is the substantive measurable Hahn-Banach / separability step.
+      REMAINING GAP: the geometric lemma
+        closed_convex_mem_of_dense_support_le :
+          ∀ {E} [normed ℝ-space], (D : ℕ → E →L[ℝ] ℝ), DenseRange D →
+          ∀ {S x}, IsClosed S → Convex ℝ S → S.Nonempty → IsBounded S →
+          (∀ n, D n x ≤ sSup (D n '' S)) → x ∈ S
+      requires:
+        • geometric_hahn_banach_closed_point (Mathlib ✓)
+        • dual norm bound for f − D n on bounded S ∪ {x}
+        • DenseRange.exists_lt to pick n with ‖f − D n‖ < δ/(2R)
+
+      Deferred — Pro STUCK on this single geometric lemma. See
+      lean/diagnostics/lean_prover_hahn_banach_response_1.md.
     -/
     sorry
 
