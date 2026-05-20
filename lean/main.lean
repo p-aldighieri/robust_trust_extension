@@ -1278,12 +1278,52 @@ theorem adversary_infimum_pointwise
   have h_eq : sInf A = I := le_antisymm h_upper h_lower
   simpa [A, I, g] using h_eq
 
-theorem strategy_value_le_menu_sup
-    (model : RobustTrustModel)
-    (setup : ProfileRealizationSetup model)
-    (σM : AgentStrategyM model) :
-    RobustPayoffM model σM ≤ sSup (Set.range (MenuFunctionalF model)) := by
-  sorry
+private lemma sSup_image_closure_eq_of_continuous
+    {X : Type*} [TopologicalSpace X]
+    (f : X → ℝ) (hf : Continuous f) (S : Set X)
+    (hSne : S.Nonempty) (hBA : BddAbove (f '' S)) :
+    sSup (f '' closure S) = sSup (f '' S) := by
+  have hUB_closure : ∀ y ∈ f '' closure S, y ≤ sSup (f '' S) := by
+    rintro y ⟨x, hx_closure, rfl⟩
+    have h_preim : closure S ⊆ f ⁻¹' {y : ℝ | y ≤ sSup (f '' S)} := by
+      refine closure_minimal ?_ (isClosed_Iic.preimage hf)
+      rintro x hx
+      exact le_csSup hBA ⟨x, hx, rfl⟩
+    exact h_preim hx_closure
+  have hne_cl : (f '' closure S).Nonempty := by
+    obtain ⟨x, hx⟩ := hSne
+    exact ⟨f x, x, subset_closure hx, rfl⟩
+  have hBA_cl : BddAbove (f '' closure S) := ⟨sSup (f '' S), hUB_closure⟩
+  have hne_S : (f '' S).Nonempty := hSne.image f
+  apply le_antisymm
+  · exact csSup_le hne_cl hUB_closure
+  · refine csSup_le hne_S ?_
+    rintro y ⟨x, hx, rfl⟩
+    exact le_csSup hBA_cl ⟨x, subset_closure hx, rfl⟩
+
+private lemma sInf_image_closure_eq_of_continuous
+    {X : Type*} [TopologicalSpace X]
+    (f : X → ℝ) (hf : Continuous f) (S : Set X)
+    (hSne : S.Nonempty) (hBB : BddBelow (f '' S)) :
+    sInf (f '' closure S) = sInf (f '' S) := by
+  have hLB_closure : ∀ y ∈ f '' closure S, sInf (f '' S) ≤ y := by
+    rintro y ⟨x, hx_closure, rfl⟩
+    have h_preim : closure S ⊆ f ⁻¹' {y : ℝ | sInf (f '' S) ≤ y} := by
+      refine closure_minimal ?_ (isClosed_Ici.preimage hf)
+      rintro x hx
+      exact csInf_le hBB ⟨x, hx, rfl⟩
+    exact h_preim hx_closure
+  have hne_cl : (f '' closure S).Nonempty := by
+    obtain ⟨x, hx⟩ := hSne
+    exact ⟨f x, x, subset_closure hx, rfl⟩
+  have hBB_cl : BddBelow (f '' closure S) := ⟨sInf (f '' S), hLB_closure⟩
+  have hne_S : (f '' S).Nonempty := hSne.image f
+  apply le_antisymm
+  · refine le_csInf hne_S ?_
+    rintro y ⟨x, hx, rfl⟩
+    exact csInf_le hBB_cl ⟨x, subset_closure hx, rfl⟩
+  · exact le_csInf hne_cl hLB_closure
+
 
 /-- Helper: measurable aligned-best selector over an arbitrary compact menu.
 Generalization of `aligned_best_labeling_selection` from `OptimalMenuCstar`
@@ -1861,6 +1901,401 @@ private lemma menu_value_le_strategy_sup_robust_range_bddAbove
     unfold RobustPayoffM
     exact csInf_le hbdd ⟨β0, rfl⟩
   exact le_trans hRobust_le_mix (hmix_upper β0)
+
+private lemma beliefDot_profileMap_diag_measurable
+    (model : RobustTrustModel) (setup : ProfileRealizationSetup model)
+    (σM : AgentStrategyM model) :
+    Measurable
+      (fun s : model.M => beliefDot (model.inclM s) (profileMap model σM s)) := by
+  have hPair : Measurable (fun s : model.M => (s, s)) := by
+    refine Measurable.prod ?_ ?_
+    · exact measurable_id
+    · exact measurable_id
+  exact (beliefDot_profileMap_uncurry_measurable model setup σM).comp hPair
+
+private lemma beliefDot_profileMap_diag_integrable
+    (model : RobustTrustModel) (setup : ProfileRealizationSetup model)
+    (σM : AgentStrategyM model) :
+    Integrable
+      (fun s : model.M => beliefDot (model.inclM s) (profileMap model σM s))
+      model.τM := by
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  obtain ⟨B, hB⟩ := beliefDot_profileMap_uniform_bound model σM
+  refine MeasureTheory.Integrable.of_bound ?_ B ?_
+  · exact (beliefDot_profileMap_diag_measurable model setup σM).aestronglyMeasurable
+  · exact Filter.Eventually.of_forall (fun s => hB s s)
+
+private lemma menuFunctionalF_bddAbove_uniform
+    (model : RobustTrustModel) :
+    BddAbove (Set.range (MenuFunctionalF model)) := by
+  classical
+  obtain ⟨B, hB0, hB⟩ := beliefDot_ProfileInW_abs_le_private_bound model
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  have hα_nn : 0 ≤ model.α := model.α_nonneg
+  have h1α_nn : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+  have h_α_sum : model.α + (1 - model.α) = 1 := by ring
+  refine ⟨B, ?_⟩
+  rintro x ⟨C, rfl⟩
+  obtain ⟨w0, hw0⟩ := C.nonempty
+  have hmenu_pt : ∀ s : model.M,
+      |model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s| ≤ B := by
+    intro s
+    have hSimp_BA : BddAbove
+        ((fun w : ProfileInW model => beliefDot (model.inclM s) w.val) ''
+          (↑C : Set (ProfileInW model))) := by
+      refine ⟨B, ?_⟩
+      rintro y ⟨w, _, rfl⟩
+      exact (abs_le.mp (hB (model.inclM s) w)).2
+    have hSimp_BB : BddBelow
+        ((fun w : ProfileInW model => beliefDot (model.inclM s) w.val) ''
+          (↑C : Set (ProfileInW model))) := by
+      refine ⟨-B, ?_⟩
+      rintro y ⟨w, _, rfl⟩
+      exact (abs_le.mp (hB (model.inclM s) w)).1
+    have hmax_le : maxPayoff model C s ≤ B := by
+      unfold maxPayoff
+      refine csSup_le ⟨_, ⟨w0, hw0, rfl⟩⟩ ?_
+      rintro y ⟨w, _, rfl⟩
+      exact (abs_le.mp (hB (model.inclM s) w)).2
+    have hmax_ge : -B ≤ maxPayoff model C s := by
+      unfold maxPayoff
+      calc (-B : ℝ)
+          ≤ beliefDot (model.inclM s) w0.val := (abs_le.mp (hB (model.inclM s) w0)).1
+        _ ≤ _ := le_csSup hSimp_BA ⟨w0, hw0, rfl⟩
+    have hmin_le : minPayoff model C s ≤ B := by
+      unfold minPayoff
+      calc (sInf _ : ℝ)
+          ≤ beliefDot (model.inclM s) w0.val := csInf_le hSimp_BB ⟨w0, hw0, rfl⟩
+        _ ≤ B := (abs_le.mp (hB (model.inclM s) w0)).2
+    have hmin_ge : -B ≤ minPayoff model C s := by
+      unfold minPayoff
+      refine le_csInf ⟨_, ⟨w0, hw0, rfl⟩⟩ ?_
+      rintro y ⟨w, _, rfl⟩
+      exact (abs_le.mp (hB (model.inclM s) w)).1
+    have hupper :
+        model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s ≤ B := by
+      have h1 := mul_le_mul_of_nonneg_left hmax_le hα_nn
+      have h2 := mul_le_mul_of_nonneg_left hmin_le h1α_nn
+      nlinarith [h_α_sum]
+    have hlower :
+        -B ≤ model.α * maxPayoff model C s + (1 - model.α) * minPayoff model C s := by
+      have h1 := mul_le_mul_of_nonneg_left hmax_ge hα_nn
+      have h2 := mul_le_mul_of_nonneg_left hmin_ge h1α_nn
+      nlinarith [h_α_sum]
+    exact abs_le.mpr ⟨hlower, hupper⟩
+  unfold MenuFunctionalF
+  exact (integral_Icc_of_forall_abs_le_prob _ hB0 hmenu_pt).2
+
+theorem strategy_value_le_menu_sup
+    (model : RobustTrustModel)
+    (setup : ProfileRealizationSetup model)
+    (σM : AgentStrategyM model) :
+    RobustPayoffM model σM ≤ sSup (Set.range (MenuFunctionalF model)) := by
+  classical
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  let wσ : model.M → ProfileInW model :=
+    fun m => ⟨profileMap model σM m, by
+      unfold profileMap PayoffProfileSet
+      exact ⟨σM.sectionM m, rfl⟩⟩
+  have hwσ_meas : Measurable wσ :=
+    (profileMap_measurable_for_kernel_bound model setup σM).subtype_mk
+  haveI : CompactSpace (ProfileInW model) :=
+    isCompact_iff_compactSpace.mp setup.W_compact
+  let Cσ : CompactMenu model :=
+    { carrier := closure (Set.range wσ)
+      isCompact' := isClosed_closure.isCompact
+      nonempty' := by
+        rcases (inferInstance : Nonempty model.M) with ⟨m0⟩
+        exact ⟨wσ m0, subset_closure (Set.mem_range_self m0)⟩ }
+  have hCσ_coe :
+      (↑Cσ : Set (ProfileInW model)) = closure (Set.range wσ) := rfl
+  have h_bdd_range :
+      ∀ s : model.M,
+        BddAbove
+          (Set.range fun m : model.M =>
+            beliefDot (model.inclM s) (wσ m).val) ∧
+        BddBelow
+          (Set.range fun m : model.M =>
+            beliefDot (model.inclM s) (wσ m).val) := by
+    intro s
+    obtain ⟨B, _hB0, hB⟩ := beliefDot_ProfileInW_abs_le_private_bound model
+    refine ⟨⟨B, ?_⟩, ⟨-B, ?_⟩⟩
+    · rintro y ⟨m, rfl⟩
+      exact (abs_le.mp (hB (model.inclM s) (wσ m))).2
+    · rintro y ⟨m, rfl⟩
+      exact (abs_le.mp (hB (model.inclM s) (wσ m))).1
+  have hmax_eq :
+      ∀ s : model.M,
+        maxPayoff model Cσ s =
+          sSup (Set.range fun m : model.M =>
+            beliefDot (model.inclM s) (wσ m).val) := by
+    intro s
+    unfold maxPayoff
+    have hf_cont : Continuous (fun w : ProfileInW model =>
+        beliefDot (model.inclM s) w.val) := by
+      have h := beliefDot_menu_uncurry_continuous model
+      exact h.comp ((continuous_const).prodMk continuous_id)
+    have h_range_ne : (Set.range wσ).Nonempty :=
+      ⟨wσ Classical.ofNonempty, Set.mem_range_self _⟩
+    have h_img_eq :
+        (fun w : ProfileInW model => beliefDot (model.inclM s) w.val) '' Set.range wσ
+          = Set.range fun m : model.M => beliefDot (model.inclM s) (wσ m).val := by
+      ext y; constructor
+      · rintro ⟨w, ⟨m, rfl⟩, rfl⟩; exact ⟨m, rfl⟩
+      · rintro ⟨m, rfl⟩; exact ⟨wσ m, Set.mem_range_self m, rfl⟩
+    have hBA : BddAbove
+        ((fun w : ProfileInW model => beliefDot (model.inclM s) w.val) ''
+          Set.range wσ) := by
+      rw [h_img_eq]; exact (h_bdd_range s).1
+    have h_eq := sSup_image_closure_eq_of_continuous _ hf_cont (Set.range wσ) h_range_ne hBA
+    rw [hCσ_coe, h_eq, h_img_eq]
+  have hmin_eq :
+      ∀ s : model.M,
+        minPayoff model Cσ s =
+          sInf (Set.range fun m : model.M =>
+            beliefDot (model.inclM s) (wσ m).val) := by
+    intro s
+    unfold minPayoff
+    have hf_cont : Continuous (fun w : ProfileInW model =>
+        beliefDot (model.inclM s) w.val) := by
+      have h := beliefDot_menu_uncurry_continuous model
+      exact h.comp ((continuous_const).prodMk continuous_id)
+    have h_range_ne : (Set.range wσ).Nonempty :=
+      ⟨wσ Classical.ofNonempty, Set.mem_range_self _⟩
+    have h_img_eq :
+        (fun w : ProfileInW model => beliefDot (model.inclM s) w.val) '' Set.range wσ
+          = Set.range fun m : model.M => beliefDot (model.inclM s) (wσ m).val := by
+      ext y; constructor
+      · rintro ⟨w, ⟨m, rfl⟩, rfl⟩; exact ⟨m, rfl⟩
+      · rintro ⟨m, rfl⟩; exact ⟨wσ m, Set.mem_range_self m, rfl⟩
+    have hBB : BddBelow
+        ((fun w : ProfileInW model => beliefDot (model.inclM s) w.val) ''
+          Set.range wσ) := by
+      rw [h_img_eq]; exact (h_bdd_range s).2
+    have h_eq := sInf_image_closure_eq_of_continuous _ hf_cont (Set.range wσ) h_range_ne hBB
+    rw [hCσ_coe, h_eq, h_img_eq]
+  have hmax_bound :
+      ∀ s : model.M,
+        beliefDot (model.inclM s) (profileMap model σM s) ≤
+          maxPayoff model Cσ s := by
+    intro s
+    rw [hmax_eq s]
+    refine le_csSup (h_bdd_range s).1 ?_
+    exact ⟨s, rfl⟩
+  have hAligned_le :
+      AlignedPayoffM model σM ≤
+        ∫ s, maxPayoff model Cσ s ∂model.τM := by
+    unfold AlignedPayoffM
+    refine MeasureTheory.integral_mono
+      (beliefDot_profileMap_diag_integrable model setup σM)
+      (maxPayoff_integrable model Cσ)
+      ?_
+    exact hmax_bound
+  have hMisInf :
+      sInf (Set.range fun β : AdviserKernel model =>
+        MisalignedPayoffM model β σM) =
+        ∫ s, minPayoff model Cσ s ∂model.τM := by
+    have hwσ_uncurry_meas :
+        Measurable fun p : model.M × model.M =>
+          beliefDot (model.inclM p.1) (wσ p.2).val := by
+      change Measurable fun p : model.M × model.M =>
+        beliefDot (model.inclM p.1) (profileMap model σM p.2)
+      exact beliefDot_profileMap_uncurry_measurable model setup σM
+    have hwσ_bdd :
+        ∃ C : ℝ, ∀ s m : model.M,
+          |beliefDot (model.inclM s) (wσ m).val| ≤ C := by
+      obtain ⟨B, hB⟩ := beliefDot_profileMap_uniform_bound model σM
+      exact ⟨B, fun s m => by
+        have := hB s m
+        simpa [Real.norm_eq_abs, wσ] using this⟩
+    have hinf_meas :
+        Measurable fun s : model.M =>
+          sInf (Set.range fun m : model.M =>
+            beliefDot (model.inclM s) (wσ m).val) := by
+      have heq : (fun s : model.M => minPayoff model Cσ s)
+          = fun s => sInf (Set.range fun m : model.M =>
+              beliefDot (model.inclM s) (wσ m).val) := by
+        funext s; exact hmin_eq s
+      rw [← heq]
+      have hcont : Continuous
+          (fun b : Belief model.Ω =>
+            sInf ((fun w : ProfileInW model => beliefDot b w.val) ''
+              (↑Cσ : Set (ProfileInW model)))) :=
+        Cσ.isCompact.continuous_sInf (beliefDot_menu_uncurry_continuous model)
+      have hmeas : Measurable (fun s : model.M => minPayoff model Cσ s) := by
+        simpa [minPayoff] using hcont.measurable.comp model.inclM_measurable
+      exact hmeas
+    have hinf_int :
+        Integrable
+          (fun s : model.M =>
+            sInf (Set.range fun m : model.M =>
+              beliefDot (model.inclM s) (wσ m).val)) model.τM := by
+      have heq : (fun s : model.M => minPayoff model Cσ s)
+          = fun s => sInf (Set.range fun m : model.M =>
+              beliefDot (model.inclM s) (wσ m).val) := by
+        funext s; exact hmin_eq s
+      rw [← heq]
+      exact minPayoff_integrable model Cσ
+    have hkernel_int :
+        ∀ β : AdviserKernel model,
+          Integrable
+            (fun p : model.M × model.M =>
+              beliefDot (model.inclM p.1) (wσ p.2).val)
+            (model.τM.compProd β.kernel) := by
+      intro β
+      haveI : ProbabilityTheory.IsMarkovKernel β.kernel := β.isMarkov
+      haveI : IsProbabilityMeasure (model.τM.compProd β.kernel) :=
+        inferInstance
+      obtain ⟨B, hB⟩ := beliefDot_profileMap_uniform_bound model σM
+      refine MeasureTheory.Integrable.of_bound ?_ B ?_
+      · exact hwσ_uncurry_meas.aestronglyMeasurable
+      · refine Filter.Eventually.of_forall ?_
+        intro p
+        have := hB p.1 p.2
+        simpa [Real.norm_eq_abs, wσ] using this
+    have hpoint :=
+      adversary_infimum_pointwise model wσ hwσ_meas hwσ_uncurry_meas
+        hwσ_bdd hinf_meas hinf_int hkernel_int
+    have hheq : (fun β : AdviserKernel model =>
+        ∫ s, ∫ m, beliefDot (model.inclM s) (wσ m).val ∂(β.kernel s) ∂model.τM) =
+        (fun β => MisalignedPayoffM model β σM) := by
+      funext β
+      unfold MisalignedPayoffM
+      rfl
+    rw [← hheq]
+    rw [hpoint]
+    refine MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall ?_)
+    intro s
+    exact (hmin_eq s).symm
+  have hbddBelow_mis :
+      BddBelow (Set.range fun β : AdviserKernel model =>
+        MisalignedPayoffM model β σM) := by
+    obtain ⟨B, hB0, hB⟩ := beliefDot_ProfileInW_abs_le_private_bound model
+    refine ⟨-B, ?_⟩
+    rintro x ⟨β, rfl⟩
+    haveI : ProbabilityTheory.IsMarkovKernel β.kernel := β.isMarkov
+    have hOuter : ∀ s, -B ≤ ∫ m, beliefDot (model.inclM s) (profileMap model σM m)
+        ∂(β.kernel s) := by
+      intro s
+      haveI : IsProbabilityMeasure (β.kernel s) :=
+        β.isMarkov.isProbabilityMeasure s
+      have hbound : ∀ m, |beliefDot (model.inclM s) (profileMap model σM m)| ≤ B := by
+        intro m; exact hB _ (wσ m)
+      exact (integral_Icc_of_forall_abs_le_prob (β.kernel s) hB0 hbound).1
+    unfold MisalignedPayoffM
+    have h_const_int :
+        (∫ _s : model.M, (-B : ℝ) ∂model.τM) = -B := by simp
+    rw [← h_const_int]
+    refine MeasureTheory.integral_mono_ae
+      (integrable_const (-B))
+      (beliefDot_profileMap_kernel_integral_integrable model setup β σM)
+      ?_
+    exact Filter.Eventually.of_forall hOuter
+  have hF_split :
+      MenuFunctionalF model Cσ =
+        model.α * (∫ s, maxPayoff model Cσ s ∂model.τM) +
+          (1 - model.α) *
+            (∫ s, minPayoff model Cσ s ∂model.τM) := by
+    have hα_max_int :
+        Integrable (fun s => model.α * maxPayoff model Cσ s) model.τM :=
+      (maxPayoff_integrable model Cσ).const_mul model.α
+    have h1α_min_int :
+        Integrable (fun s => (1 - model.α) * minPayoff model Cσ s) model.τM :=
+      (minPayoff_integrable model Cσ).const_mul (1 - model.α)
+    unfold MenuFunctionalF
+    rw [integral_add hα_max_int h1α_min_int, integral_const_mul, integral_const_mul]
+  -- Prove RobustPayoff σM ≤ MenuFunctionalF Cσ directly via ε-approximation
+  have hRobust_le_F :
+      RobustPayoffM model σM ≤ MenuFunctionalF model Cσ := by
+    rw [hF_split]
+    set A : ℝ := AlignedPayoffM model σM with hA_def
+    set MisRange : Set ℝ :=
+      Set.range fun β : AdviserKernel model => MisalignedPayoffM model β σM
+    have hMisRange_ne : MisRange.Nonempty := by
+      let β0 : AdviserKernel model :=
+        { kernel := ProbabilityTheory.Kernel.deterministic
+            (id : model.M → model.M) measurable_id
+          isMarkov := inferInstance }
+      exact ⟨MisalignedPayoffM model β0 σM, ⟨β0, rfl⟩⟩
+    have hSI : sInf MisRange = ∫ s, minPayoff model Cσ s ∂model.τM := hMisInf
+    have hα_nonneg : 0 ≤ model.α := model.α_nonneg
+    have hαc : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+    have hαAB : model.α * A ≤ model.α * ∫ s, maxPayoff model Cσ s ∂model.τM :=
+      mul_le_mul_of_nonneg_left hAligned_le hα_nonneg
+    obtain ⟨Bu, hBu0, hBu⟩ := beliefDot_ProfileInW_abs_le_private_bound model
+    have hBdd_mix :
+        BddBelow (Set.range fun β : AdviserKernel model =>
+          MixturePayoffM model β σM) := by
+      refine ⟨model.α * (-Bu) + (1 - model.α) * (-Bu), ?_⟩
+      rintro x ⟨β', rfl⟩
+      unfold MixturePayoffM
+      have hAlow : -Bu ≤ AlignedPayoffM model σM := by
+        unfold AlignedPayoffM
+        have hbound : ∀ s, |beliefDot (model.inclM s) (profileMap model σM s)| ≤ Bu :=
+          fun s => hBu _ (wσ s)
+        exact (integral_Icc_of_forall_abs_le_prob model.τM hBu0 hbound).1
+      have hMlow : -Bu ≤ MisalignedPayoffM model β' σM := by
+        haveI : ProbabilityTheory.IsMarkovKernel β'.kernel := β'.isMarkov
+        have hOuter : ∀ s, -Bu ≤ ∫ m, beliefDot (model.inclM s)
+            (profileMap model σM m) ∂(β'.kernel s) := by
+          intro s
+          haveI : IsProbabilityMeasure (β'.kernel s) :=
+            β'.isMarkov.isProbabilityMeasure s
+          have hbound : ∀ m, |beliefDot (model.inclM s) (profileMap model σM m)| ≤ Bu :=
+            fun m => hBu _ (wσ m)
+          exact (integral_Icc_of_forall_abs_le_prob (β'.kernel s) hBu0 hbound).1
+        unfold MisalignedPayoffM
+        have h_const_int :
+            (∫ _s : model.M, (-Bu : ℝ) ∂model.τM) = -Bu := by simp
+        rw [← h_const_int]
+        refine MeasureTheory.integral_mono_ae
+          (integrable_const (-Bu))
+          (beliefDot_profileMap_kernel_integral_integrable model setup β' σM)
+          ?_
+        exact Filter.Eventually.of_forall hOuter
+      nlinarith [mul_le_mul_of_nonneg_left hAlow hα_nonneg,
+                 mul_le_mul_of_nonneg_left hMlow hαc]
+    unfold RobustPayoffM
+    refine le_of_forall_pos_le_add ?_
+    intro ε hε_pos
+    have h1αB : (1 - model.α) ≤ 1 := by linarith
+    have hexists_lt : ∃ x ∈ MisRange, x < sInf MisRange + ε := by
+      by_contra hcontra
+      have hLower : ∀ x ∈ MisRange, sInf MisRange + ε ≤ x := by
+        intro x hx
+        exact le_of_not_gt (fun hxlt => hcontra ⟨x, hx, hxlt⟩)
+      have hle : sInf MisRange + ε ≤ sInf MisRange := le_csInf hMisRange_ne hLower
+      linarith
+    obtain ⟨y, hy_in, hy_lt⟩ := hexists_lt
+    obtain ⟨β, hβy⟩ := hy_in
+    have hMixβ : MixturePayoffM model β σM = model.α * A + (1 - model.α) * y := by
+      show model.α * AlignedPayoffM model σM + (1 - model.α) * _ = _
+      rw [← hA_def, ← hβy]
+    have hsInf_le_β :
+        sInf (Set.range fun β : AdviserKernel model => MixturePayoffM model β σM) ≤
+          MixturePayoffM model β σM :=
+      csInf_le hBdd_mix ⟨β, rfl⟩
+    have h_step :
+        (1 - model.α) * y ≤ (1 - model.α) * (sInf MisRange + ε) :=
+      mul_le_mul_of_nonneg_left (le_of_lt hy_lt) hαc
+    have h_oneα_ε : (1 - model.α) * ε ≤ ε := by
+      have h1αB_nn : 0 ≤ 1 - model.α := hαc
+      have := mul_le_mul_of_nonneg_right h1αB (le_of_lt hε_pos)
+      linarith
+    calc sInf (Set.range fun β : AdviserKernel model => MixturePayoffM model β σM)
+        ≤ MixturePayoffM model β σM := hsInf_le_β
+      _ = model.α * A + (1 - model.α) * y := hMixβ
+      _ ≤ model.α * A + (1 - model.α) * (sInf MisRange + ε) := by linarith
+      _ = model.α * A + (1 - model.α) * sInf MisRange + (1 - model.α) * ε := by ring
+      _ ≤ model.α * (∫ s, maxPayoff model Cσ s ∂model.τM) +
+            (1 - model.α) * sInf MisRange + (1 - model.α) * ε := by linarith [hαAB]
+      _ ≤ model.α * (∫ s, maxPayoff model Cσ s ∂model.τM) +
+            (1 - model.α) * sInf MisRange + ε := by linarith [h_oneα_ε]
+      _ = model.α * (∫ s, maxPayoff model Cσ s ∂model.τM) +
+            (1 - model.α) * (∫ s, minPayoff model Cσ s ∂model.τM) + ε := by
+            rw [hSI]
+  exact le_trans hRobust_le_F
+    (le_csSup (menuFunctionalF_bddAbove_uniform model) ⟨Cσ, rfl⟩)
 
 /-- Trivial model-side coefficient fact. -/
 private lemma menu_value_le_strategy_sup_one_sub_alpha_nonneg

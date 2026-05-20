@@ -1,6 +1,6 @@
-You are the Lean Prover. Close ONE specific sorry.
+You are the Lean Prover. Close ONE specific sorry: `strategy_value_le_menu_sup` at line 1286 of main.lean.
 
-## Target (in namespace RobustTrustV8, import Mathlib)
+## Target
 
 ```lean
 theorem strategy_value_le_menu_sup
@@ -11,77 +11,90 @@ theorem strategy_value_le_menu_sup
   sorry
 ```
 
+## Key building block (just PROVED at line 1204): adversary_infimum_pointwise
+
+For w : M → ProfileInW with measurability + boundedness + integrability hypotheses,
+```
+sInf (range β => ∫ s, ∫ m, beliefDot (inclM s) (w m).val ∂(β.kernel s) ∂τM)
+  = ∫ s, sInf (range m => beliefDot (inclM s) (w m).val) ∂τM
+```
+
 ## Math sketch
 
-For any agent strategy σM, construct a compact menu `C_σ ⊆ PayoffProfileSet model` from σM such that `RobustPayoffM σM ≤ MenuFunctionalF C_σ`. Then `RobustPayoffM σM ≤ sSup (range F)` via `le_csSup`.
+Construct C* := closed convex hull of range w_of_σ ⊆ ProfileInW, where
+`w_of_σ m := ⟨profileMap σM m, ⟨σM.sectionM m, rfl⟩⟩ : ProfileInW model` (always in PayoffProfileSet).
 
-**Construction of C_σ**: Take C_σ := closure(image of M under `s ↦ profileMap σM s`). 
-- profileMap σM s = profileOfPrivate (σM.sectionM s) ∈ PayoffProfileSet.
-- So range (profileMap σM) ⊆ PayoffProfileSet model = ↑PayoffProfileSet ⊆ ProfileInW model (subtype).
-- Hmm, we want C_σ : CompactMenu model = NonemptyCompacts (ProfileInW model).
+For each s, since beliefDot (inclM s) · is linear in second arg:
+- sup over closed conv hull of range = sup over range
+- inf over closed conv hull of range = inf over range
 
-Subtle: profileMap σM : model.M → Profile model, but ProfileInW is a subtype. Each value is in PayoffProfileSet, so we can lift to ProfileInW. Lift: `fun s => (⟨profileMap σM s, ⟨σM.sectionM s, rfl⟩⟩ : ProfileInW model)`.
+So:
+- maxPayoff C* s = sup_m beliefDot (inclM s) (profileMap σM m)
+- minPayoff C* s = inf_m beliefDot (inclM s) (profileMap σM m) = sInf_m
 
-Then range (lifted) ⊆ ProfileInW model is fine. Closure of this range in ProfileInW model.
+Then:
+- AlignedPayoffM σM = ∫ beliefDot(inclM s, profileMap σM s) dτM
+  ≤ ∫ sup_m beliefDot(inclM s, profileMap σM m) dτM
+  = ∫ maxPayoff C* dτM
+- sInf_β MisalignedPayoffM β σM = ∫ sInf_m beliefDot(...) dτM  [adversary_infimum_pointwise]
+  = ∫ minPayoff C* dτM
+- RobustPayoff σM = sInf_β MixturePayoffM β σM = α A + (1-α) sInf_β M_β
+  ≤ α ∫ max C* + (1-α) ∫ min C* = MenuFunctionalF C*
+  ≤ sSup (range MenuFunctionalF)
 
-Need closure compact: range may not be compact. Image of model.M (compact) under continuous lift function would be compact, but is profileMap continuous? profileOfPrivate continuous (per setup), σM.sectionM is measurable but maybe not continuous.
+For BddAbove (range MenuFunctionalF): mirror `menu_value_le_strategy_sup_robust_range_bddAbove`.
+Use the uniform |beliefDot| ≤ B bound, every MenuFunctionalF C ∈ [-B, B].
 
-If σM.sectionM not continuous, image might not be compact. Then closure of range might not be compact either.
+## Definitions
 
-Hmm. The structure requires C_σ to be compact. We need to be careful.
+```lean
+abbrev ProfileInW (model) := {w : Profile model // w ∈ PayoffProfileSet model}
+abbrev CompactMenu (model) := TopologicalSpace.NonemptyCompacts (ProfileInW model)
+noncomputable def maxPayoff (model) (C) (s) : ℝ :=
+  sSup ((fun w : ProfileInW model => beliefDot (model.inclM s) w.val) '' (↑C : Set _))
+noncomputable def minPayoff (model) (C) (s) : ℝ := sInf (...)
+noncomputable def MenuFunctionalF (model) (C) : ℝ :=
+  ∫ s, model.α * maxPayoff C s + (1 - model.α) * minPayoff C s ∂model.τM
+```
 
-**Alternative**: Take C_σ := all of PayoffProfileSet (lifted to ProfileInW). It's compact (by prs.W_compact). Then F(C_σ) ≥ ??? Not obvious.
+Available helpers in scope:
+- `profileMap_measurable_for_kernel_bound model setup σM : Measurable (fun m => profileMap σM m)`
+- `beliefDot_profileMap_uncurry_measurable model setup σM : Measurable (...)` (line ~1605)
+- `beliefDot_profileMap_uniform_bound model σM : ∃ B, ∀ s m, ‖...‖ ≤ B`
+- `integral_Icc_of_forall_abs_le_prob`
+- `beliefDot_ProfileInW_abs_le_private_bound model : ∃ B ≥ 0, ∀ b w, |beliefDot b w.val| ≤ B`
+- `maxPayoff_integrable`, `minPayoff_integrable model C` (for any C)
+- `compact_menu_aligned_selection model C : ∃ wC ...` (line 1292)
+- `adversary_infimum_pointwise` (line 1204, PROVED)
+- `model.private_profile_bounded`, `setup.W_compact`, `setup.W_convex`, `setup.Φ_eq_profile`, `setup.Φ_continuous`
 
-**Cleaner**: Define σM-induced menu = closure(range of σM ∘ profileOfPrivate restricted to image). 
-
-Actually rethinking: the v8 argument is:
-- Pick C_σ := PayoffProfileSet (or any menu containing range profileMap σM).
-- maxPayoff(C_σ, s) ≥ beliefDot(inclM s) (profileMap σM s).
-- AlignedPayoffM σM = ∫ beliefDot(inclM s) (profileMap σM s) dτ ≤ ∫ maxPayoff(C_σ, s) dτ.
-- For adversary: MisalignedPayoffM β σM ≥ ∫ minPayoff(C_σ, s) dτ (with appropriate Markov kernel argument).
-- So RobustPayoffM σM = α A + (1-α) sInf_β M ≤ α ∫ max + (1-α) sInf_β [∫ ∫ beliefDot ...] = ??
-
-Hmm. sInf_β over kernels: the adversary picks β to minimize. β can pick any m, including the worst one. So sInf_β MisalignedPayoffM β σM ≥ ∫ minPayoff(C_σ, s) dτ — wait, opposite direction.
-
-Actually: MisalignedPayoffM β σM = ∫ ∫ beliefDot(inclM s, profileMap σM m) dβ(s, m) dτ. For each (s, m), beliefDot... ≥ minPayoff(C_σ, s) (where C_σ contains the range profileMap σM, so the value at any m is ≥ inf). So MisalignedPayoffM β σM ≥ ∫ minPayoff(C_σ, s) dτ.
-
-Then sInf_β ≥ ∫ minPayoff(C_σ, s) dτ.
-
-α A + (1-α) sInf_β M ≤ α ∫ max C_σ + ??? Hmm wait, we want ≤ for RobustPayoffM σM ≤ F(C_σ). Let me re-derive.
-
-F(C_σ) = ∫ α max C_σ + (1-α) min C_σ dτ.
-RobustPayoffM σM = α A + (1-α) sInf_β M.
-
-For RobustPayoffM σM ≤ F(C_σ): need α A ≤ α ∫ max AND (1-α) sInf_β M ≤ (1-α) ∫ min.
-
-α A = α ∫ beliefDot(inclM s, profileMap σM s) dτ.
-α ∫ max C_σ = α ∫ sSup ((beliefDot (inclM s)) '' lifted profileMap σM range across some menu).
-
-If C_σ ⊇ image of profileMap σM, then profileMap σM s ∈ C_σ for each s, so beliefDot(inclM s, profileMap σM s) ≤ max C_σ s. So A ≤ ∫ max C_σ. Then α A ≤ α ∫ max C_σ. ✓
-
-For (1-α) sInf_β M ≤ (1-α) ∫ min C_σ: sInf_β M ≤ ∫ min C_σ. We need to construct an adversary kernel βargmin such that MisalignedPayoffM βargmin σM = ∫ min C_σ.
-
-βargmin would pick m* ∈ argmin_{m'} beliefDot(inclM s, profileMap σM m') for each s. Since profileMap σM m can attain min C_σ at some m (because C_σ = range profileMap σM has min as element), βargmin exists.
-
-Actually wait — min C_σ s = sInf {beliefDot(inclM s, w) : w ∈ C_σ}. If C_σ = closure(range profileMap σM), the sInf is attained on the closure but maybe not on the range itself. So we may need approximation: ∃ sequence m_n with beliefDot(inclM s, profileMap σM m_n) → min C_σ s.
-
-Then βargmin chooses an ε-minimizer. By a similar argument to epsilon_adversary_realization, sInf_β M ≤ ∫ min C_σ + ε for any ε > 0. Taking ε → 0: sInf_β M ≤ ∫ min C_σ.
-
-This is non-trivial. Skip detailed proof and stub the key intermediate. The substantive content involves:
-1. Build C_σ : CompactMenu model. (Requires closure of range under lifting, ensuring compactness.)
-2. Show MenuFunctionalF C_σ ≥ RobustPayoffM σM via the bounds above.
-3. Use `le_csSup` with BddAbove witness for `range (MenuFunctionalF model)`.
-
-For step 3: BddAbove of `range F` requires uniform upper bound on F(C). By the same private_profile_bounded argument, |F(C)| ≤ C_bnd for any C. So range F is bounded above.
+Mathlib helpers: `IsCompact.closure_subset_of_isClosed`, `subset_closure`, `IsClosed.closure_eq`, `IsLinearMap.csSup_convexHull`, `Convex.csInf_convexHull` (for sup/inf over conv hull = sup/inf over set, via linear functional).
 
 ## Strategy
 
-This is substantively similar to `menu_value_le_strategy_sup` (which we proved). The structural pattern:
-- σM-induced menu construction
-- Per-s/per-m pointwise inequality between beliefDot and max/min payoff
-- Integration via le_csSup over kernels + le_csSup over menus
+1. **Build C***: `C* := closure (range w_of_σ) ⊆ ProfileInW model`.
+   - IsCompact via `setup.W_compact.image (inclusion)` or `setup.W_compact` restricted to subtype, combined with `IsCompact.closure`.
+   - Or simpler: `C* := setupNonemptyCompactsOfSetWInRange ...`.
+   - The natural "full menu" is `Set.univ : Set (ProfileInW model)` if CompactSpace inst exists.
+   - Use IsCompact_univ.
 
-Provide the cleanest version you can. If certain steps require non-trivial machinery (e.g., closure of range needs continuity of profileMap which we don't have), use STUCK with the precise gap.
+2. **Bounds**:
+   - `hmax_bound s : beliefDot (inclM s) (profileMap σM s) ≤ maxPayoff C* s`
+   - `hmin_bound s : minPayoff C* s ≤ sInf_m beliefDot (inclM s) (profileMap σM m)`
+   (Both via membership of profileMap σM m in C*.)
+
+3. **AlignedPayoff bound**: integrate hmax_bound.
+
+4. **sInf MisalignedPayoff = ∫ sInf_m**: apply `adversary_infimum_pointwise` with `w := w_of_σ` and verify the 6 hypotheses (measurability of w, measurability of g, boundedness of g, measurability of sInf, integrability of sInf, integrability of g under compProd).
+
+5. **RobustPayoff bound**: combine the additive decomposition. Need
+   `sInf_β (α A + (1-α) M_β) = α A + (1-α) sInf_β M_β` — use `Real.sInf_const_add` or general `ciInf_add_const` after rewriting.
+
+6. **MenuFunctionalF bound**: linearity (integral_add) + comparison.
+
+7. **sSup**: use `le_csSup` with C* ∈ range and BddAbove (proved analogously to robust_range_bddAbove).
+
+Aim for 150-400 lines. May add private helpers. If genuinely STUCK on Step 1 (compact menu construction), state STUCK with the precise mathlib lemma needed.
 
 ## Output
 
@@ -97,4 +110,4 @@ theorem strategy_value_le_menu_sup ... := by
   -- your proof
 ```
 
-Aim for 100-200 lines.
+CRITICAL: model fields are `model.α/model.τM` (Greek). `AdviserKernel.kernel` is the field; `β.isMarkov` is Markov instance witness.

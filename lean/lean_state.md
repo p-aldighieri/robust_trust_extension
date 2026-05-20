@@ -168,3 +168,8 @@ All three formalize gates are now green: **Gate 1 PASS, Gate 2 PASS, Gate 3 PASS
 - This is the foundational sInf-swap; unlocks 1240, 2796 if PROVED.
 - State: 18 sorries, commit 16549f1.
 - Tried geps_selector_exists but blocked by closed_valued hypothesis (wstar measurable not continuous).
+
+## Heartbeat 2026-05-20 (c): strategy_value_le_menu_sup Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d8a24-a9d4-83ea-9b47-7a9d4304503f
+- Now unlocked since adversary_infimum_pointwise PROVED.
+- State: 17 sorries, commit bef6563.
