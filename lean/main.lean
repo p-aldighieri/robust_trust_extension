@@ -1349,6 +1349,177 @@ MisalignedPayoff β0 σ = AlignedPayoff σ, so MixturePayoff β0 σ = AlignedPay
 ≤ C, hence RobustPayoff σ = sInf ≤ MixturePayoff β0 σ ≤ C. Substantive gaps:
 (a) integrability of `s ↦ beliefDot (inclM s) (profileMap σ s)` to use
 integral_mono with C; (b) BddBelow of range MixturePayoffM for csInf_le_of_le. -/
+/-
+Precise remaining API stub 1.
+
+Needed lemma:
+  compact-extremum measurability for a Carathéodory/support-function map.
+
+In this application:
+  F s w = beliefDot (model.inclM s) w.val
+
+For fixed `w`, `s ↦ F s w` is measurable.
+For fixed `s`, `w ↦ F s w` is continuous.
+For compact `C`, this should give AEMeasurable/Measurable for
+  s ↦ maxPayoff C s
+and
+  s ↦ minPayoff C s.
+-/
+private lemma beliefDot_menu_uncurry_continuous
+    (model : RobustTrustModel) :
+    Continuous (fun x : Belief model.Ω × ProfileInW model =>
+      beliefDot x.1 x.2.val) := by
+  classical
+  unfold beliefDot
+  apply continuous_finset_sum
+  intro ω _
+  have hb : Continuous (fun b : Belief model.Ω => b.val ω) := by
+    exact (continuous_apply ω).comp
+      (continuous_subtype_val : Continuous (fun b : Belief model.Ω => b.val))
+  have hw : Continuous (fun w : ProfileInW model => w.val ω) := by
+    exact (continuous_apply ω).comp
+      (continuous_subtype_val : Continuous (fun w : ProfileInW model => w.val))
+  exact (hb.comp continuous_fst).mul (hw.comp continuous_snd)
+private lemma profileInW_abs_le_private_bound (model : RobustTrustModel) :
+    ∃ B : ℝ, 0 ≤ B ∧ ∀ w : ProfileInW model, ∀ ω : model.Ω, |w.val ω| ≤ B := by
+  rcases model.private_profile_bounded with ⟨B0, hB0⟩
+  refine ⟨max B0 0, le_max_right B0 0, ?_⟩
+  intro w ω
+  have hwprop : w.val ∈ PayoffProfileSet model := w.property
+  obtain ⟨σ, hσ⟩ : ∃ σ, model.profileOfPrivate σ = w.val := hwprop
+  calc
+    |w.val ω| = |model.profileOfPrivate σ ω| := by
+      rw [← hσ]
+    _ ≤ B0 := hB0 σ ω
+    _ ≤ max B0 0 := le_max_left B0 0
+
+private lemma beliefDot_ProfileInW_abs_le_private_bound (model : RobustTrustModel) :
+    ∃ B : ℝ, 0 ≤ B ∧
+      ∀ b : Belief model.Ω, ∀ w : ProfileInW model, |beliefDot b w.val| ≤ B := by
+  rcases profileInW_abs_le_private_bound model with ⟨B, hB_nonneg, hB⟩
+  refine ⟨B, hB_nonneg, ?_⟩
+  intro b w
+  have hb_nonneg : ∀ ω : model.Ω, 0 ≤ b.val ω := by
+    intro ω
+    exact b.property.1 ω
+  have hb_sum : (∑ ω : model.Ω, b.val ω) = 1 := by
+    exact b.property.2
+  unfold beliefDot
+  calc
+    |∑ ω : model.Ω, b.val ω * w.val ω|
+        ≤ ∑ ω : model.Ω, |b.val ω * w.val ω| := by
+          exact Finset.abs_sum_le_sum_abs
+            (s := Finset.univ)
+            (f := fun ω : model.Ω => b.val ω * w.val ω)
+    _ = ∑ ω : model.Ω, b.val ω * |w.val ω| := by
+          apply Finset.sum_congr rfl
+          intro ω _hω
+          rw [abs_mul, abs_of_nonneg (hb_nonneg ω)]
+    _ ≤ ∑ ω : model.Ω, b.val ω * B := by
+          apply Finset.sum_le_sum
+          intro ω _hω
+          exact mul_le_mul_of_nonneg_left (hB w ω) (hb_nonneg ω)
+    _ = B := by
+          rw [← Finset.sum_mul, hb_sum, one_mul]
+
+private lemma maxPayoff_aemeasurable
+    (model : RobustTrustModel) (C : CompactMenu model) :
+    AEMeasurable (fun s => maxPayoff model C s) model.τM := by
+  have hcont :
+      Continuous
+        (fun b : Belief model.Ω =>
+          sSup
+            ((fun w : ProfileInW model => beliefDot b w.val) ''
+              (↑C : Set (ProfileInW model)))) :=
+    C.isCompact.continuous_sSup (beliefDot_menu_uncurry_continuous model)
+  have hmeas : Measurable (fun s : model.M => maxPayoff model C s) := by
+    simpa [maxPayoff] using hcont.measurable.comp model.inclM_measurable
+  exact hmeas.aemeasurable
+
+private lemma minPayoff_aemeasurable
+    (model : RobustTrustModel) (C : CompactMenu model) :
+    AEMeasurable (fun s => minPayoff model C s) model.τM := by
+  have hcont :
+      Continuous
+        (fun b : Belief model.Ω =>
+          sInf
+            ((fun w : ProfileInW model => beliefDot b w.val) ''
+              (↑C : Set (ProfileInW model)))) :=
+    C.isCompact.continuous_sInf (beliefDot_menu_uncurry_continuous model)
+  have hmeas : Measurable (fun s : model.M => minPayoff model C s) := by
+    simpa [minPayoff] using hcont.measurable.comp model.inclM_measurable
+  exact hmeas.aemeasurable
+
+private lemma maxPayoff_mem_Icc_ae
+    (model : RobustTrustModel) (C : CompactMenu model) :
+    ∃ B : ℝ, ∀ᵐ s ∂model.τM, maxPayoff model C s ∈ Set.Icc (-B) B := by
+  rcases beliefDot_ProfileInW_abs_le_private_bound model with ⟨B, _hB_nonneg, hB⟩
+  refine ⟨B, Filter.Eventually.of_forall ?_⟩
+  intro s
+  let S : Set ℝ :=
+    (fun w : ProfileInW model => beliefDot (model.inclM s) w.val) ''
+      (↑C : Set (ProfileInW model))
+  have hS_nonempty : S.Nonempty := by
+    rcases C.nonempty with ⟨w0, hw0⟩
+    exact ⟨beliefDot (model.inclM s) w0.val, ⟨w0, hw0, rfl⟩⟩
+  have hS_upper : ∀ y ∈ S, y ≤ B := by
+    rintro y ⟨w, _hw, rfl⟩
+    exact (abs_le.mp (hB (model.inclM s) w)).2
+  have hS_lower : ∀ y ∈ S, -B ≤ y := by
+    rintro y ⟨w, _hw, rfl⟩
+    exact (abs_le.mp (hB (model.inclM s) w)).1
+  have hS_bddAbove : BddAbove S := ⟨B, hS_upper⟩
+  have hmax_le : sSup S ≤ B :=
+    csSup_le hS_nonempty hS_upper
+  have hle_max : -B ≤ sSup S := by
+    rcases hS_nonempty with ⟨y, hy⟩
+    exact le_trans (hS_lower y hy) (le_csSup hS_bddAbove hy)
+  refine ⟨?_, ?_⟩
+  · simpa [maxPayoff, S] using hle_max
+  · simpa [maxPayoff, S] using hmax_le
+
+private lemma minPayoff_mem_Icc_ae
+    (model : RobustTrustModel) (C : CompactMenu model) :
+    ∃ B : ℝ, ∀ᵐ s ∂model.τM, minPayoff model C s ∈ Set.Icc (-B) B := by
+  rcases beliefDot_ProfileInW_abs_le_private_bound model with ⟨B, _hB_nonneg, hB⟩
+  refine ⟨B, Filter.Eventually.of_forall ?_⟩
+  intro s
+  let S : Set ℝ :=
+    (fun w : ProfileInW model => beliefDot (model.inclM s) w.val) ''
+      (↑C : Set (ProfileInW model))
+  have hS_nonempty : S.Nonempty := by
+    rcases C.nonempty with ⟨w0, hw0⟩
+    exact ⟨beliefDot (model.inclM s) w0.val, ⟨w0, hw0, rfl⟩⟩
+  have hS_upper : ∀ y ∈ S, y ≤ B := by
+    rintro y ⟨w, _hw, rfl⟩
+    exact (abs_le.mp (hB (model.inclM s) w)).2
+  have hS_lower : ∀ y ∈ S, -B ≤ y := by
+    rintro y ⟨w, _hw, rfl⟩
+    exact (abs_le.mp (hB (model.inclM s) w)).1
+  have hS_bddBelow : BddBelow S := ⟨-B, hS_lower⟩
+  have hle_min : -B ≤ sInf S :=
+    le_csInf hS_nonempty hS_lower
+  have hmin_le : sInf S ≤ B := by
+    rcases hS_nonempty with ⟨y, hy⟩
+    exact le_trans (csInf_le hS_bddBelow hy) (hS_upper y hy)
+  refine ⟨?_, ?_⟩
+  · simpa [minPayoff, S] using hle_min
+  · simpa [minPayoff, S] using hmin_le
+
+private lemma maxPayoff_integrable
+    (model : RobustTrustModel) (C : CompactMenu model) :
+    Integrable (fun s => maxPayoff model C s) model.τM := by
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  rcases maxPayoff_mem_Icc_ae model C with ⟨B, hB⟩
+  exact Integrable.of_mem_Icc (-B) B (maxPayoff_aemeasurable model C) hB
+
+private lemma minPayoff_integrable
+    (model : RobustTrustModel) (C : CompactMenu model) :
+    Integrable (fun s => minPayoff model C s) model.τM := by
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  rcases minPayoff_mem_Icc_ae model C with ⟨B, hB⟩
+  exact Integrable.of_mem_Icc (-B) B (minPayoff_aemeasurable model C) hB
+
 private lemma menu_value_le_strategy_sup_robust_range_bddAbove
     (model : RobustTrustModel) :
     BddAbove
@@ -1446,11 +1617,14 @@ theorem menu_value_le_strategy_sup
         MenuFunctionalF model C =
           model.α * (∫ s, @maxPayoff model C s ∂model.τM) +
             (1 - model.α) * (∫ s, @minPayoff model C s ∂model.τM) := by
+      have hα_max_int :
+          Integrable (fun s => model.α * maxPayoff model C s) model.τM :=
+        (maxPayoff_integrable model C).const_mul model.α
+      have h1α_min_int :
+          Integrable (fun s => (1 - model.α) * minPayoff model C s) model.τM :=
+        (minPayoff_integrable model C).const_mul (1 - model.α)
       unfold MenuFunctionalF
-      -- ∫ (a*f + b*g) = a*∫f + b*∫g; needs integrability of f, g
-      -- We use menu_integrand_integrable (which itself depends on the
-      -- sorried helpers but compiles structurally).
-      sorry
+      rw [integral_add hα_max_int h1α_min_int, integral_const_mul, integral_const_mul]
     rw [hF_split]
     unfold MixturePayoffM
     rw [hAligned]
@@ -1728,37 +1902,6 @@ theorem menu_extrema_Hausdorff_Lipschitz
   · simpa [minPayoff, f, one_mul] using
       menu_sInf_image_lipschitz_nonemptyCompacts hf C D
 
-/-
-Precise remaining API stub 1.
-
-Needed lemma:
-  compact-extremum measurability for a Carathéodory/support-function map.
-
-In this application:
-  F s w = beliefDot (model.inclM s) w.val
-
-For fixed `w`, `s ↦ F s w` is measurable.
-For fixed `s`, `w ↦ F s w` is continuous.
-For compact `C`, this should give AEMeasurable/Measurable for
-  s ↦ maxPayoff C s
-and
-  s ↦ minPayoff C s.
--/
-private lemma beliefDot_menu_uncurry_continuous
-    (model : RobustTrustModel) :
-    Continuous (fun x : Belief model.Ω × ProfileInW model =>
-      beliefDot x.1 x.2.val) := by
-  classical
-  unfold beliefDot
-  apply continuous_finset_sum
-  intro ω _
-  have hb : Continuous (fun b : Belief model.Ω => b.val ω) := by
-    exact (continuous_apply ω).comp
-      (continuous_subtype_val : Continuous (fun b : Belief model.Ω => b.val))
-  have hw : Continuous (fun w : ProfileInW model => w.val ω) := by
-    exact (continuous_apply ω).comp
-      (continuous_subtype_val : Continuous (fun w : ProfileInW model => w.val))
-  exact (hb.comp continuous_fst).mul (hw.comp continuous_snd)
 
 private lemma menu_integrand_aemeasurable
     (model : RobustTrustModel)
