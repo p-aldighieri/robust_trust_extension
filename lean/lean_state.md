@@ -255,3 +255,18 @@ They're used transitively by the V8 main theorem via:
 Awaiting Pedro decision: leave as sorry, attempt to prove, or convert to axiom.
 
 State: commit d398c73. AXLE-clean on lean-4.29.0. phase: proving_lemmas (essentially done modulo INVENTORY).
+
+## Audit tasks 2026-05-20
+
+Task 1 (inside RobustTrust project): main.lean audit (Part A + Part B)
+  URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0dd632-2010-83ea-8fa2-37ff59055184
+  Attached: main.lean.txt (200KB)
+
+Task 2 (plain chatgpt.com Extended Pro): conceptual fit check
+  URL: https://chatgpt.com/c/6a0dd9aa-1b8c-83ea-b171-395c96e4e61f
+  Content: objective_statement.md + theorem_2_extension_proof_v8.md inlined (40KB)
+  Note: PDF (Robust_trust_Dworczak_Smolin.pdf) failed to upload via the script — content cited inline in objective is sufficient for conceptual check
+
+Task 3: follow-up in Task 2's chat once positive verdict returns.
+
+Helper script added: scripts/chatgpt_browser_agent/cdp_submit_with_attach.mjs
