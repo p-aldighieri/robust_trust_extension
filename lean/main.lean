@@ -4119,14 +4119,127 @@ theorem exact_adversary_attainment
           MisalignedPayoffFull model β σstar) := by
     rw [hmis_beta, hmis_inf]
 
+  -- BddBelow of MisalignedPayoffFull range via uniform |beliefDot| ≤ B.
+  have hMis_bddBelow :
+      BddBelow (Set.range fun β : AdviserKernel model =>
+        MisalignedPayoffFull model β σstar) := by
+    obtain ⟨B, hB0, hB⟩ := beliefDot_ProfileInW_abs_le_private_bound model
+    haveI : IsProbabilityMeasure model.τM := model.τM_prob
+    refine ⟨-B, ?_⟩
+    rintro x ⟨β, rfl⟩
+    haveI : ProbabilityTheory.IsMarkovKernel β.kernel := β.isMarkov
+    unfold MisalignedPayoffFull MisalignedPayoffM
+    have hOuter : ∀ s, -B ≤ ∫ m, beliefDot (model.inclM s)
+        (profileMap model (restrictFullToM model σstar) m) ∂(β.kernel s) := by
+      intro s
+      haveI : IsProbabilityMeasure (β.kernel s) :=
+        β.isMarkov.isProbabilityMeasure s
+      have hbound : ∀ m, |beliefDot (model.inclM s)
+          (profileMap model (restrictFullToM model σstar) m)| ≤ B := by
+        intro m
+        rw [ec.sigma_implements_wlabel m]
+        exact hB _ (ec.wlabel.wstar m)
+      exact (integral_Icc_of_forall_abs_le_prob (β.kernel s) hB0 hbound).1
+    have h_const_int :
+        (∫ _s : model.M, (-B : ℝ) ∂model.τM) = -B := by simp
+    rw [← h_const_int]
+    have hinner_int :
+        Integrable
+          (fun s : model.M =>
+            ∫ m, beliefDot (model.inclM s)
+              (profileMap model (restrictFullToM model σstar) m) ∂(β.kernel s))
+          model.τM := by
+      refine MeasureTheory.Integrable.of_bound ?_ B ?_
+      · have hg_meas_pm :
+            Measurable fun p : model.M × model.M =>
+              beliefDot (model.inclM p.1)
+                (profileMap model (restrictFullToM model σstar) p.2) := by
+          classical
+          unfold beliefDot
+          refine Finset.measurable_sum _ ?_
+          intro ω _
+          refine Measurable.mul ?_ ?_
+          · have hCoord : Measurable (fun s : model.M => (model.inclM s).val ω) :=
+              ((measurable_pi_apply ω).comp measurable_subtype_coe).comp
+                model.inclM_measurable
+            exact hCoord.comp measurable_fst
+          · have hCoord' :
+                Measurable (fun m : model.M =>
+                  profileMap model (restrictFullToM model σstar) m ω) := by
+              have hPM : Measurable (fun m : model.M =>
+                  (ec.wlabel.wstar m).val ω) :=
+                ((measurable_pi_apply ω).comp measurable_subtype_coe).comp
+                  ec.wlabel.measurable_wstar
+              have : (fun m : model.M =>
+                  profileMap model (restrictFullToM model σstar) m ω) =
+                  (fun m : model.M => (ec.wlabel.wstar m).val ω) := by
+                funext m; rw [ec.sigma_implements_wlabel m]
+              rw [this]; exact hPM
+            exact hCoord'.comp measurable_snd
+        have hg_uncurry_sm :
+            StronglyMeasurable (Function.uncurry (fun s : model.M => fun m : model.M =>
+              beliefDot (model.inclM s)
+                (profileMap model (restrictFullToM model σstar) m))) := by
+          change StronglyMeasurable (fun p : model.M × model.M =>
+            beliefDot (model.inclM p.1)
+              (profileMap model (restrictFullToM model σstar) p.2))
+          exact hg_meas_pm.stronglyMeasurable
+        have hsm := MeasureTheory.StronglyMeasurable.integral_kernel_prod_right
+            (κ := β.kernel) hg_uncurry_sm
+        exact hsm.aestronglyMeasurable
+      · refine Filter.Eventually.of_forall ?_
+        intro s
+        haveI : IsProbabilityMeasure (β.kernel s) :=
+          β.isMarkov.isProbabilityMeasure s
+        have hbound : ∀ m, |beliefDot (model.inclM s)
+            (profileMap model (restrictFullToM model σstar) m)| ≤ B := by
+          intro m
+          rw [ec.sigma_implements_wlabel m]
+          exact hB _ (ec.wlabel.wstar m)
+        have hreal : (β.kernel s).real Set.univ = 1 := by simp
+        have hnorm := MeasureTheory.norm_integral_le_of_norm_le_const
+          (μ := β.kernel s)
+          (f := fun m : model.M =>
+            beliefDot (model.inclM s)
+              (profileMap model (restrictFullToM model σstar) m))
+          (C := B) (Filter.Eventually.of_forall hbound)
+        simpa [hreal] using hnorm
+    refine MeasureTheory.integral_mono_ae
+      (integrable_const (-B)) hinner_int ?_
+    exact Filter.Eventually.of_forall hOuter
+  -- βstar attains sInf, so MisalignedPayoffFull βstar ≤ MisalignedPayoffFull β for all β
+  have hMis_lb_βstar :
+      ∀ β : AdviserKernel model,
+        MisalignedPayoffFull model βstar σstar ≤
+          MisalignedPayoffFull model β σstar := by
+    intro β
+    rw [hmis_attains]
+    exact csInf_le hMis_bddBelow ⟨β, rfl⟩
+  -- BddBelow of MixturePayoffFull range follows from MisalignedPayoffFull lower bound.
+  have hMix_bddBelow :
+      BddBelow (Set.range fun β : AdviserKernel model =>
+        MixturePayoffFull model β σstar) := by
+    refine ⟨MixturePayoffFull model βstar σstar, ?_⟩
+    rintro x ⟨β, rfl⟩
+    have hmis_le := hMis_lb_βstar β
+    have hαc : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+    unfold MixturePayoffFull
+    have := mul_le_mul_of_nonneg_left hmis_le hαc
+    linarith
   have hmix :
       MixturePayoffFull model βstar σstar =
         RobustPayoffFull model σstar := by
-    -- Algebraic linearity: sInf_β (α·A + (1-α)·M β) = α·A + (1-α)·sInf_β M β when
-    -- (1-α) ≥ 0. Combined with hmis_attains (Mis βstar = sInf range Mis), gives equality.
-    -- Establishing this requires Real.iInf_const_add + Real.iInf_const_mul-style API
-    -- + BddBelow of MisalignedPayoffFull range. Deferred to a future Pro pass.
-    sorry
+    unfold RobustPayoffFull
+    apply le_antisymm
+    · -- MixturePayoffFull βstar ≤ sInf
+      refine le_csInf ⟨_, ⟨βstar, rfl⟩⟩ ?_
+      rintro x ⟨β, rfl⟩
+      have hmis_le := hMis_lb_βstar β
+      have hαc : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+      unfold MixturePayoffFull
+      have := mul_le_mul_of_nonneg_left hmis_le hαc
+      linarith
+    · exact csInf_le hMix_bddBelow ⟨βstar, rfl⟩
 
   refine ⟨βstar, hdet, hsupp, ?_, hmix, hσstar⟩
   simpa [IsAdversarialFull] using hmix
