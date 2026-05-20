@@ -1520,11 +1520,126 @@ private lemma minPayoff_integrable
   rcases minPayoff_mem_Icc_ae model C with ⟨B, hB⟩
   exact Integrable.of_mem_Icc (-B) B (minPayoff_aemeasurable model C) hB
 
+private lemma integral_Icc_of_forall_abs_le_prob
+    {X : Type*} [MeasurableSpace X] (μ : Measure X)
+    [IsProbabilityMeasure μ] {f : X → ℝ} {B : ℝ}
+    (hB0 : 0 ≤ B) (hf : ∀ x, |f x| ≤ B) :
+    -B ≤ (∫ x, f x ∂μ) ∧ (∫ x, f x ∂μ) ≤ B := by
+  constructor
+  · by_cases hfi : Integrable f μ
+    · have hconst : Integrable (fun _ : X => -B) μ := by
+        simp
+      have hge : (fun _ : X => -B) ≤ᵐ[μ] f :=
+        Filter.Eventually.of_forall fun x => (abs_le.mp (hf x)).1
+      have hmono :
+          (∫ _ : X, -B ∂μ) ≤ ∫ x, f x ∂μ :=
+        MeasureTheory.integral_mono_ae hconst hfi hge
+      calc
+        -B = (∫ _ : X, -B ∂μ) := by simp
+        _ ≤ ∫ x, f x ∂μ := hmono
+    · rw [MeasureTheory.integral_undef hfi]
+      linarith
+  · by_cases hfi : Integrable f μ
+    · have hconst : Integrable (fun _ : X => B) μ := by
+        simp
+      have hle : f ≤ᵐ[μ] (fun _ : X => B) :=
+        Filter.Eventually.of_forall fun x => (abs_le.mp (hf x)).2
+      have hmono :
+          (∫ x, f x ∂μ) ≤ ∫ _ : X, B ∂μ :=
+        MeasureTheory.integral_mono_ae hfi hconst hle
+      calc
+        (∫ x, f x ∂μ) ≤ ∫ _ : X, B ∂μ := hmono
+        _ = B := by simp
+    · rw [MeasureTheory.integral_undef hfi]
+      exact hB0
+
 private lemma menu_value_le_strategy_sup_robust_range_bddAbove
     (model : RobustTrustModel) :
     BddAbove
       (Set.range (fun σ : AgentStrategyM model => @RobustPayoffM model σ)) := by
-  sorry
+  classical
+  obtain ⟨B, hB0, hB⟩ := beliefDot_ProfileInW_abs_le_private_bound model
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  refine ⟨B, ?_⟩
+  rintro x ⟨σ, rfl⟩
+  have hpoint :
+      ∀ (b : Belief model.Ω) (s : model.M),
+        |beliefDot b (profileMap model σ s)| ≤ B := by
+    intro b s
+    exact
+      hB b
+        (⟨profileMap model σ s, by
+            dsimp [profileMap]
+            exact ⟨σ.sectionM s, rfl⟩⟩ : ProfileInW model)
+  have hAligned :
+      -B ≤ AlignedPayoffM model σ ∧
+        AlignedPayoffM model σ ≤ B := by
+    let f : model.M → ℝ := fun s =>
+      beliefDot (model.inclM s) (profileMap model σ s)
+    have hf : ∀ s : model.M, |f s| ≤ B := by
+      intro s
+      simpa [f] using hpoint (model.inclM s) s
+    have hIcc := integral_Icc_of_forall_abs_le_prob model.τM hB0 hf
+    simpa [AlignedPayoffM, f] using hIcc
+  have hMis :
+      ∀ β : AdviserKernel model,
+        -B ≤ MisalignedPayoffM model β σ ∧
+          MisalignedPayoffM model β σ ≤ B := by
+    intro β
+    letI := β.isMarkov
+    let F : model.M → ℝ := fun s =>
+      ∫ m, beliefDot (model.inclM s) (profileMap model σ m) ∂(β.kernel s)
+    have hF : ∀ s : model.M, |F s| ≤ B := by
+      intro s
+      haveI : IsProbabilityMeasure (β.kernel s) := inferInstance
+      let g : model.M → ℝ := fun m =>
+        beliefDot (model.inclM s) (profileMap model σ m)
+      have hg : ∀ m : model.M, |g m| ≤ B := by
+        intro m
+        simpa [g] using hpoint (model.inclM s) m
+      have hgIcc := integral_Icc_of_forall_abs_le_prob (β.kernel s) hB0 hg
+      exact abs_le.mpr (by simpa [F, g] using hgIcc)
+    have hFIcc := integral_Icc_of_forall_abs_le_prob model.τM hB0 hF
+    simpa [MisalignedPayoffM, F] using hFIcc
+  have hmix_lower :
+      ∀ β : AdviserKernel model, -B ≤ MixturePayoffM model β σ := by
+    intro β
+    have hβ := hMis β
+    have hαc : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+    have hA :=
+      mul_le_mul_of_nonneg_left hAligned.1 model.α_nonneg
+    have hM :=
+      mul_le_mul_of_nonneg_left hβ.1 hαc
+    unfold MixturePayoffM
+    nlinarith [hA, hM]
+  have hmix_upper :
+      ∀ β : AdviserKernel model, MixturePayoffM model β σ ≤ B := by
+    intro β
+    have hβ := hMis β
+    have hαc : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
+    have hA :=
+      mul_le_mul_of_nonneg_left hAligned.2 model.α_nonneg
+    have hM :=
+      mul_le_mul_of_nonneg_left hβ.2 hαc
+    unfold MixturePayoffM
+    nlinarith [hA, hM]
+  let β0 : AdviserKernel model :=
+    { kernel :=
+        ProbabilityTheory.Kernel.deterministic
+          (id : model.M → model.M) measurable_id
+      isMarkov := inferInstance }
+  have hbdd :
+      BddBelow
+        (Set.range
+          (fun β : AdviserKernel model => MixturePayoffM model β σ)) := by
+    refine ⟨-B, ?_⟩
+    rintro y ⟨β, rfl⟩
+    exact hmix_lower β
+  have hRobust_le_mix :
+      RobustPayoffM model σ ≤ MixturePayoffM model β0 σ := by
+    unfold RobustPayoffM
+    exact csInf_le hbdd ⟨β0, rfl⟩
+  exact le_trans hRobust_le_mix (hmix_upper β0)
 
 /-- Trivial model-side coefficient fact. -/
 private lemma menu_value_le_strategy_sup_one_sub_alpha_nonneg
