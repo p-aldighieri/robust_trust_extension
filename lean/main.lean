@@ -1277,12 +1277,17 @@ private lemma menu_value_le_strategy_sup_payoff_image_bddBelow
     exact continuous_const.mul ((continuous_apply ω).comp continuous_subtype_val)
   exact (C.isCompact.image hcont).bddBelow
 
-/-- Allowed bookkeeping helper: robust payoffs are uniformly bounded above. -/
+/-- Allowed bookkeeping helper: robust payoffs are uniformly bounded above.
+Bound from `model.private_profile_bounded` (uniform sup-norm bound on
+profileOfPrivate). Sketch: take β0 = deterministic identity kernel; then
+MisalignedPayoff β0 σ = AlignedPayoff σ, so MixturePayoff β0 σ = AlignedPayoff σ
+≤ C, hence RobustPayoff σ = sInf ≤ MixturePayoff β0 σ ≤ C. Substantive gaps:
+(a) integrability of `s ↦ beliefDot (inclM s) (profileMap σ s)` to use
+integral_mono with C; (b) BddBelow of range MixturePayoffM for csInf_le_of_le. -/
 private lemma menu_value_le_strategy_sup_robust_range_bddAbove
     (model : RobustTrustModel) :
     BddAbove
       (Set.range (fun σ : AgentStrategyM model => @RobustPayoffM model σ)) := by
-  -- Uniform boundedness of utility/payoff profiles.
   sorry
 
 /-- Trivial model-side coefficient fact. -/
