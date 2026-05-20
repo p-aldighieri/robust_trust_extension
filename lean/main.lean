@@ -2149,6 +2149,16 @@ theorem geps_selector_exists
         ∀ s : model.M, mε s ∈ EpsilonContactGeps model cdagger ε s := by
   sorry
 
+private lemma exists_lt_sInf_add_pos_of_nonempty_rt
+    (s : Set ℝ) (hne : s.Nonempty) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ x ∈ s, x < sInf s + δ := by
+  by_contra h
+  have hLower : ∀ x ∈ s, sInf s + δ ≤ x := by
+    intro x hx
+    exact le_of_not_gt (fun hxlt => h ⟨x, hx, hxlt⟩)
+  have hle : sInf s + δ ≤ sInf s := le_csInf hne hLower
+  linarith
+
 theorem epsilon_adversary_realization
     (model : RobustTrustModel)
     (σstar : AgentStrategyFull model)
@@ -2158,7 +2168,126 @@ theorem epsilon_adversary_realization
         MixturePayoffFull model βε σstar ≤
             RobustPayoffFull model σstar + (1 - model.α) * ε ∧
           MixturePayoffFull model βε σstar ≤ UStarFull model + ε := by
-  sorry
+  intro ε hε
+  classical
+
+  have hα0 : 0 ≤ (model.α : ℝ) := by
+    first
+    | exact model.alpha_nonneg
+    | exact model.α_nonneg
+    | exact model.halpha_nonneg
+    | exact model.hα_nonneg
+    | exact model.hα.1
+    | exact model.alpha_bounds.1
+    | exact model.α_bounds.1
+    | exact model.alpha_bound.1
+    | exact model.α_bound.1
+    | exact model.alpha_mem.1
+    | exact model.α_mem.1
+    | exact model.alpha_mem_Icc.1
+    | exact model.α_mem_Icc.1
+    | exact model.α.property.1
+
+  have hα1 : (model.α : ℝ) ≤ 1 := by
+    first
+    | exact model.alpha_le_one
+    | exact model.α_le_one
+    | exact model.halpha_le_one
+    | exact model.hα_le_one
+    | exact model.hα.2
+    | exact model.alpha_bounds.2
+    | exact model.α_bounds.2
+    | exact model.alpha_bound.2
+    | exact model.α_bound.2
+    | exact model.alpha_mem.2
+    | exact model.α_mem.2
+    | exact model.alpha_mem_Icc.2
+    | exact model.α_mem_Icc.2
+    | exact model.α.property.2
+
+  let β0 : AdviserKernel model :=
+    { kernel := ProbabilityTheory.Kernel.deterministic
+        (id : model.M → model.M) measurable_id
+      isMarkov := inferInstance }
+
+  have hmul_le : (1 - (model.α : ℝ)) * ε ≤ ε := by
+    have hone_sub_le : 1 - (model.α : ℝ) ≤ 1 := by
+      linarith
+    have : (1 - (model.α : ℝ)) * ε ≤ 1 * ε :=
+      mul_le_mul_of_nonneg_right hone_sub_le (le_of_lt hε)
+    linarith
+
+  by_cases hαeq : (model.α : ℝ) = 1
+  · have hmix0 :
+        MixturePayoffFull model β0 σstar = AlignedPayoffFull model σstar := by
+      simp [MixturePayoffFull, hαeq]
+
+    have hRange :
+        Set.range (fun β : AdviserKernel model =>
+          MixturePayoffFull model β σstar) =
+            {AlignedPayoffFull model σstar} := by
+      ext x
+      constructor
+      · intro hx
+        rcases hx with ⟨β, rfl⟩
+        simp [MixturePayoffFull, hαeq]
+      · intro hx
+        rcases hx with rfl
+        exact ⟨β0, by simp [MixturePayoffFull, hαeq]⟩
+
+    have hRobust :
+        RobustPayoffFull model σstar = AlignedPayoffFull model σstar := by
+      simpa [RobustPayoffFull, hRange]
+
+    have h₁ :
+        MixturePayoffFull model β0 σstar ≤
+          RobustPayoffFull model σstar + (1 - model.α) * ε := by
+      calc
+        MixturePayoffFull model β0 σstar
+            = RobustPayoffFull model σstar := by
+                rw [hmix0, hRobust]
+        _ ≤ RobustPayoffFull model σstar + (1 - model.α) * ε := by
+          have hzero : (1 - (model.α : ℝ)) * ε = 0 := by
+            rw [hαeq]
+            ring
+          simpa [hzero]
+
+    refine ⟨β0, h₁, ?_⟩
+    calc
+      MixturePayoffFull model β0 σstar
+          ≤ RobustPayoffFull model σstar + (1 - model.α) * ε := h₁
+      _ ≤ UStarFull model + ε := by
+        rw [hσstar]
+        linarith
+
+  · have hαlt : (model.α : ℝ) < 1 := lt_of_le_of_ne hα1 hαeq
+    have hδ : 0 < (1 - (model.α : ℝ)) * ε := by
+      exact mul_pos (sub_pos.mpr hαlt) hε
+
+    let s : Set ℝ :=
+      Set.range (fun β : AdviserKernel model =>
+        MixturePayoffFull model β σstar)
+
+    have hsne : s.Nonempty := by
+      exact ⟨MixturePayoffFull model β0 σstar, ⟨β0, rfl⟩⟩
+
+    obtain ⟨x, hxmem, hxlt⟩ :=
+      exists_lt_sInf_add_pos_of_nonempty_rt s hsne hδ
+    rcases hxmem with ⟨βε, rfl⟩
+
+    have h₁ :
+        MixturePayoffFull model βε σstar ≤
+          RobustPayoffFull model σstar + (1 - model.α) * ε := by
+      exact le_of_lt (by
+        simpa [RobustPayoffFull, s] using hxlt)
+
+    refine ⟨βε, h₁, ?_⟩
+    calc
+      MixturePayoffFull model βε σstar
+          ≤ RobustPayoffFull model σstar + (1 - model.α) * ε := h₁
+      _ ≤ UStarFull model + ε := by
+        rw [hσstar]
+        linarith
 
 theorem exact_contact_selector_unpack
     (model : RobustTrustModel)
