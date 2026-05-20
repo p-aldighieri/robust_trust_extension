@@ -1705,7 +1705,11 @@ theorem wstar_profile_map_implemented
     (cdagger : PrunedMenuCdagger model wlabel) :
     ∃ σM : AgentStrategyM model,
       ∀ m : model.M, profileMap model σM m = (wlabel.wstar m).val := by
-  sorry
+  refine ⟨{ sectionM := fun m => prm.R (wlabel.wstar m)
+            measurable_sectionM := prm.measurable_R.comp wlabel.measurable_wstar }, ?_⟩
+  intro m
+  show model.profileOfPrivate (prm.R (wlabel.wstar m)) = (wlabel.wstar m).val
+  exact prm.right_inverse (wlabel.wstar m)
 
 theorem wstar_payoff_equals_F_Cdagger
     (model : RobustTrustModel)
@@ -1730,7 +1734,14 @@ theorem sigma_star_robust_optimal
     ∃ σstarFull : AgentStrategyFull model,
       RobustPayoffFull model σstarFull = UStarFull model ∧
         ∀ m : model.M, σstarFull.sectionFull (model.inclM m) = σstarM.sectionM m := by
-  sorry
+  let σstarFull := bridge.extendRestricted σstarM
+  refine ⟨σstarFull, ?_, ?_⟩
+  · -- RobustPayoffFull σstarFull = UStarFull model
+    obtain ⟨hUStar_eq, hRobust_eq⟩ := full_restricted_Ustar_equivalence model msupp bridge
+    have h_eq_section : ∀ m, σstarFull.sectionFull (model.inclM m) = σstarM.sectionM m :=
+      bridge.extendRestricted_eq σstarM
+    rw [hRobust_eq σstarFull σstarM h_eq_section, hσstarM, ← hUStar_eq]
+  · exact bridge.extendRestricted_eq σstarM
 
 theorem geps_nonempty
     (model : RobustTrustModel)
