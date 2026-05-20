@@ -2058,6 +2058,24 @@ theorem aligned_best_labeling_selection
     have hmax : f m ⟨w, hwC⟩ ≤ f m (wsel m) := h_isMax h_mem
     simpa [f] using hmax
 
+/-- Aux: if a sub-menu C ⊆ Cstar contains the aligned-best range (range wstar),
+then F(Cstar) ≤ F(C). Max term is preserved (wstar achieves the per-s max);
+min term is weakly increasing (smaller set → larger sInf). The integral
+preserves these inequalities. **Substantive gap**: this is the integral
+form of the closure-pruning preservation argument; full proof requires
+integral_mono over the menu-integrand bounded by the same C_bnd. -/
+private lemma MenuFunctionalF_le_of_contains_aligned_argmax
+    (model : RobustTrustModel)
+    (opt : OptimalMenuCstar model)
+    (wlabel : AlignedBestLabelingWstar model opt)
+    (C : CompactMenu model)
+    (hC_sub : (↑C : Set (ProfileInW model)) ⊆
+        (↑opt.Cstar : Set (ProfileInW model)))
+    (hrange_sub : Set.range wlabel.wstar ⊆
+        (↑C : Set (ProfileInW model))) :
+    MenuFunctionalF model opt.Cstar ≤ MenuFunctionalF model C := by
+  sorry
+
 theorem closure_pruning_value_preservation
     (model : RobustTrustModel)
     (opt : OptimalMenuCstar model)
@@ -2067,7 +2085,65 @@ theorem closure_pruning_value_preservation
           (↑opt.Cstar : Set (ProfileInW model)) ∧
         MenuFunctionalF model cdagger.Cdagger = MenuFunctionalF model opt.Cstar ∧
         MenuFunctionalF model opt.Cstar = UStarM model := by
-  sorry
+  classical
+  let S : Set (ProfileInW model) := closure (Set.range wlabel.wstar)
+  have hrange_sub_Cstar :
+      Set.range wlabel.wstar ⊆
+        (↑opt.Cstar : Set (ProfileInW model)) := by
+    rintro w ⟨m, rfl⟩
+    exact wlabel.mem_Cstar m
+  have hclosed_Cstar :
+      IsClosed (↑opt.Cstar : Set (ProfileInW model)) :=
+    opt.Cstar.isCompact.isClosed
+  have hS_sub_Cstar :
+      S ⊆ (↑opt.Cstar : Set (ProfileInW model)) := by
+    dsimp [S]
+    exact closure_minimal hrange_sub_Cstar hclosed_Cstar
+  have hS_nonempty : S.Nonempty := by
+    rcases Set.range_nonempty wlabel.wstar with ⟨w, hw⟩
+    exact ⟨w, subset_closure hw⟩
+  have hS_compact : IsCompact S :=
+    opt.Cstar.isCompact.of_isClosed_subset isClosed_closure hS_sub_Cstar
+  let CdaggerMenu : CompactMenu model :=
+    ⟨⟨S, hS_compact⟩, hS_nonempty⟩
+  have hCdagger_sub_Cstar :
+      (↑CdaggerMenu : Set (ProfileInW model)) ⊆
+        (↑opt.Cstar : Set (ProfileInW model)) := hS_sub_Cstar
+  have hclosure_sub_Cdagger :
+      closure (Set.range wlabel.wstar) ⊆
+        (↑CdaggerMenu : Set (ProfileInW model)) := fun _ hw => hw
+  have hCdagger_sub_closure :
+      (↑CdaggerMenu : Set (ProfileInW model)) ⊆
+        closure (Set.range wlabel.wstar) := fun _ hw => hw
+  have hrange_sub_Cdagger :
+      Set.range wlabel.wstar ⊆
+        (↑CdaggerMenu : Set (ProfileInW model)) :=
+    fun w hw => hclosure_sub_Cdagger (subset_closure hw)
+  have hvalue_ge :
+      MenuFunctionalF model opt.Cstar ≤
+        MenuFunctionalF model CdaggerMenu :=
+    MenuFunctionalF_le_of_contains_aligned_argmax
+      model opt wlabel CdaggerMenu
+      hCdagger_sub_Cstar
+      hrange_sub_Cdagger
+  have hvalue_le :
+      MenuFunctionalF model CdaggerMenu ≤
+        MenuFunctionalF model opt.Cstar :=
+    opt.optimal CdaggerMenu
+  have hvalue :
+      MenuFunctionalF model CdaggerMenu =
+        MenuFunctionalF model opt.Cstar :=
+    le_antisymm hvalue_le hvalue_ge
+  let cdagger : PrunedMenuCdagger model wlabel :=
+    { Cdagger := CdaggerMenu
+      subset_Cstar := hCdagger_sub_Cstar
+      closure_range_subset := hclosure_sub_Cdagger
+      range_dense := hCdagger_sub_closure
+      value_preserved := hvalue }
+  refine ⟨cdagger, ?_, ?_, ?_⟩
+  · exact cdagger.subset_Cstar
+  · exact cdagger.value_preserved
+  · exact opt.value_eq
 
 theorem wstar_profile_map_implemented
     (model : RobustTrustModel)
