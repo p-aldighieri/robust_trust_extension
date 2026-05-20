@@ -173,3 +173,8 @@ All three formalize gates are now green: **Gate 1 PASS, Gate 2 PASS, Gate 3 PASS
 - URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d8a24-a9d4-83ea-9b47-7a9d4304503f
 - Now unlocked since adversary_infimum_pointwise PROVED.
 - State: 17 sorries, commit bef6563.
+
+## Heartbeat 2026-05-20 (d): wstar_payoff_equals_F_Cdagger Pro chat in flight
+- URL: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0d9818-2d98-83ea-9406-0bffe4d65aa4
+- State: 16 sorries, commit 5402193.
+- Should unlock 3rd-conjunct sInf-linearity gap shared with hmix.
