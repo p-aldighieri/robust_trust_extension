@@ -19,6 +19,22 @@ not because they supersede v8.
 ## Route Records
 
 - `prior_attempts_digest.md`: failed architectures and why they should not be
-  restarted without new information.
+  restarted without new information. Updated 2026-05-21 with Pass 3 (Pareto-
+  frontier route) results.
 - `route_memos/phil_reny_route_memo.md`: durable memo for the Phil-Reny
   restricted-game and Lusin-lift approach.
+- `route_memos/piotr_pareto_frontier_route_memo.md`: working hypothesis for
+  Piotr's 2026-05-20 reformulation (subsets of $W^P$).
+- `route_memos/piotr_pareto_frontier_results.md`: first-attempt closure
+  summary (overridden by user 2026-05-21).
+- `route_memos/piotr_pareto_frontier_pass3_chronicle.md`: Pass 3 chronicle
+  with all positive contributions and the honest (D2)≡menu-Hall finding.
+
+## Pass 3 deliverables (2026-05-21)
+
+- `01_deliverables/exposition/exposition_v9.tex`: $v9$ exposition combining
+  the $v8$ menu engine with Pass 3's Clarke-Danskin finite-menu Pareto-Hall,
+  $\alpha=0$ unconditional, and compact-menu under (R1)+(R2-FES).
+- `03_runs/piotr_pareto_frontier/`: full pipeline trace (12 prompt/response
+  pairs across formalizer, literature, searcher×2, breakdown×2, prover×3,
+  reviewer×3).

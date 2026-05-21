@@ -132,6 +132,64 @@ the standing hypotheses do not force.
   $U\cup C<\infty$ finiteness lemma, or the realization/duality bridge — all
   open and reviewer-cleared as non-derivable.
 
+## Attempt 4 — Pareto-frontier reformulation (Piotr Dworczak, 2026-05-20; Pass 3)
+
+The 2026-05-20 reformulation by Piotr: agent picks a compact subset $C\subseteq W^P$
+of the weak Pareto frontier; misaligned adviser maps signals into payoff
+vectors in $C$. Documented in `route_memos/piotr_pareto_frontier_route_memo.md`
+and `route_memos/piotr_pareto_frontier_pass3_chronicle.md`.
+
+**What this delivered (verified by independent reviewer passes):**
+
+- **(T1) Finite-menu Pareto-Hall calibration** — *unconditional* in
+  payoff-label coordinates. Mechanism: at a Pareto-completed finite
+  ambient local maximizer of $F_k$, Clarke-Danskin stationarity produces
+  measurable active-face weights $\lambda^\pm:M\to\Delta(k)$ whose
+  normalized images $p_i = g_i/q_i$ lie in $B_W(w_i)$. Calibration emerges
+  as a Lagrange multiplier rather than being assumed as a Hall hypothesis.
+  No atomlessness, no genericity, no strict convexity.
+- **(T2) α=0 unconditional original-game Theorem 2** — degenerate
+  pure-adversarial case. Agent ignores advice, plays $R(w_0)$ with
+  $w_0\in\arg\max_W \mu_0\cdot w$; adversary sends a constant message;
+  posterior at the unique on-path message is the prior $\mu_0$, and
+  $R(w_0)$ is Bayes-optimal there by construction.
+- **(T4) Compact-menu Pareto-Hall** under (R1) stratification + (R2-FES)
+  finite effective exposure — meaningfully weaker than v8 menu-Hall in
+  payoff-label coordinates.
+
+**What did not work (do NOT re-propose without new ingredient):**
+
+- The lift from payoff-label calibration to original-game messagewise
+  calibration (Definition 2 q-a.e.) for general $\alpha\in(0,1)$ requires
+  (D2) finite-fiber calibrated matching, which Reviewer 03 + Searcher 02
+  confirmed is *structurally the same as v8's menu-Hall*, not strictly
+  weaker. The aligned/misaligned mismatch (aligned mass at literal m=s
+  vs. misaligned routing via $\lambda^-$) makes this lift the deletion-
+  compatible Hall duality problem of the v8 closure memo, in finite-fiber
+  coordinates.
+- Searcher 02 ruled out seven primitive candidates: atomless τ +
+  fiber-richness (C1), single-valued Gauss map (C2), τ-symmetry (C3),
+  smooth + strictly convex $W^P$ (C4), product utility (C5), coarsening
+  (C6), fiber-rich Lyapunov + Lagrangian transport (C7). Closest
+  mathematically (C7) collapses into (D2) when stated rigorously.
+- Do NOT propose any new primitive sufficient condition for (D2)
+  derived from atomlessness, fiber richness, or smoothness alone.
+
+**Recommended attack vectors for Pass 4+** (per Searcher 02 + user
+override 2026-05-21):
+
+- Direct attack on the deletion-compatible Hall duality theorem with
+  tools not surveyed in Pass 3: Beiglböck-Nutz martingale OT with cone
+  constraints, Doval-Smolin persuasion-and-welfare full framework,
+  Lipnowski-Ravid weak-institutions, Schauder/Kakutani fixed-point on
+  (labeling, kernel) pairs.
+- Special primitive islands: binary state $|\Omega|=2$ pushed to infinite
+  $M$, $\Theta$; antipodal/radial τ-symmetry; polyhedral $W$ with
+  finite-faced optimal trust region.
+- Theorem 1's connected trust region combined with Clarke-Danskin (T1):
+  $C^* = w^*(T)$ is connected compact in $W^P$, which may force structural
+  calibration that finite-vertex $C^*$ does not.
+
 ## What is genuinely new (Phil Reny's contribution)
 
 A two-stage path that **avoids the broken adversary-side attainment step**:

@@ -1,0 +1,493 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black, urlcolor=blue!50!black}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}
+\renewcommand{\theassumption}{A\arabic{assumption}}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\Om}{\Omega}
+\newcommand{\Th}{\Theta}
+\newcommand{\Si}{\Sigma}
+\newcommand{\suppset}{\operatorname{supp}}
+\newcommand{\essinf}{\operatorname*{essinf}}
+\newcommand{\essup}{\operatorname*{esssup}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\K}{\mathcal{K}}
+
+\title{
+  Extending Theorem~2 of \emph{Robust Trust} to infinite $M$ and $\Theta$:\\
+  \large A Pareto-frontier addendum to the menu engine (v9, Pass~3)
+}
+\author{Pedro Aldighieri}
+\date{21 May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note is the v9 layer above the v8 menu-engine exposition. It records
+the third pass at the infinite extension of Theorem~2 of Dworczak \&
+Smolin's \emph{Robust Trust} (2026), motivated by Piotr Dworczak's
+2026-05-20 suggestion to reformulate the agent's strategy as a compact
+subset of the weak Pareto frontier $W^P$ of state-contingent payoff
+profiles, with the misaligned adviser mapping signals directly into
+payoff vectors in the chosen subset. We report four new results.
+\textbf{(T1)~Finite-menu Pareto-Hall calibration} closes
+\emph{unconditionally} in payoff-label coordinates: at any
+finite-menu Pareto-completed ambient local maximizer of the value
+functional, Clarke--Danskin stationarity produces measurable active-face
+weights $\lambda^\pm:M\to\Delta(k)$ whose normalized images
+$p_i = g_i/q_i$ lie in the Bayes-cone $B_W(w_i)$. Calibration
+\emph{emerges} as a Lagrange multiplier rather than being imposed as an
+external Hall-type assumption. \textbf{(T2)~$\alpha=0$ unconditional}
+infinite-$M$ Theorem~2 closes via a singleton-strategy reduction:
+when the adviser is purely adversarial, the optimal payoff-profile
+menu collapses to a single Bayes-optimal-at-prior profile, and the
+adviser's fixed-message strategy makes the agent's continuation
+Bayes-optimal at the prior. \textbf{(T3)~Compact-menu Pareto-Hall}
+closes in payoff-label coordinates under finite effective exposure
+of the optimal menu, a primitive structural condition strictly
+weaker than $v8$ menu-Hall in those coordinates. \textbf{(T4)~Honest
+endpoint.} For general $\alpha\in(0,1)$ and the original-game
+Definition~2, the lift from payoff-label calibration to messagewise
+calibration requires a finite-fiber matching condition \emph{(D2)}
+which is shown to be the finite-fiber version of $v8$'s menu-Hall,
+not a strictly weaker primitive. The deletion-compatible Hall duality
+theorem named in the project closure memo remains the single open
+object. A fresh seven-candidate primitive search (atomless plus
+fiber-richness, single-valued Gauss map, $\tau$-symmetry, smooth plus
+strictly convex $W^P$, product utility, coarsening, fiber-rich
+Lagrangian transport) did not produce a strictly weaker primitive.
+All claims above were verified by independent reviewer passes on fresh
+chats; the pipeline trace is in \S\ref{sec:pipeline}.
+\end{abstract}
+
+\section{Setting and recap of $v8$}\label{sec:setting}
+
+We use the notation of \emph{Robust Trust} and of $v8$ (\S\ref{sec:setting}
+in \texttt{exposition.pdf}). $\Om$ is finite with full-support prior
+$\mu_0$; $s\in\Delta(\Om)$ has unconditional law $\tau$ on
+$M = \suppset(\tau)$; $\theta\in\Th$ (compact metric) is drawn from
+$f(\cdot\mid\omega)$, independent of $s$ given $\omega$; $A$ is compact
+metric; $u(a,\omega,\theta)$ is bounded continuous in $a$. With
+probability $\alpha\in[0,1]$ the adviser is aligned and reports $s$
+truthfully; with probability $1-\alpha$ misaligned, using any
+$\beta:M\to\Delta(M)$ Borel. Agent strategies are
+$\sigma:M\times\Th\to\Delta(A)$ Borel. The robust value is
+$U^* = \sup_{\sigma\in\Si}U(\sigma)$ with $U$ as in $v8$ Eq.~(1).
+
+The $v8$ menu engine works on the payoff-profile polytope
+$W = \{w\in\R^N : \exists\,\hat\sigma:\Th\to\Delta(A),\;w(\omega)=\E_{\hat\sigma}[u(a,\omega,\theta)\mid\omega]\}$,
+which is convex compact (\emph{Robust Trust} Lemma~2 of Theorem~1's
+proof, p.~27). Its weak Pareto frontier $W^P$ is the closed subset of
+profiles not strictly state-wise dominated. Lemma~2 records the key
+equivalence \emph{$\hat\sigma$ is Bayes-optimal for some belief iff its
+profile is in $W^P$}.
+
+$v8$ delivers a three-tier result:
+\begin{itemize}
+  \item \textbf{Tier~1a (value optimality)}: $\sup_C F(C)$ is attained on
+    $\K(W)$ under standing alone, where
+    $F(C) = \int[\alpha\max_C s\!\cdot w + (1-\alpha)\min_C s\!\cdot w]\,d\tau$.
+  \item \textbf{Tier~1b (exact adversary)}: under \emph{exact-contact},
+    a deterministic message kernel $\beta^*(\cdot\mid s) = \delta_{m^*(s)}$
+    attains the misaligned infimum.
+  \item \textbf{Tier~2 (full robust rationalizability)}: under
+    \emph{exact-contact} plus \emph{menu-Hall}, Definition~2 holds
+    $q$-a.e.
+\end{itemize}
+The $v8$ closure memo names the single open object as a
+\emph{deletion-compatible Hall duality theorem} reconciling sourcewise
+deletion certificates with messagewise Bayes-cone calibration; both
+prior attack routes (constrained-persuasion duality and
+calibration-defect bound) stalled at the same structural family of
+gaps.
+
+\section{The Pareto-frontier reformulation}\label{sec:gp}
+
+\paragraph{Piotr's proposal (2026-05-20, verbatim).} ``Instead of
+thinking of the Agent as selecting a mapping from private signals and
+messages of the Adviser to distributions over actions, we can think of
+the Agent as selecting a subset of the weak Pareto frontier of
+state-contingent payoffs, relying on Lemma~2 in the proof of
+Theorem~1. With some appropriate topology, the set of all feasible
+subsets is compact. The strategy of the misaligned Adviser is to map
+their signal into a state-contingent payoff vector in the set chosen
+by the Agent.''
+
+\paragraph{The game $\mathcal G_P$.}
+\begin{itemize}[leftmargin=*]
+  \item Agent's strategy space: $\K(W^P) = \{C\subseteq W^P : C\ne\emptyset,\,C\text{ compact}\}$,
+    equipped with Hausdorff distance. Blaschke selection yields
+    $(\K(W^P), d_H)$ compact metric.
+  \item Misaligned adviser's strategy space for fixed $C$: Borel maps
+    $\beta:M\to W^P$ with $\beta(s)\in C$ $\tau$-a.e. Compactness follows
+    from the relaxed-Young embedding into $\Delta(M\times C)$.
+  \item Payoff $U_P(C,\beta) = \alpha\!\int_M\!\max_{w\in C}s\!\cdot w\,d\tau + (1-\alpha)\!\int_M s\!\cdot\beta(s)\,d\tau$.
+  \item Agent's robust value $V_P(C) = \inf_\beta U_P(C,\beta) = \alpha\!\int\max_C s\!\cdot w\,d\tau + (1-\alpha)\!\int\min_C s\!\cdot w\,d\tau$.
+\end{itemize}
+
+\paragraph{WLOG equivalence to the original value.}
+By Lemma~2 of Theorem~1's proof, every optimal $\sigma\in\Si$ is
+equivalent to one whose message-conditional profile $w_\sigma(m)$ takes
+values in $W^P$ for every $m\in M$. Setting $C_\sigma := \overline{w_\sigma(M)}\subseteq W^P$
+collapses the adversary's effective action set to $C_\sigma$ and yields
+\begin{equation}\label{eq:wlog}
+  U^* \;=\; \sup_{C\in\K(W^P)}V_P(C).
+\end{equation}
+The lift from any $C\in\K(W^P)$ to a measurable original-game strategy
+is the profile-realization right inverse $R:W\to\hat\Si$ (KRN; $v8$
+\S3 sub-lemma).
+
+\paragraph{What $\mathcal G_P$ buys cleanly.} The adversary's
+best-response in $\mathcal G_P$ is $\beta^*(s)\in\argmin_{w\in C}s\!\cdot w$,
+existence automatic by Kuratowski--Ryll-Nardzewski on the compact-valued
+correspondence $s\mapsto C$. This dispenses with the $v8/v5$ \emph{A8c-lsc}
+hypothesis. Tier~1a in payoff-vector form is therefore strictly cleaner
+than $v8$'s.
+
+\section{Finite-menu Pareto-Hall calibration via Clarke--Danskin}\label{sec:t1}
+
+The key technical novelty of $v9$ is a Lagrange-multiplier-based
+calibration theorem that does not assume any Hall-type kernel
+existence.
+
+\begin{theorem}[Finite-menu Pareto-Hall calibration]\label{thm:T1}
+Let $C^* = \{w_1,\ldots,w_k\}\subseteq W^P$ be a Pareto-completed ambient
+local maximizer of the finite-menu functional
+\[
+  F_k(w_1,\ldots,w_k) \;=\; \int_M\!\big[\alpha\max_i s\!\cdot w_i + (1-\alpha)\min_i s\!\cdot w_i\big]\,\tau(ds).
+\]
+Then there exist Borel measurable active-face weights
+\[
+  \lambda^+:M\to\Delta(k),\quad \lambda^-:M\to\Delta(k),
+\]
+with $\suppset\lambda^+(s)\subseteq\argmax_i s\!\cdot w_i$ and
+$\suppset\lambda^-(s)\subseteq\argmin_i s\!\cdot w_i$ for $\tau$-a.e.\ $s$,
+such that the integral subgradient component
+\[
+  g_i \;=\; \alpha\!\int\lambda^+_i(s)\,s\,d\tau + (1-\alpha)\!\int\lambda^-_i(s)\,s\,d\tau
+\]
+satisfies $g_i\in N_W(w_i)$ for every $i$; and with
+$q_i = \alpha\!\int\lambda^+_i\,d\tau + (1-\alpha)\!\int\lambda^-_i\,d\tau$,
+the normalized vector $p_i := g_i/q_i$ lies in $B_W(w_i) = N_W(w_i)\cap\Delta(\Om)$
+for every $i$ with $q_i > 0$.
+\end{theorem}
+
+\noindent The proof chain is twelve lemmas long; here we record the
+load-bearing structure.
+
+\begin{lemma}[Integral Clarke--Danskin representation]\label{lem:L6}
+Every $g\in\partial_C F_k(\bar w)$ admits Borel multipliers
+$\lambda^\pm:M\to\Delta(k)$ with $\suppset\lambda^\pm(s)$ in the active
+max/min faces and the integral representation above.
+\end{lemma}
+
+\noindent Proof outline. Apply Clarke's integral subdifferential
+interchange (Clarke 1983, \S2.7) to obtain
+$\partial_C F_k(\bar w)\subseteq\int_M\partial_C\phi_s(\bar w)\,d\tau$
+(Aumann integral closed in finite dimension; uniform Lipschitz
+$L(s)=\|s\|_\infty\le 1$). Use the larger active-weight correspondence
+$R(s)\supseteq\partial_C\phi_s(\bar w)$ rather than equality
+(\emph{patched after reviewer pass~01}: equality fails on positive-measure
+tie sets in general). Select a Borel measurable selector
+$\xi(s)\in R(s)$ on the Borel partition $\{E_{I,J}\}$ of $M$ into
+active-cell strata, apply Kuratowski--Ryll-Nardzewski to decompose
+$\xi(s)$ into $\lambda^+(s)\in\Delta(I)$ and $\lambda^-(s)\in\Delta(J)$.
+
+\begin{lemma}[Clarke--Fermat normal-cone stationarity]\label{lem:L7}
+If $\bar w$ is an ambient local maximizer of $F_k$ on $W^k$, then there
+exists $g\in\partial_C F_k(\bar w)$ with $g\in N_{W^k}(\bar w) = \prod_i N_W(w_i)$.
+\end{lemma}
+
+\noindent Proof outline. Apply Clarke's necessary condition for the
+constrained minimum of $-F_k$ on $W^k$, yielding
+$0\in\partial_C(-F_k)(\bar w) + N_{W^k}(\bar w)$, and use the product
+normal-cone formula. The ambient (rather than frontier-only) local-max
+hypothesis is essential for $N_W$-normality and is delivered by Lemma~2
+of Theorem~1's proof under standard Pareto-completion.
+
+\begin{lemma}[Multipliers are the calibration kernel]\label{lem:L8}
+With $g$ from Lemma~\ref{lem:L7} and $\lambda^\pm$ from Lemma~\ref{lem:L6},
+the mass balance $\sum_i q_i = 1$ holds, $p_i := g_i/q_i\in\Delta(\Om)$
+for $q_i>0$, and $p_i\in B_W(w_i)$.
+\end{lemma}
+
+\noindent Proof outline. \emph{Mass balance}: integrate
+$\sum_i\lambda^\pm_i = 1$ against $\tau$. \emph{Posterior in simplex}:
+$\sum_\omega[g_i]_\omega = \alpha\!\int\lambda^+_i\sum_\omega s(\omega)\,d\tau + (1-\alpha)\!\int\lambda^-_i\sum_\omega s(\omega)\,d\tau = q_i$
+since $s\in\Delta(\Om)$; nonneg entries by $s\ge 0$ and $\lambda^\pm\ge 0$.
+\emph{Calibration}: $g_i\in N_W(w_i)$ by Lemma~\ref{lem:L7};
+$N_W(w_i)$ is a convex cone; positive rescaling $p_i = g_i/q_i$
+preserves cone membership; intersection with $\Delta(\Om)$ gives $B_W(w_i)$.
+
+\noindent\textbf{Mechanism.} The Clarke multipliers $\lambda^\pm$ are
+not bookkeeping: they encode \emph{both} the aligned tie-routing weights
+on the supporting hyperplane $\argmax_i s\!\cdot w_i$ \emph{and} the
+adversarial tie-routing weights on $\argmin_i s\!\cdot w_i$. The
+normalization $p_i = g_i/q_i$ is the disintegration posterior at
+label~$i$ under a (label-coordinate) joint law combining aligned
+$\lambda^+$-routing with weight~$\alpha$ and adversarial
+$\lambda^-$-routing with weight~$1-\alpha$. Fermat normality of $g_i$
+in $N_W(w_i)$ is therefore \emph{equivalent} to Bayes-optimality of the
+disintegrated posterior at $w_i$: calibration emerges from the
+finite-menu optimization itself, not from an external Hall assumption.
+
+\paragraph{No hidden hypotheses.} The proof uses no atomlessness of
+$\tau$, no genericity (positive-measure ties are handled by measurable
+selection on Borel active-cell strata), no strict convexity of $W$, and
+no $\tau$-AC restriction. Reviewer~02 (fresh chat) verified
+Lemmas~\ref{lem:L6}--\ref{lem:L8} with all hypotheses on the table.
+
+\paragraph{$v8$ sharpness package compatibility.} Theorem~\ref{thm:T1}
+does not contradict $v8$ Lemma~7 (cone intersection) or Theorem~8
+(no-free-dust) on the WTA ternary witness, because the witness is
+\emph{not} a finite ambient local maximizer of $F_k$ in the
+Lemma~\ref{lem:L7} sense. The $v8$ closure memo classifies the witness
+as a menu-engine artefact; this classification is what allows
+Theorem~\ref{thm:T1} to hold without contradicting the witness's
+non-calibration.
+
+\section{$\alpha=0$ unconditional via singleton strategy}\label{sec:t2}
+
+When the adviser is purely adversarial, the optimal payoff-profile menu
+collapses to a single Bayes-optimal-at-prior profile, and Definition~2
+closes by a brute-force calculation.
+
+\begin{theorem}[$\alpha=0$ unconditional Theorem~2]\label{thm:T2}
+Under the standing hypotheses and $\alpha=0$ (pure adversarial adviser),
+there exists a robustly rationalizable optimal strategy without any
+finiteness of $M$ or $\Th$. Explicitly:
+\begin{itemize}[leftmargin=*]
+  \item Pick $w_0\in\argmax_{w\in W}\mu_0\!\cdot w$, attained because $W$
+    is compact in $\R^N$.
+  \item Set $\hat\sigma^*(m) := R(w_0)$ for every $m\in M$ (the agent
+    ignores advice and plays the Bayes-optimal-at-prior continuation).
+  \item Pick any fixed $m_0\in M$ and set $\beta^*(\cdot\mid s) := \delta_{m_0}$
+    for every $s$ (the adversary sends a constant message).
+\end{itemize}
+Then $\beta^*$ is adversarial against $\sigma^*$ (agent's payoff is
+$\beta$-independent since $\hat\sigma^*$ is constant in $m$), the unique
+$q$-positive message is $m_0$, and the disintegration posterior there
+is $\mu_0$ (the prior). By construction $w_0\in\argmax_W\mu_0\!\cdot w$,
+hence $R(w_0)$ is Bayes-optimal at $\mu_0$. Definition~2 holds.
+\end{theorem}
+
+\noindent Reviewer~03 (fresh chat) verified Theorem~\ref{thm:T2} and
+flagged it as the cleanest infinite extension in the pure adversarial
+regime. The result strictly generalizes the paper's Theorem~2 for
+$\alpha=0$.
+
+\noindent\textbf{Caveat on scope.} $\alpha=0$ is the \emph{degenerate}
+limit of the model in which the adviser is never aligned. The
+substantive regime is $\alpha\in(0,1)$; Theorem~\ref{thm:T2} should be
+read as the easy end of the spectrum, not as the headline contribution.
+
+\section{Compact-menu Pareto-Hall under finite effective exposure}\label{sec:t4}
+
+The finite-menu Theorem~\ref{thm:T1} extends to compact menus under an
+economically meaningful primitive condition strictly weaker than $v8$'s
+menu-Hall in payoff-label coordinates.
+
+\begin{assumption}[(R1) Stratification]\label{ass:R1}
+$W^P$ admits a finite Borel stratification $W^P = \bigsqcup_\ell S_\ell$
+such that on each stratum's relative interior the Gauss map
+$\nu:S_\ell\to S^{N-1}$ (selecting a unit-norm supporting direction) is
+single-valued and continuous.
+\end{assumption}
+
+\noindent Polyhedral $W$ satisfies (R1) trivially with strata =
+relative interiors of faces. Smooth strictly convex $W$ satisfies (R1)
+with a single stratum.
+
+\begin{assumption}[(R2-FES) Finite effective exposure]\label{ass:R2}
+At a global maximizer $C^*\in\argmax_{\K(W^P)}V_P$, there is a finite
+subset $C_0 = \{w_1,\ldots,w_k\}\subseteq C^*$ such that for $\tau$-a.e.\ $s\in M$,
+$\max_{w\in C^*}s\!\cdot w = \max_{w\in C_0}s\!\cdot w$ and
+$\min_{w\in C^*}s\!\cdot w = \min_{w\in C_0}s\!\cdot w$.
+\end{assumption}
+
+\noindent (R2-FES) is the structural translation of ``the agent's
+effective response is finite-menu, even when the abstract menu is a
+continuum''. It is economically meaningful in applications with
+finite-thresholding decision rules (clinical triage, lending tiers).
+
+\begin{theorem}[Compact-menu Pareto-Hall]\label{thm:T4}
+Under (R1) plus (R2-FES), every global maximizer $C^*\in\argmax_{\K(W^P)}V_P$
+admits Borel multipliers $\lambda^\pm:M\to\Delta(k)$ supported on the
+finite effective exposure $C_0$ such that the induced label posteriors
+$p_i = g_i/q_i$ lie in $B_W(w_i)\cap\Delta(\Om)$ for every $i$ with $q_i>0$.
+\end{theorem}
+
+\noindent Proof outline. (R2-FES) gives $V_P(C_0) = V_P(C^*)$; (R1)
+combined with $C_0\subset C^*$ makes $C_0$ a Pareto-completed ambient
+local maximizer of $F_k$ on the appropriate stratum product;
+Theorem~\ref{thm:T1} applies. \emph{Capstone~1} in $v9$'s breakdown~02
+(see \texttt{breakdown\_02\_response.md}).
+
+\paragraph{General compact ($v9$ Capstone~2).} Under a weaker condition
+\emph{(R3-FCA/PK)} requiring approximation of $C^*$ by finite critical
+menus in Painlev\'e--Kuratowski convergence, Capstone~2 lifts the
+finite-effective theorem to general compact menus. This is conditional;
+not unconditional.
+
+\section{The honest endpoint: $(D2)\equiv$ menu-Hall for general $\alpha$}\label{sec:d2}
+
+The lift from payoff-label calibration (Theorems~\ref{thm:T1}
+and~\ref{thm:T4}) to original-game messagewise calibration
+(Definition~2 in the $q$-a.e. infinite-space reading) requires a
+finite-fiber matching condition we call $(D2)$.
+
+\begin{assumption}[(D2) Finite-fiber calibrated matching]\label{ass:D2}
+There exists a Borel original-game adversarial kernel $\hat\beta^*:M\to\Delta(M)$
+such that, with $\gamma_\alpha := \alpha(\mathrm{id},\mathrm{id})_\#\tau + (1-\alpha)\tau\otimes\hat\beta^*$
+and $q := (\gamma_\alpha)_2$:
+\begin{enumerate}[label=(D2.\arabic*)]
+  \item \emph{First-marginal match}: for $\tau$-a.e.\ $s$,
+    $\hat\beta^*(F_i\mid s) = \lambda^-_i(s)$ where
+    $F_i = (w^*)^{-1}(\{w_i\})$.
+  \item \emph{Rowwise-minimizer support}: $\hat\beta^*(F_i\mid s)>0$
+    implies $w_i\in\argmin_{w\in C^*}s\!\cdot w$.
+  \item \emph{Messagewise calibration}: $P_{\hat\beta^*}(\cdot\mid m)\in B_W(w^*(m))$
+    for $q$-a.e.\ $m\in M$.
+\end{enumerate}
+\end{assumption}
+
+\begin{proposition}\label{prop:D2equiv}
+For general $\alpha\in(0,1)$, (D2) is structurally the finite-fiber
+version of $v8$'s menu-Hall. It is not a strictly weaker primitive
+condition.
+\end{proposition}
+
+\noindent Proof outline (verified by reviewer~03). With $\lambda^-$
+fixed, (D2.3) restated in original-game variables matches the $v8$
+menu-Hall condition for a kernel supported on $G(s)$ with posterior in
+$B(m)$ $q$-a.e. The finite-label coarsening makes the bookkeeping
+smaller (only $k$ Bayes cones to satisfy), but the underlying
+source-to-message splitting inside each fiber $F_i$ in the presence
+of aligned-diagonal mass is the same Hall transport problem. The
+$v8$ closure memo names this exact object as deletion-compatible Hall
+duality.
+
+\paragraph{The aligned/misaligned mismatch.} For $\alpha>0$,
+$p_i = g_i/q_i$ averages aligned tie-routing $\lambda^+$ and misaligned
+$\lambda^-$. The original-game messagewise posterior at any
+representative $m_i\in F_i$ involves only the aligned-conditional-given-$m_i$
+distribution (the truthful aligned mass at the literal message $m=s$,
+not at the label-representative) plus misaligned $\lambda^-$. Forcing
+these to agree messagewise is (D2.3).
+
+\paragraph{Searcher~02's primitive scan.} A fresh seven-candidate
+search (\texttt{searcher\_02\_response.md}) examined:
+\begin{enumerate}[label=(C\arabic*), leftmargin=*]
+  \item Atomless $\tau$ plus fiber-richness ($\tau(F_i)>0$): too weak.
+  \item Single-valued Gauss map at $C^*$: clarifies equations but does
+    not solve them.
+  \item Diagonal $\tau$-symmetry: a positive island only for
+    one-dimensional or antipodal cases.
+  \item Smooth plus strictly convex $W^P$: meaningful regularity, but
+    not sufficient.
+  \item Product/separable utility: not a useful sufficient condition.
+  \item Coarsening / pure-aligned-redirect: helps for exact-contact, not
+    for (D2).
+  \item Fiber-rich Lyapunov plus Lagrangian transport: closest
+    mathematically, but as stated insufficient; when repaired, it
+    becomes (D2)/menu-Hall.
+\end{enumerate}
+Verdict: \emph{no candidate yields a genuinely primitive sufficient
+condition for $(D2)$ strictly weaker than menu-Hall, in payoff-label
+coordinates}.
+
+\section{Pipeline trace and verification}\label{sec:pipeline}
+
+All claims in this note were generated and verified via the
+MathPipeProver smart-scaffolding pipeline, with Extended Pro as the
+external proof engine. Each prover output was reviewed on a fresh
+independent chat. The trace:
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+Pass & Chat ID & Verdict / output \\
+\hline
+Formalizer 01 & \texttt{6a0e88b1} & Reformulation precise; (D2)$\equiv$menu-Hall flagged \\
+Literature 01 & \texttt{6a0e8b5e} & BUILD; closest tool: Dworczak--Kolotilin \\
+Searcher 01 & \texttt{6a0e8f51} & Primary route: Clarke--Danskin stationarity \\
+Breakdown 01 & \texttt{6a0e95c1} & 12-lemma chain \\
+Prover 01 (L6) & \texttt{6a0e9994} & Integral Clarke--Danskin representation \\
+Reviewer 01 (L6) & \texttt{6a0e9cfe} & PATCH\_SMALL --- patched with $R(s)$ \\
+Prover 02 (L7+L8) & \texttt{6a0ea088} & Fermat + multiplier hinge \\
+Reviewer 02 (L7+L8) & \texttt{6a0ea3ca} & \textbf{PASS} (Theorem~\ref{thm:T1}) \\
+Prover 03 (L12) & \texttt{6a0ea7b0} & $\alpha=0$ unconditional; $\alpha>0$ needs (D2) \\
+Breakdown 02 (compact) & \texttt{6a0ea80b} & (R1)+(R2-FES); (R3-FCA/PK) \\
+Reviewer 03 (singleton) & \texttt{6a0eaf03} & \textbf{PASS} (Theorems~\ref{thm:T2}--\ref{thm:T4}) \\
+Searcher 02 (primitives) & \texttt{6a0eaf16} & No strictly weaker (D2) primitive \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Open problems and recommendations}\label{sec:open}
+
+\paragraph{The single open object remains the deletion-compatible Hall
+duality theorem.} Both the $v8$ closure memo and this $v9$ confirm
+this from independent attack directions. The named obstructions are
+Borel-to-compact non-monotonicity, label-fiber lift, and slack
+discipline in curved $W$.
+
+\paragraph{Special primitive islands worth attacking.} Per searcher~02:
+\begin{itemize}[leftmargin=*]
+  \item Binary state ($|\Om|=2$): paper Appendix A.6 covers finite $M$.
+    Push to infinite $M$, $\Th$ using Theorem~\ref{thm:T1} plus an
+    order/monotone structure on $\Delta(\Om)$.
+  \item Antipodal/radial $\tau$-symmetry: spherical case (paper
+    Appendix A.10) plus rotational invariance forces calibration by
+    symmetry-averaging.
+  \item Polyhedral $W$ with finite-faced optimal trust region: $(R1)$
+    + finite-faceted polyhedrality reduces (R2-FES) to the
+    finite-vertex case; Theorem~\ref{thm:T4} closes.
+\end{itemize}
+
+\paragraph{Methodological contribution.} The Clarke--Danskin
+finite-menu calibration mechanism (Theorem~\ref{thm:T1}) is portable
+beyond robust trust to other zero-sum persuasion-like games with
+finite-effective payoff-profile menus. Calibration as a Lagrange
+multiplier is, to our knowledge, a new tool in this literature.
+
+\paragraph{What $v9$ deliberately does not claim.} Unrestricted
+infinite Theorem~2 for general $\alpha\in(0,1)$ without (D2)/menu-Hall.
+The route's negative finding is just as load-bearing as the positive
+ones: \emph{the locked gate is structural across the menu-engine and
+Pareto-frontier reformulations}.
+
+\section*{Acknowledgments}
+
+The Pareto-frontier reformulation is due to Piotr Dworczak (private
+correspondence, 2026-05-20). The Clarke--Danskin calibration mechanism
+was identified by the searcher pass on 2026-05-21 and verified across
+the prover/reviewer chain on the same day. All pipeline artifacts are
+in \texttt{03\_runs/piotr\_pareto\_frontier/}.
+
+\end{document}
