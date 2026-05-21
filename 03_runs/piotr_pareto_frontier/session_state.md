@@ -23,7 +23,115 @@
 | Prover 06 (L_B3 + L_B5) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f0429-6e0c-83ea-83f5-3f856910333f | DONE — L_B3 PASS modulo wording; L_B5 PATCH_BIG → PASS under (R-EE)+(R-TD)+(R-IES) | 2026-05-21 |
 | Reviewer 05 (L_B3+L_B5 verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f0b07-582c-83ea-b609-dd42ad9f812a | DONE — **PASS** under (R-EE)+(R-TD)+(R-IES) | 2026-05-21 |
 | Prover 07 (L_B6 binary capstone) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f0b1a-52a4-83ea-8a20-1bb55a830899 | DONE — PATCH_SMALL → **PASS** after kernel-branch correction | 2026-05-21 |
-| Reviewer 06 (capstone verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f0e77-a73c-83ea-8291-3d93702d2a0b | generating | 2026-05-21 |
+| Reviewer 06 (capstone verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f0e77-a73c-83ea-8291-3d93702d2a0b | DONE — **PASS** | 2026-05-21 |
+| Searcher 04 (\|Ω\|≥3 attack vectors) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f11af-74d4-83ea-8b10-19fb890b2f13 | DONE — **TOP: G3′/FBNF Fibered Binary Normal Fan** | 2026-05-21 |
+| Prover 08 (F1 FBNF gate-unlocking) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f157d-7c0c-83ea-bd2d-d467e2f0205f | DONE — PATCH_BIG → PASS for endpoint-fiber F1 (same correction as binary B1) | 2026-05-21 |
+| Reviewer 07 (patched F1) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f19ce-7e44-83ea-a612-581e6562910f | DONE — **PASS** for endpoint-fiber F1 | 2026-05-21 |
+| Prover 09 (F2 endpoint-only fiber image) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f19e1-001c-83ea-a863-bcc68c9c69bf | DONE — **PASS** for endpoint-supported F2; PATCH_SMALL only if strict-argmin form needed | 2026-05-21 |
+| Reviewer 08 (F2 verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f1fac-c354-83ea-a65f-e469d896111a | DONE — F2 PASS local; needs FBNF-7 global fiber dominance as primitive | 2026-05-21 |
+| Prover 10 (F3 fiberwise stationarity) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f1fbe-6638-83ea-97fe-af8463e5b61e | DONE — PASS with boundary KKT caveat; FBNF-6 derived | 2026-05-21 |
+| Reviewer 09 (F3 verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f2394-1b18-83ea-aa5c-ea0133469544 | DONE — PASS with one-sided KKT for boundary fibers; FBNF-7 must be in F4 | 2026-05-21 |
+| Prover 11 (F4 FBNF capstone) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f23a5-d324-83ea-8b24-5b9b145f23a8 | DONE — PASS conditional on FBNF-7 + endpoint-fiber F1 | 2026-05-21 |
+| Reviewer 10 (FBNF capstone verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f26d5-7e2c-83ea-9c84-71d0d61dc735 | generating | 2026-05-21 |
+
+## FBNF chain COMPLETE (pending Reviewer 10)
+
+- F1 (Conditional B1 + measurable pasting): PROVED + Reviewer 07 PASS ✓
+- F2 (Endpoint-only fiber image): PROVED + Reviewer 08 PASS (local) +
+  identified FBNF-7 (global fiber dominance) as needed primitive.
+- F3 (Localized stationarity → fiberwise balance): PROVED + Reviewer 09
+  PASS with one-sided KKT for boundary fibers. FBNF-6 DERIVED.
+- F4 (FBNF capstone): PROVED — Reviewer 10 in flight.
+
+**FBNF theorem (provisional, awaiting Reviewer 10):**
+> For |Ω|≥3, α∈(0,1), under FBNF-1...5 + FBNF-7 primitive (FBNF-6 is
+> derived), Theorem 2 closes for arbitrary measurable M, Θ.
+> Coverage: spherical models, affine MLR / single-crossing, polyhedral
+> W with scalarizable faces.
+
+## FBNF chain near completion
+
+- **F1**: PASS reviewer-PASS'd ✓
+- **F2**: PASS in endpoint-supported form; Reviewer 08 flagged that
+  GLOBAL fiber dominance (FBNF-7) is needed as PRIMITIVE class
+  condition. Spherical/MLR satisfy FBNF-7; WTA ternary fails it.
+- **F3**: PASS with boundary KKT caveat; FBNF-6 is DERIVED, not primitive.
+- **F4** capstone: Prover 11 in flight with FBNF-7 added.
+- Reviewer 09 (F3 verify) in flight.
+
+**FBNF class** is now 6 primitive conditions (FBNF-1..5 + FBNF-7), with
+FBNF-6 derived from optimality.
+
+## Provisional capstone statement
+
+> For $|\Omega|\ge 3$, $\alpha\in(0,1)$, under FBNF-1...5 + FBNF-7,
+> Theorem 2 closes for arbitrary measurable $M$, $\Theta$. Coverage:
+> spherical models, affine MLR / single-crossing posteriors,
+> polyhedral W with scalarizable faces.
+
+## FBNF chain status
+
+- **F1** (conditional B1 + measurable pasting): PROVER 08 PATCH_BIG → PASS endpoint-fiber; **REVIEWER 07 PASS** ✓
+- **F2** (endpoint-only fiber image): PROVER 09 PASS endpoint-supported; Reviewer 08 in flight.
+- **F3** (localized stationarity → fiberwise balance): Prover 10 in flight (treats FBNF-6 as DERIVED, not primitive).
+- **F4** (capstone assembly): next.
+
+If F3 + F4 close, FBNF route closes the |Ω|≥3 case for the class of
+models with foliated normal fans (spherical, MLR, fan-induced).
+
+## |Ω|≥3 attack — FBNF route
+
+Searcher 04 identified the top route: **G3′/FBNF (Fibered Binary
+Normal Fan)**. Treat Δ(Ω) as foliated by 1D affine binary fibers, apply
+the binary capstone conditionally on each fiber, paste via measurable
+disintegration.
+
+FBNF primitive conditions (FBNF-1...6): measurable affine foliation,
+fiber-preserving TRS, endpoint-only fiber image, fiberwise endpoint
+exposure, fiberwise tie discipline, local endpoint stationarity.
+
+The WTA ternary v8 witness fails FBNF-1 (its normal fan is not
+1-parametric), so the route automatically rules out the v8 obstruction
+by hypothesis class.
+
+Four-lemma chain:
+- **F1** (conditional B1 + measurable pasting) — gate-unlocking,
+  PROVER 08 IN FLIGHT.
+- F2 (endpoint-only fiber image).
+- F3 (localized stationarity → fiberwise balance).
+- F4 (capstone assembly).
+
+Coverage: spherical models, MLR families, fan-induced normal cones.
+
+## MILESTONE 3 — BINARY CAPSTONE PROVED + REVIEWER-VERIFIED ✓
+
+**Reviewer 06: PASS.** The binary-state infinite-extension of Robust
+Trust Theorem 2 closes for $|\Omega|=2$, $\alpha\in(0,1)$, arbitrary
+measurable $M$ and $\Theta$, under (R-EE)+(R-TD)+(R-IES).
+
+This is **the first unconditional infinite-extension of Theorem 2 in
+the substantive α∈(0,1) regime** the project has produced.
+
+Strictly generalizes paper §4.2 / Appendix A.6 from finite $M, \Theta$
+to arbitrary measurable $M, \Theta$ in the binary state case.
+
+**Committed to git** with full pipeline trace (12 prompt/response
+pairs in the binary chain alone).
+**v9 exposition updated** (9 pages, Section 8 added).
+**Push notification sent** to user.
+
+## Next move: |Ω|≥3 attack
+
+Per Reviewer 06 next-step signal: **attack |Ω|≥3 with geometries
+that reduce vector calibration to finitely many scalar or low-dim
+face transports**.
+
+Searcher 04 in flight on candidates:
+- (G1) Polyhedral W with finite-vertex optimal C*.
+- (G2) Antipodal/radial τ-symmetry (stabilizer-rich).
+- (G3) One-dim normal fan / fibered binary.
+- (G4) Block-diagonal product utility.
+- (G5) Triangulation reduction.
 
 ## Pass 3+ binary chain COMPLETE (pending fresh reviewer 06)
 

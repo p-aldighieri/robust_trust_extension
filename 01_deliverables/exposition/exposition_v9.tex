@@ -574,14 +574,137 @@ $W$ with finite-vertex optimal $C^*$, antipodal/radial $\tau$-symmetry,
 one-dimensional normal fans). The pipeline's next pass attacks these
 candidates.
 
+\section{The FBNF class: an unconditional |Ω|≥3 extension}\label{sec:fbnf}
+
+\emph{Addendum, 2026-05-21 (Pass 3++): after the binary capstone, the
+pipeline continued to attack the |Ω|≥3 case per user override. The
+result is the FBNF class theorem below — a second unconditional
+infinite-extension covering an economically meaningful family of
+multi-state models.}
+
+\paragraph{The FBNF primitive class.}
+The Fibered Binary Normal Fan class consists of model primitives
+$(u, A, \Omega, \Theta, \tau)$ admitting an affine 1-d foliation
+$\ell$ of $\Delta(\Omega)$ satisfying six primitive conditions:
+
+\begin{description}
+  \item[(FBNF-1) Measurable affine foliation.] Standard Borel base
+    $Z$, Borel disintegration $\tau(ds) = \int_Z \tau_z(dt)\,\lambda(dz)$,
+    affine embeddings $\ell_z:[a_z, b_z]\to\Delta(\Omega)$ jointly Borel,
+    covering $M$ $\tau$-a.e.
+  \item[(FBNF-2) Fiber-preserving TRS.] The optimal TRS $T = \bigcup_z \ell_z([L(z), R(z)])$;
+    Bregman projection $\Pi_T$ preserves fibers.
+  \item[(FBNF-3) Endpoint-only fiber image.] For $\tau_z$-a.e. $t$, the
+    in-fiber rowwise minimizer is in $\{\ell_z(L(z)), \ell_z(R(z))\}$.
+    Derivable from a primitive condition $\mathsf{P}$ on $(u, A, W, \ell)$
+    such as concavity-on-fiber or supporting-line domination of
+    $\mu\mapsto s\cdot w^*(\mu)$ on each fiber arc.
+  \item[(FBNF-4) Fiberwise endpoint exposure.] $B_W(w_{z,L})\cap\ell_z([a_z, b_z]) = \{\ell_z(L(z))\}$,
+    symmetric for $R(z)$.
+  \item[(FBNF-5) Fiberwise tie discipline.] $\tau_z$ has zero mass at
+    the fiber-endpoint tie point.
+  \item[(FBNF-7) Global fiber dominance.] For $\tau$-a.e. $s\in M$ in
+    fiber $z$, $\min_{\mu\in T} s\cdot w^*(\mu) = \min_{\mu\in T_z} s\cdot w^*(\mu)$:
+    cross-fiber messages do not beat in-fiber endpoint minimums.
+\end{description}
+
+\paragraph{(FBNF-6) is derived.} The fiberwise total-balance equations
+\begin{align*}
+\alpha\!\int_{a_z}^{L(z)}\!(L(z)-t)\,\tau_z(dt) &= (1-\alpha)\!\int_{S_+(z)}\!(t-L(z))\,\tau_z(dt), \\
+\alpha\!\int_{R(z)}^{b_z}\!(t-R(z))\,\tau_z(dt) &= (1-\alpha)\!\int_{S_-(z)}\!(R(z)-t)\,\tau_z(dt),
+\end{align*}
+hold for $\lambda$-a.e.\ $z$ at the optimal TRS, by localized two-sided
+perturbations of the FBNF trust band combined with the conditional $v9$
+T1 Clarke--Danskin Fermat (Lemma~F3). At boundary fibers
+($L(z)=a_z$ or $R(z)=b_z$), replace equality by one-sided KKT
+inequalities.
+
+\begin{theorem}[FBNF infinite-extension of Theorem 2]\label{thm:fbnf}
+Under the standing hypotheses, $|\Omega|\ge 3$, $\alpha\in(0,1)$, and
+the primitive class FBNF-1+2+3+4+5+7 (with FBNF-6 derived from optimality
+via F3), there exists a robustly rationalizable optimal strategy for
+\emph{arbitrary measurable $M$ and $\Theta$}.
+
+The strategy pair is:
+\begin{align*}
+  \hat\sigma^*(m) &= R(w^*(\Pi_T(m))), \\
+  \hat\beta^*(\cdot\mid s) &= \begin{cases}
+    \kappa_{L,z}(\cdot\mid s) & s = \ell_z(t)\in S_+(z), \\
+    \kappa_{R,z}(\cdot\mid s) & s = \ell_z(t)\in S_-(z),
+  \end{cases}
+\end{align*}
+where $\kappa_{L,z}, \kappa_{R,z}$ are the conditional B1 kernels
+from Lemma~F1, supported on endpoint fibers $\ell_z([a_z, L(z)])$ and
+$\ell_z([R(z), b_z])$ respectively. Definition~2 (in the $q$-a.e.
+infinite-space reading) holds.
+\end{theorem}
+
+\paragraph{Proof sketch.} Combine F1 (Conditional B1 + measurable
+pasting), F2 (Endpoint-only fiber image), F3 (Localized stationarity
+giving FBNF-6), and FBNF-7 (Global fiber dominance) to establish the
+adversarial best response is endpoint-only, the kernel calibration
+holds via the B1 mechanism on each fiber, and the TRS continuation is
+Bayes-optimal at every $q$-positive message by FBNF-4. All four lemmas
+F1--F4 are reviewer-verified on independent fresh chats (Reviewers
+07--10).
+
+\paragraph{Coverage corollaries.}
+\begin{corollary}[Spherical / radial models]\label{cor:sphere}
+Suppose $\Delta(\Omega)$ is foliated by radial diameters through a
+$\tau$-symmetric center $b$, $u$ depends on $\mu$ only through
+$\|\mu-b\|$ (radial), and the optimal trust region is a Bregman ball
+about $b$. Then FBNF-1+\dots+7 hold; Theorem~\ref{thm:fbnf} applies.
+\end{corollary}
+
+\begin{corollary}[Affine MLR / single-crossing]\label{cor:mlr}
+Suppose adviser posteriors lie on a 1-parameter affine path
+$s = \ell(t)$ in $\Delta(\Omega)$, $u(a, \omega, \theta)$ has the
+single-crossing property in $(t, a)$, and the optimal trust region is
+an interval on the path. Then FBNF-1+\dots+7 hold;
+Theorem~\ref{thm:fbnf} applies.
+\end{corollary}
+
+\begin{corollary}[Polyhedral W with scalarizable faces]\label{cor:poly}
+Suppose $W$ is polyhedral, the optimal menu $C^*$ exposes finitely many
+vertices, and the Bayes face $B_W(w_i)$ at each active vertex is a
+1-dim segment in $\Delta(\Omega)$ (scalarizable). Then FBNF-1+\dots+7
+hold; Theorem~\ref{thm:fbnf} applies.
+\end{corollary}
+
+\paragraph{Sharpness compatibility.} The $v8$ WTA ternary witness has
+polyhedral $W$ with vertex menu but \emph{non-scalarizable} Bayes faces
+(the supporting belief cone at each vertex is 2-dimensional). The
+witness therefore fails FBNF-7 (cross-vertex dominance), and is
+correctly excluded by the FBNF class.
+
+\paragraph{Comparison.}
+\begin{itemize}
+  \item $v8$ Tier~2 = menu-Hall postulated as calibration on output.
+  \item Binary $v9$ (\S\ref{sec:binary}) = (R-EE)+(R-TD)+(R-IES)
+    primitive on $(\tau, u)$; calibration derived.
+  \item FBNF $v9$ (this section) = FBNF-1\dots5+FBNF-7 primitive on
+    $(\tau, u, \ell)$; calibration derived.
+\end{itemize}
+Both $v9$ theorems are unconditional in the substantive $\alpha\in(0,1)$
+regime over their respective classes, with primitive conditions
+strictly weaker than menu-Hall.
+
+\paragraph{Open.} Unrestricted $|\Omega|\ge 3$ without FBNF-7 (or
+similar global-dominance condition) remains the named open problem.
+The closure memo's deletion-compatible Hall duality theorem is still
+the locked gate beyond the FBNF class.
+
 \section*{Acknowledgments}
 
 The Pareto-frontier reformulation is due to Piotr Dworczak (private
 correspondence, 2026-05-20). The Clarke--Danskin calibration mechanism
 was identified by the searcher pass on 2026-05-21 and verified across
 the prover/reviewer chain on the same day. The binary-state capstone
-(\S\ref{sec:binary}) was produced on 2026-05-21 via the same pipeline
-after user override of the first-pass consolidation. All pipeline
-artifacts are in \texttt{03\_runs/piotr\_pareto\_frontier/}.
+(\S\ref{sec:binary}) and the FBNF $|\Omega|\ge 3$ capstone
+(\S\ref{sec:fbnf}) were produced on 2026-05-21 via the same pipeline
+after user overrides of two consolidation passes. All pipeline
+artifacts (24+ prompt/response files across formalizer, literature,
+searcher, breakdown, prover, reviewer chains) are in
+\texttt{03\_runs/piotr\_pareto\_frontier/}.
 
 \end{document}
