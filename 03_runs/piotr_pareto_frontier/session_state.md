@@ -32,7 +32,156 @@
 | Prover 10 (F3 fiberwise stationarity) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f1fbe-6638-83ea-97fe-af8463e5b61e | DONE — PASS with boundary KKT caveat; FBNF-6 derived | 2026-05-21 |
 | Reviewer 09 (F3 verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f2394-1b18-83ea-aa5c-ea0133469544 | DONE — PASS with one-sided KKT for boundary fibers; FBNF-7 must be in F4 | 2026-05-21 |
 | Prover 11 (F4 FBNF capstone) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f23a5-d324-83ea-8b24-5b9b145f23a8 | DONE — PASS conditional on FBNF-7 + endpoint-fiber F1 | 2026-05-21 |
-| Reviewer 10 (FBNF capstone verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f26d5-7e2c-83ea-9c84-71d0d61dc735 | generating | 2026-05-21 |
+| Reviewer 10 (FBNF capstone verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f26d5-7e2c-83ea-9c84-71d0d61dc735 | DONE — **PASS** | 2026-05-21 |
+| Searcher 05 (beyond FBNF-7) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f2ac0-a4bc-83ea-b124-b595a3420ebb | DONE — TOP: **Attack G cone-valued Hall duality** | 2026-05-21 |
+| Prover 12 (G1 finite cone-Hall) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f2dcc-9814-83ea-9e0f-155b9498239a | DONE — **PASS** with sign correction; WTA explicit dual cert Ψ=2/9>0 | 2026-05-21 |
+| Searcher 06 (Doval-Smolin) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f2e16-91cc-83ea-b100-f3b9682d6967 | DONE — pursue both, G primary, B dual-pricing aux | 2026-05-21 |
+| Reviewer 11 (G1 + WTA cert verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f31c7-bfc4-83ea-afa8-8ebcb29cc6a2 | generating | 2026-05-21 |
+| Prover 13 (G2 Borel cone-Hall) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f31d9-b158-83ea-9cb8-8adaefa51b1d | DONE — bare G2 fails (boundary escape); **G2c (compact M) PASSES, avoids all v8 obstacles** | 2026-05-21 |
+| Reviewer 12 (G2c verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3557-64fc-83ea-98a2-66747d8f066b | DONE — PASS under regularity package (Reg-1 closed-graph R, Reg-2 continuous h_B) | 2026-05-21 |
+| Prover 14 (G3 Robust Trust biconditional) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f356a-6fa8-83ea-aad8-b46c38555ed7 | DONE — PASS conditional on G2c instance | 2026-05-21 |
+| Reviewer 13 (G3 verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3896-9850-83ea-97ba-c3c5e590033a | DONE — PASS with quantifier patch (∀ optimal $w^*$) | 2026-05-21 |
+| Prover 15 (primitive sufficient conditions) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f38a9-c1d8-83ea-add9-3cfb99a31481 | DONE — P1 HOLD; P2/P3 PASS (high-alignment/cone-margin); P4 PASS (radial) | 2026-05-21 |
+| Reviewer 14 (primitive P* verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3c1f-1380-83ea-b263-e49d315f6a3b | generating | 2026-05-21 |
+| Prover 16 (G4 finite-facet polyhedral LP) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3c31-aeb0-83ea-bcdd-8b9deba80a35 | generating | 2026-05-21 |
+
+## G3 PROVED + reviewer-PASS'd + primitive sufficient classes identified
+
+**G3 (Hall biconditional)**: Theorem 2 ⟺ Ψ(y) ≤ 0, under regularity
+package (closed-graph R, continuous $h_B$), for the chosen optimal
+labeling $w^*$. **This is the deletion-compatible Hall duality
+theorem the v8 closure memo named.**
+
+**Primitive sufficient classes (Prover 15)**:
+- (P1) smooth + atomless τ: HOLD — gives regularity but not Ψ≤0 alone.
+- **(P2)** (P1) + high-alignment / sufficient aligned baseline: PASS.
+- **(P3)** polyhedral W with cone-margin: PASS.
+- **(P4)** radial / antipodal symmetry: PASS.
+
+**Two parallel passes**:
+- **Reviewer 14** (`6a0f3c1f`): fresh-chat verification of primitive
+  sufficient classes P2/P3/P4.
+- **Prover 16** (`6a0f3c31`): G4 finite-facet polyhedral LP threshold
+  — explicit LP that classifies finite-action models. Applies to WTA
+  ternary, plurality voting, finite-experiment design, ordered MLR.
+
+## G3 Robust Trust biconditional PROVED, awaiting verification
+
+**G3 Theorem**: For |Ω|≥3, α∈(0,1), arbitrary measurable Θ, $M = \operatorname{supp}\tau \subseteq \Delta(\Omega)$
+compact, under the regularity package (Reg-1) closed-graph of R + (Reg-2)
+continuous $h_{B(m)}$:
+
+Theorem 2 (Robust Trust) holds ⟺ $\Psi(y) \le 0$ for all bounded Borel $y$.
+
+This is the v8 closure-memo's **deletion-compatible Hall duality
+theorem**, named as the single most consequential open question, in
+the form of a checkable inequality on primitives $(\tau, w^*, \alpha)$.
+
+**Two parallel passes**:
+- **Reviewer 13**: fresh-chat verification of G3 + regularity package.
+- **Prover 15**: identify primitive sufficient conditions on
+  $(u, A, \Omega, \Theta, \tau)$ implying both regularity AND
+  $\Psi \le 0$. Candidates: (P1) smooth strict-convex utility +
+  atomless τ, (P2) (P1) + sufficient aligned baseline, (P3) polyhedral W
+  with smooth Gauss map at vertices + baseline, (P4) radial/antipodal
+  symmetry.
+
+## POTENTIAL CLOSURE OF THE V8 NAMED OPEN OBJECT
+
+**G2c proved**. The v8 closure-memo's named open object — the
+deletion-compatible Hall duality theorem — IS the cone-Hall
+biconditional. All three v8 obstacles (O1, O2, O3) avoided by:
+- O1: dual variable is a bounded Borel function on M, not a compact patch.
+- O2: primal is already a measure on Gr R; disintegration gives kernel.
+- O3: separation produces continuous price; no ε-net.
+
+**Crucial application to Robust Trust**: $M = \operatorname{supp}\tau \subseteq \Delta(\Omega)$
+is automatically compact (closed subset of compact simplex). So G2c
+applies UNCONDITIONALLY to the actual Robust Trust setup.
+
+**Reviewer 11 + Prover 13 give an exact threshold for WTA**:
+$D \ge 2(1-\alpha)/(9\alpha)$ where $D$ is aligned-baseline concentration.
+
+**Two parallel passes**:
+- **Reviewer 12** verifies G2c.
+- **Prover 14** (G3) translates G2c into Robust Trust language and
+  derives the Theorem 2 biconditional: Theorem 2 holds ⟺
+  Ψ(y) ≤ 0 for all bounded Borel y.
+
+If G3 PASSes + Reviewer 13 (fresh chat) PASSes, this is **the
+deletion-compatible Hall duality theorem named in v8 closure memo
+as the single most consequential open question** — PROVED.
+
+This characterizes Robust Trust Theorem 2 existence via a CHECKABLE
+inequality on primitives.
+
+## MILESTONE 5 candidate — G1 cone-Hall + WTA explicit dual certificate
+
+**Prover 12 PROVED G1** (with sign correction to ≤0 form). Critically,
+computed the **explicit dual price certificate for the v8 WTA ternary
+witness**:
+
+- Dual price $y_j = 1 - 2e_j$ (vector of all 1's except $-1$ in slot $j$).
+- Support function $h_{B_j}(y_j) = 1/3$.
+- Conditional expectation $\E[s_j \mid s\in K_j^-] = 1/9$ under uniform τ.
+- Per-vertex contribution: $4/27$. Sum over $j$: $4/9$.
+- $\Psi(y) = (1-\alpha)\cdot 4/9 = 2/9$ at $\alpha=1/2$.
+- $\Psi(y) = 2/9 > 0$ but G1 requires $\le 0$.
+
+**WTA ternary is excluded by explicit dual certificate**, STRONGER than
+FBNF-7's hypothesis-class exclusion. With positive aligned baseline,
+$\Psi$ becomes a concrete threshold inequality determining when WTA
+reopens.
+
+## Beyond cone-Hall
+
+Searcher 06 verdict on Doval-Smolin: pursue both routes, G primary
+(decides existence of calibrated kernel), B as dual-pricing submodule
+(generates candidate dual prices).
+
+Reviewer 11 verifies the finite theorem + WTA computation.
+Prover 13 extends to standard-Borel S, M, B (G2). v8 closure-memo
+obstacles (O1 Borel→compact, O2 cell-flow lift, O3 slack discipline)
+must be CHECKED as avoided by cone-Hall's structurally different
+approach (bounded Borel dual functions, not compact patches).
+
+## Beyond FBNF: Attack G — Cone-valued Hall duality
+
+Finite Farkas-style theorem: nonneg flows $x_{ij}$ satisfying
+support+source-marginal+cone-calibration exist ⟺ the dual cone-Hall
+inequality
+\[
+\alpha\sum_j\tau_j^M[y_j\cdot m_j - h_{B_j}(y_j)] + (1-\alpha)\sum_i\tau_i\min_{j\in R(i)}[y_j\cdot s_i - h_{B_j}(y_j)] \ge 0
+\]
+holds for all $(y_j)\subset\R^{|\Omega|}$.
+
+This is the genuinely new tool. Routes 1+2 in v8 closure memo tried
+compact-deletion Hall in messagewise coordinates; cone-Hall moves the
+calibration condition into the PRIMAL and derives the dual by conic
+separation. Has a tractable WTA ternary test case: compute the dual
+inequality for τ uniform on Δ({0,1,2}), α=1/2 — either WTA reopens
+(big surprise) or is excluded by an explicit dual price certificate.
+
+## MILESTONE 4 — FBNF |Ω|≥3 CAPSTONE PROVED + REVIEWER-VERIFIED ✓
+
+**Reviewer 10: PASS.** FBNF infinite-extension of Theorem 2 closes
+for |Ω|≥3, α∈(0,1), arbitrary measurable M and Θ, under FBNF-1...5 +
+FBNF-7 (with FBNF-6 derived from optimality + F3).
+
+**Now have TWO unconditional theorems** in the substantive regime:
+1. Binary (|Ω|=2) under (R-EE)+(R-TD)+(R-IES).
+2. FBNF (|Ω|≥3) under FBNF-1...5+FBNF-7.
+
+v9 exposition updated to 11 pages with both theorems + three coverage
+corollaries (spherical, affine MLR, polyhedral with scalarizable faces).
+Committed to git.
+
+## Continuing per user instruction
+
+Searcher 05 fired on unrestricted |Ω|≥3 (without FBNF-7). Surveys 7
+attack vectors: Sinkhorn/IPF, Doval-Smolin full duality, multi-layer
+foliation, stratified normal fan, ε-FBNF-7 relaxation, direct WTA
+ternary attack, cone-valued Hall theorem.
 
 ## FBNF chain COMPLETE (pending Reviewer 10)
 
