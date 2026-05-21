@@ -496,24 +496,40 @@ $C^\dagger_0 := \overline{w_0(M)}$ compact in $W$, $F(C^\dagger_0) = U^*$.
 
 \emph{Null Cantor subset lemma.} Because $\tau$ is atomless and
 $M = \suppset(\tau)$, $M$ contains no isolated points. We construct $N$
-by a Cantor scheme. Choose two distinct points $m^0, m^1 \in M$; by
-atomlessness and inner-regularity of $\tau$ on the Polish space $M$
-\cite[Thm.~7.1.7, Vol.~II]{Bogachev2007}, pick disjoint compact
-neighborhoods $F^0, F^1$ of $m^0, m^1$ with diameters $<1/2$ and
-$\tau(F^0 \cup F^1) < 1/2$. Iterate: given $F^t$ for $t \in \{0,1\}^n$,
-since $F^t$ has no isolated points and $\tau$ is atomless, pick two
-distinct interior points $m^{t0}, m^{t1}$ and disjoint compact
-neighborhoods $F^{t0}, F^{t1} \subseteq \mathrm{int}(F^t)$ with
-diameters $<2^{-(n+1)}$ and
-$\tau(F^{t0} \cup F^{t1}) < 2^{-(n+1)}$. Set
+by a Cantor scheme with diameter and mass control at each level. Pick
+two distinct points $m^0, m^1 \in M$ in disjoint relatively open
+neighborhoods $U^0, U^1 \subseteq M$ (possible since $M$ has no
+isolated points). By inner regularity of $\tau$ on the Polish space
+$M$ \cite[Thm.~7.1.7, Vol.~II]{Bogachev2007} and atomlessness, choose
+disjoint compact $F^0 \subseteq U^0$, $F^1 \subseteq U^1$ with each
+$F^t$ having nonempty interior relative to $M$, diameter $<2^{-1}$,
+and $\tau(F^0 \cup F^1) < 2^{-1}$.
+
+Iterate: given the family $\{F^t\}_{t \in \{0,1\}^n}$ of pairwise
+disjoint compact sets with nonempty $M$-relative interior, $M$-relative
+interior of each $F^t$ has no isolated points (subsets of perfect
+Polish spaces with nonempty interior are perfect), so for each $t$ we
+pick two distinct interior points $m^{t0}, m^{t1}$ and disjoint
+compact neighborhoods $F^{t0}, F^{t1} \subseteq \mathrm{int}_M(F^t)$
+each with nonempty $M$-relative interior, diameter $<2^{-(n+1)}$, and
+satisfying the \emph{level-aggregate mass bound}
+\[
+  \tau\!\!\Big( \bigcup_{t \in \{0,1\}^{n+1}} F^t \Big) \;<\; 2^{-(n+1)}.
+\]
+This is achievable because atomlessness lets us shrink each $F^{t0}$,
+$F^{t1}$ inside its parent to arbitrarily small $\tau$-mass; allocating
+mass budget $2^{-(n+1)} / 2^{n+1} = 2^{-2(n+1)}$ to each of the $2^{n+1}$
+children suffices. Set
 \[
   N := \bigcap_{n \ge 0} \bigcup_{t \in \{0,1\}^n} F^t.
 \]
 The shrinking-diameter compact-nested intersection gives a homeomorphism
 $2^\omega \to N$ by $t \mapsto \bigcap_n F^{t|_n}$; $N$ is compact,
-zero-dimensional, has no isolated points, $\tau(N) = 0$. See
-\cite[Thm.~6.2]{Kechris1995} for the general Cantor-scheme embedding
-of $2^\omega$ into a nonempty perfect Polish space.
+zero-dimensional, has no isolated points. By monotone convergence of
+the nested intersection,
+$\tau(N) = \lim_n \tau\!\big(\bigcup_{|t|=n} F^t\big) \le \lim_n 2^{-n}
+= 0$. See \cite[Thm.~6.2]{Kechris1995} for the general Cantor-scheme
+embedding of $2^\omega$ into a nonempty perfect Polish space.
 
 \emph{Hausdorff--Alexandroff surjection.} Every compact metric space
 is a continuous image of $2^\omega$
