@@ -815,6 +815,53 @@ The original target was unrestricted existence of a robustly rationalizable opti
 \end{itemize}
 This is not a weakness of phrasing. Phase (b) shows that regularity and calibration are not automatic from compactness and Borel measurability alone. The current contribution is to identify exactly which additional structure closes the problem and exactly which dual prices certify failure.
 
+\section{Weakenings and sharpenings}\label{sec:weakenings}
+
+\emph{Addendum (v9.2): three targeted weakening attempts on the
+load-bearing primitive conditions, all reviewer-verified.}
+
+\paragraph{Binary-TS (relax R-TD).}
+Replaces R-TD (``$\tau$ no atom at the indifference belief'') with
+R-TD$^*$: $\tau$ may have an atom $\kappa$ at the indifference belief
+$s^*$, with measurable tie-splitting weights
+$\lambda^+(s^*), \lambda^-(s^*) \in [0,1]$ specifying how much of the
+tied mass routes to $L$ vs $R$ on the aligned and misaligned channels.
+Clarke--Danskin stationarity at the atom produces the tie weights;
+the modified L\_B5 total-balance includes the tie-mass; L\_B1 applies
+to the adjusted measures; endpoint calibration
+$P_{\hat\beta^*}(\cdot\mid L) = L$ survives.
+\emph{Effect}: the binary capstone (\S\ref{sec:binary}) extends to
+atomic-at-knife-edge $\tau$, common in discrete-time / mass-point
+signal models.
+
+\paragraph{P2$^*$-VM (variable cone-margin).}
+Replaces P2$^*$'s uniform cone-margin $\eta > 0$ with a Borel-positive
+variable margin $\eta(m): M \to (0, \infty)$, under the integrable
+upper-capacity condition $b_\eta \le \Gamma_\eta$ (a finite-measure
+control on $\eta(m)^{-1}$-weighted aggregates).
+\emph{Effect}: P2$^*$ extends to smooth models where the Bayes-cone
+width shrinks at certain boundary points of $M$ (e.g., near the
+simplex boundary of $\Delta(\Omega)$) but remains positive in the
+interior. Covers more applications with smooth-but-not-bounded
+geometry.
+
+\paragraph{Global-TRS derivation for P6$^G$.}
+Removes the reviewer caveat on P6$^G$ (finite-graph FBNF) by deriving
+the global-TRS hypothesis from primitive finite-graph geometry.
+Required strengthening: ``piecewise continuous $w^*$'' upgrades to
+``edgewise finite-contact (no-fractal contact) + vertex quotient
+consistency.''
+\emph{Effect}: P6$^G$'s primitive class becomes fully derivable from
+$(u, A, \Omega, \Theta, \tau, \text{graph}\,G)$, without postulating
+trust-region structure.
+
+\paragraph{Net.} Three sharpenings, all economically meaningful, none
+changing the headline OBJECTIVE\_NARROWED framing. The package
+remains a \textbf{strong conditional / classification result}; the
+unconditional open object is still the unstructured $|\Omega| \ge 3$
+case without regularity, primitive structure, or a verified
+$\Psi(y) \le 0$ certificate.
+
 \section*{References}
 \begin{thebibliography}{99}
 
