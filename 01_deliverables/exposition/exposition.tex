@@ -506,27 +506,28 @@ $F^t$ having nonempty interior relative to $M$, diameter $<2^{-1}$,
 and $\tau(F^0 \cup F^1) < 2^{-1}$.
 
 Iterate: given the family $\{F^t\}_{t \in \{0,1\}^n}$ of pairwise
-disjoint compact sets with nonempty $M$-relative interior, $M$-relative
-interior of each $F^t$ has no isolated points (subsets of perfect
-Polish spaces with nonempty interior are perfect), so for each $t$ we
-pick two distinct interior points $m^{t0}, m^{t1}$ and disjoint
-compact neighborhoods $F^{t0}, F^{t1} \subseteq \mathrm{int}_M(F^t)$
-each with nonempty $M$-relative interior, diameter $<2^{-(n+1)}$, and
+disjoint compact sets with nonempty $M$-relative interior, each
+$\mathrm{int}_M(F^t)$ is a nonempty open subset of the perfect Polish
+space $M$, hence has no isolated points. For each $t$ pick two
+distinct interior points $m^{t0}, m^{t1}$ and disjoint compact
+neighborhoods $F^{t0}, F^{t1} \subseteq \mathrm{int}_M(F^t)$, each
+with nonempty $M$-relative interior, diameter $<2^{-(n+1)}$, and
 satisfying the \emph{level-aggregate mass bound}
 \[
   \tau\!\!\Big( \bigcup_{t \in \{0,1\}^{n+1}} F^t \Big) \;<\; 2^{-(n+1)}.
 \]
-This is achievable because atomlessness lets us shrink each $F^{t0}$,
-$F^{t1}$ inside its parent to arbitrarily small $\tau$-mass; allocating
-mass budget $2^{-(n+1)} / 2^{n+1} = 2^{-2(n+1)}$ to each of the $2^{n+1}$
-children suffices. Set
+This is achievable because atomlessness plus continuity from above
+for shrinking compact neighborhoods around an atomless point allows
+each $F^{t0}, F^{t1}$ inside its parent to have arbitrarily small
+$\tau$-mass; allocating budget $2^{-(n+1)}/2^{n+1} = 2^{-2(n+1)}$ to
+each of the $2^{n+1}$ children suffices. Set
 \[
-  N := \bigcap_{n \ge 0} \bigcup_{t \in \{0,1\}^n} F^t.
+  N := \bigcap_{n \ge 1} \bigcup_{t \in \{0,1\}^n} F^t.
 \]
 The shrinking-diameter compact-nested intersection gives a homeomorphism
 $2^\omega \to N$ by $t \mapsto \bigcap_n F^{t|_n}$; $N$ is compact,
-zero-dimensional, has no isolated points. By monotone convergence of
-the nested intersection,
+zero-dimensional, has no isolated points. By continuity from above
+of the finite measure $\tau$ on the decreasing nested intersection,
 $\tau(N) = \lim_n \tau\!\big(\bigcup_{|t|=n} F^t\big) \le \lim_n 2^{-n}
 = 0$. See \cite[Thm.~6.2]{Kechris1995} for the general Cantor-scheme
 embedding of $2^\omega$ into a nonempty perfect Polish space.
@@ -546,10 +547,12 @@ $\psi : N \to C^\dagger_0$.
   \end{cases}
 \]
 $w^*$ is Borel as a piecewise Borel function on the Borel partition
-$(N, M \setminus N)$, equals $w_0$ $\tau$-a.e., and has image
+$(N, M \setminus N)$, equals $w_0$ $\tau$-a.e. Because $\psi$
+surjects $N$ onto $C^\dagger_0$, $\psi(N) = C^\dagger_0$; together with
+$w_0(M \setminus N) \subseteq w_0(M) \subseteq C^\dagger_0$, this gives
 $w^*(M) = \psi(N) \cup w_0(M \setminus N) = C^\dagger_0 \cup
-w_0(M \setminus N) = C^\dagger_0$ (because $w_0(M) \subseteq C^\dagger_0$
-and $\psi$ surjects). Hence $w^*(M) = C^\dagger_0$ is compact.
+w_0(M \setminus N) = C^\dagger_0$. Hence $w^*(M) = C^\dagger_0$ is
+compact.
 
 \emph{Profile-realization, global form.} The profile-realization map
 $\Phi : \hat\Sigma \to W$ (continuous on the compact private-strategy
