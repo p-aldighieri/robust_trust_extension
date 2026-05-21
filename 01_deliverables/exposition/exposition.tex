@@ -77,6 +77,12 @@ whenever exact-contact fails on a $\tau$-positive source set, and a
 companion cleanup theorem reduces the exact-contact hypothesis to
 its substantive content (contact nonemptiness) by absorbing the
 selector clause into Jankov--Von~Neumann descriptive-set machinery.
+A further primitive strengthening shows that under atomless
+adviser-signal support~$\tau$ alone, exact-contact holds for some
+value-optimal labeling --- a $\tau$-null Cantor canvas inside
+$\suppset(\tau)$ supports a continuous surjection onto the optimal
+payoff menu, and repainting only this null set turns Tier~1b
+unconditional on the natural continuous-signal primitive.
 \end{abstract}
 
 \section{The setting and the question}\label{sec:setting}
@@ -464,6 +470,167 @@ a.e.\ unique-argmax hypotheses do not, by themselves, bypass
 exact-contact; only $w^*$ continuous on all of~$M$ (not just
 $\tau$-a.e.) reduces exact-contact to a free consequence.
 
+\section{Tier 1b strengthening: unconditional under atomless~$\tau$}\label{sec:tier1b-atomless}
+
+\S\ref{sec:tier1b} and \S\ref{sec:tightness} characterised exact-contact as
+the irreducible bridge between Tier~1a's $\eps$-ceiling and Tier~1b's
+exact attainment, for a fixed optimal labeling $w^*$. This section
+delivers a \emph{primitive} strengthening: under the standing
+hypotheses augmented by atomlessness of $\tau$ alone, exact-contact
+holds for \emph{some} value-optimal labeling, and Tier~1b becomes
+unconditional.
+
+\begin{theorem}[Tier 1b under atomless $\tau$]\label{thm:atomless-tier1b}
+Assume the standing hypotheses of \S\ref{sec:setting} and $\tau$
+atomless on $M = \suppset(\tau)$.
+Then there exists a value-optimal agent strategy $\sigma^*$ whose
+payoff-profile labeling $w^* : M \to W$ satisfies $G(s) \ne \emptyset$
+for every $s \in M$. Consequently, by Theorem~\ref{thm:cleanup}, an
+exact adversary $\beta^* \in B$ exists with $U(\beta^*, \sigma^*) = U^*$.
+\end{theorem}
+
+\begin{proof}
+Apply Lemmas~\ref{lem:menu-value}--\ref{lem:eps-adv} to obtain an
+optimal Borel labeling $w_0 : M \to W$ with closure-pruned support
+$C^\dagger_0 := \overline{w_0(M)}$ compact in $W$, $F(C^\dagger_0) = U^*$.
+
+\emph{Null Cantor subset lemma.} Because $\tau$ is atomless and
+$M = \suppset(\tau)$, $M$ contains no isolated points. We construct $N$
+by a Cantor scheme. Choose two distinct points $m^0, m^1 \in M$; by
+atomlessness and inner-regularity of $\tau$ on the Polish space $M$
+\cite[Thm.~7.1.7, Vol.~II]{Bogachev2007}, pick disjoint compact
+neighborhoods $F^0, F^1$ of $m^0, m^1$ with diameters $<1/2$ and
+$\tau(F^0 \cup F^1) < 1/2$. Iterate: given $F^t$ for $t \in \{0,1\}^n$,
+since $F^t$ has no isolated points and $\tau$ is atomless, pick two
+distinct interior points $m^{t0}, m^{t1}$ and disjoint compact
+neighborhoods $F^{t0}, F^{t1} \subseteq \mathrm{int}(F^t)$ with
+diameters $<2^{-(n+1)}$ and
+$\tau(F^{t0} \cup F^{t1}) < 2^{-(n+1)}$. Set
+\[
+  N := \bigcap_{n \ge 0} \bigcup_{t \in \{0,1\}^n} F^t.
+\]
+The shrinking-diameter compact-nested intersection gives a homeomorphism
+$2^\omega \to N$ by $t \mapsto \bigcap_n F^{t|_n}$; $N$ is compact,
+zero-dimensional, has no isolated points, $\tau(N) = 0$. See
+\cite[Thm.~6.2]{Kechris1995} for the general Cantor-scheme embedding
+of $2^\omega$ into a nonempty perfect Polish space.
+
+\emph{Hausdorff--Alexandroff surjection.} Every compact metric space
+is a continuous image of $2^\omega$
+\cite[Thm.~4.18]{Kechris1995}. Composing with the homeomorphism
+$N \cong 2^\omega$ yields a continuous (hence Borel) surjection
+$\psi : N \to C^\dagger_0$.
+
+\emph{Modified labeling.} Define
+\[
+  w^*(m) :=
+  \begin{cases}
+    \psi(m) & m \in N,\\
+    w_0(m) & m \in M \setminus N.
+  \end{cases}
+\]
+$w^*$ is Borel as a piecewise Borel function on the Borel partition
+$(N, M \setminus N)$, equals $w_0$ $\tau$-a.e., and has image
+$w^*(M) = \psi(N) \cup w_0(M \setminus N) = C^\dagger_0 \cup
+w_0(M \setminus N) = C^\dagger_0$ (because $w_0(M) \subseteq C^\dagger_0$
+and $\psi$ surjects). Hence $w^*(M) = C^\dagger_0$ is compact.
+
+\emph{Profile-realization, global form.} The profile-realization map
+$\Phi : \hat\Sigma \to W$ (continuous on the compact private-strategy
+space $\hat\Sigma$, with $W = \Phi(\hat\Sigma)$ and nonempty compact
+fibers; see~\S\ref{sec:engine}) admits a Borel right inverse
+$R : W \to \hat\Sigma$ by Kuratowski--Ryll-Nardzewski measurable
+selection \cite[Thm.~18.13]{AliprantisBorder2006}. Define the modified
+agent strategy by the \emph{global} composition
+\[
+  \hat\sigma^*(m) := R(w^*(m)), \qquad
+  \sigma^*(m, \theta) := \hat\sigma^*(m)(\theta) \quad \text{for all } m \in M.
+\]
+$\hat\sigma^*$ is Borel as the composition of Borel maps. Joint Borel
+measurability of $(m,\theta) \mapsto \sigma^*(m,\theta) =
+\hat\sigma^*(m)(\theta)$ follows because the evaluation map
+$\mathrm{ev} : \hat\Sigma \times \Theta \to \Delta(A)$,
+$(\hat\sigma, \theta) \mapsto \hat\sigma(\theta)$, is Borel on the
+admissible strategy space of \S\ref{sec:engine}. By construction, the
+induced payoff profile is $\Phi(R(w^*(m))) = w^*(m)$. The global form
+bypasses any seam-measurability concern at $\partial N$.
+
+\emph{Value preservation.} Since $w^* = w_0$ on $M \setminus N$ and
+$\tau(N) = 0$, the aligned integral
+$\alpha\!\int_M m \cdot w^*(m)\,\tau(dm) = \alpha\!\int_M m \cdot w_0(m)\,\tau(dm)$.
+The misaligned term depends on $w$ only through the closure of its
+image (Lemma~\ref{lem:menu-value}); $\overline{w^*(M)} = C^\dagger_0 =
+\overline{w_0(M)}$, so the misaligned integral is unchanged. Hence
+$U(\sigma^*) = U(\sigma_0) = U^*$.
+
+\emph{Exact contact for every $s$, with measurable selector inside $N$.}
+For each $s \in M$, the rowwise infimum
+$r(s) = \min_{z \in C^\dagger_0} s \cdot z$ is attained on the compact
+$C^\dagger_0$. Consider the correspondence
+\[
+  H : M \rightrightarrows N, \qquad
+  H(s) := \{m \in N : \psi(m) \in \argmin_{z \in C^\dagger_0} s \cdot z\}.
+\]
+$H$ has nonempty compact values: nonempty because $\psi$ surjects onto
+$C^\dagger_0$ and the rowwise minimum is attained; compact because
+$\{m \in N : \psi(m) \in K\}$ is the preimage under the continuous
+$\psi : N \to C^\dagger_0$ of a closed subset $K \subseteq C^\dagger_0$,
+hence closed in the compact $N$. $H$ has Borel (in fact closed) graph
+because the defining condition $s \cdot \psi(m) = r(s)$ is continuous
+in $(s,m)$. By Kuratowski--Ryll-Nardzewski
+\cite[Thm.~18.13]{AliprantisBorder2006}, $H$ admits a Borel selector
+$m^* : M \to N$ with $m^*(s) \in H(s)$ for \emph{every}~$s$
+(not merely $\tau$-a.e.). Set
+$\beta^*(\cdot \mid s) := \delta_{m^*(s)}$; the map
+$m \mapsto \delta_m$ is continuous from $M$ into $\Delta(M)$ with the
+weak topology, so $\beta^* \in B$. For every $s$,
+$s \cdot w^*(m^*(s)) = s \cdot \psi(m^*(s)) = r(s)$. Therefore
+\begin{align*}
+  U(\beta^*, \sigma^*)
+    &= \alpha\!\int_M m \cdot w^*(m)\,\tau(dm)
+       + (1-\alpha)\!\int_M s \cdot w^*(m^*(s))\,\tau(ds)\\
+    &= \alpha\!\int_M m \cdot w^*(m)\,\tau(dm)
+       + (1-\alpha)\!\int_M r(s)\,\tau(ds) \;=\; F(C^\dagger_0) \;=\; U^*
+\end{align*}
+by Lemma~\ref{lem:menu-value}. In particular $G(s) \ne \emptyset$ for
+every $s$, and exact-contact holds in the form of \S\ref{sec:tier1b}.
+\end{proof}
+
+\begin{remark}[Atomlessness is a primitive canvas condition]
+Atomlessness of $\tau$ is a primitive structural hypothesis on the
+adviser-signal distribution. It is \emph{not} logically comparable to
+exact-contact (which is an endogenous property of a chosen labeling):
+atomlessness is a sufficient \emph{primitive} canvas condition under
+which a value-preserving null modification of any optimal labeling
+yields an exact-contact representative. The minimal technical add-on
+is the existence of a $\tau$-null Borel $N \subseteq M$ admitting a
+Borel surjection onto $C^\dagger_0$; on compact metric standard Borel
+$M$, atomlessness is the cleanest primitive guaranteeing this.
+\end{remark}
+
+\begin{remark}[Atomless $\tau$ as economic primitive]
+The unconditional finite-$M$ case in
+\cite{DworczakSmolin2026} relies on $|M|<\infty$ and $\alpha>0$ to
+make every message $q_\beta$-on-path; this is at the opposite end of
+the distributional spectrum from atomless $\tau$. In the infinite-$M$
+setting, atomlessness corresponds to continuously distributed adviser
+posteriors --- the natural primitive when $\Theta$ is a continuum or
+when the adviser observes a continuous signal, including the
+binary-state continuous-density setting and the spherical example
+worked in \cite{DworczakSmolin2026}. Theorem~\ref{thm:atomless-tier1b}
+is therefore a clean continuous-signal add-on, not a hidden D\&S
+primitive.
+\end{remark}
+
+\begin{remark}[Tier 2 is \emph{not} addressed]
+Theorem~\ref{thm:atomless-tier1b} does not provide menu-Hall. The
+no-free-dust theorem (\S\ref{sec:tight}) rules out repairing a
+menu-engine calibration failure by routing $q_\beta$-mass through
+$\tau$-null messages; that obstruction is orthogonal to exact-contact.
+Tier~2 still requires the menu-Hall calibration of \S\ref{sec:tier2}
+or its sufficient instantiations.
+\end{remark}
+
 \section{Tier 2: menu-Hall calibration}\label{sec:tier2}
 
 The menu-Hall condition asks that the rowwise minimization can be
@@ -704,6 +871,18 @@ of $\Delta$ on compact metric).)
 Vladimir I.\ Bogachev.
 \emph{Measure Theory}.
 Springer, 2007.
+(Specifically: Theorem~7.1.7 (Vol.~II): inner regularity of Borel
+probability measures on Polish spaces; standard-Borel disintegration;
+Polish-valued measurable selection.)
+
+\bibitem{Kechris1995}
+Alexander S.\ Kechris.
+\emph{Classical Descriptive Set Theory}.
+Graduate Texts in Mathematics 156, Springer, 1995.
+(Specifically: Theorem~4.18 (Hausdorff--Alexandroff: every compact
+metric space is a continuous image of the Cantor space~$2^\omega$);
+Theorem~6.2 (Cantor-scheme embedding of $2^\omega$ into a nonempty
+perfect Polish space).)
 (Standard-Borel disintegration; Polish-valued measurable selection.)
 
 \end{thebibliography}
