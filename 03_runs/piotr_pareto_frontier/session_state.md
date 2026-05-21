@@ -11,7 +11,72 @@
 | Prover 01 (L6) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0e9994-9f74-83ea-ad3f-2d258ae9dda1 | DONE (10595 chars), harvested. Pro claims reviewer-ready. | 2026-05-21 |
 | Reviewer 01 (L6) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0e9cfe-6294-83ea-9f43-cac7279e4563 | DONE — verdict PATCH_SMALL | 2026-05-21 |
 | Prover 02 (L7+L8) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0ea088-e8bc-83ea-8acd-847aa33c2f7e | DONE (13988 chars). Capstone finite-menu Pareto-Hall theorem stated as conclusion. | 2026-05-21 |
-| Reviewer 02 (L7+L8) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0ea3ca-192c-83ea-baee-b975c51761c7 | generating | 2026-05-21 |
+| Reviewer 02 (L7+L8) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0ea3ca-192c-83ea-baee-b975c51761c7 | DONE — verdict **PASS** | 2026-05-21 |
+| Prover 03 (L12 lift) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0ea7b0-18b0-83ea-a93b-22f17b33ecac | DONE — verdict: α=0 unconditional ✓; α>0 needs (D2)≡menu-Hall | 2026-05-21 |
+| Breakdown 02 (compact lift) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0ea80b-f7ac-83ea-8aab-bb51af639fa9 | DONE — Capstone 1 (stratified) under R1+R2-FES; Capstone 2 (general compact) under R3-FCA/PK | 2026-05-21 |
+| Reviewer 03 (α=0 + D2) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0eaf03-95a4-83ea-afdb-73b7563f59fa | generating | 2026-05-21 |
+| Searcher 02 (primitive D2) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0eaf16-7210-83ea-8d1f-c2e2819e774c | generating | 2026-05-21 |
+
+## MILESTONE 2: α=0 unconditional + (D2)≡menu-Hall ✗ for α>0
+
+**Honest assessment from Prover 03:**
+- **α=0**: original-message lift closes unconditionally → infinite-M, infinite-Θ Theorem 2 for pure adversarial case. CLEAN POSITIVE RESULT.
+- **α>0**: lift requires (D2) finite-fiber calibrated matching, which is essentially menu-Hall in finite-label coordinates. **Same dragon, finite-dimensional glasses.** 🐉
+
+The Pareto-frontier route:
+- IMPROVES Tier 1a + finite-menu Tier 2 (calibration becomes a Lagrange multiplier).
+- DELIVERS unconditional Tier 2 for α=0 (new positive result).
+- HITS the same closed gate for general α>0.
+
+## Compact-menu lift status (Breakdown 02)
+
+- **Capstone 1**: under (A0) ambient-local-max + (R1) stratification + (R2-FES) finite effective exposure — compact-menu Pareto-Hall closes in payoff-label coords. Meaningfully weaker than v8 menu-Hall.
+- **Capstone 2**: under (R3-FCA/PK) finite critical approximation in PK sense — general compact closes. Conditional.
+
+Both still inherit the α>0 original-message lift problem (D2).
+
+## Path forward (this cycle)
+
+1. **Reviewer 03** (fresh chat) — verify the α=0 unconditional + (D2)≡menu-Hall claims.
+2. **Searcher 02** (fresh chat) — final long-shot: any primitive sufficient condition for (D2) strictly weaker than menu-Hall? Candidates C1-C7 (atomless+fiber-rich Lyapunov, single-valued Gauss, τ-symmetry, smooth+strictly convex W^P, product utility, coarsening, fiber-rich Lagrangian transport).
+
+## MILESTONE 1: Finite-menu Pareto-Hall calibration theorem ✓
+
+**Status: PROVED + INDEPENDENTLY REVIEWED + COMMITTED to git.**
+
+The finite-menu Pareto-Hall calibration theorem closes in payoff-label
+coordinates with **no hidden hypotheses** (no atomlessness, no genericity,
+no strict convexity, no τ-AC, no banned moves). Calibration is produced
+by Lagrange multipliers via Clarke-Danskin stationarity, NOT assumed as
+an external Hall hypothesis.
+
+v8 sharpness witness (WTA ternary) is **not** a counterexample — it is
+not a finite ambient local maximizer in the Lemma 7 sense (it is a
+menu-engine artefact per v8 closure memo).
+
+This is a publishable strict generalization of v8's Tier 1a/1b for the
+finite-menu case.
+
+## Critical issue identified for Prover 03 (L12 original-message lift)
+
+While drafting the L12 prompt, I noticed that the lift from finite
+payoff-label calibration to original-message calibration is **NOT free**:
+- Reduced-game posterior \(p_i = g_i/q_i\) is the average of aligned-
+  conditional and misaligned-conditional posteriors at label \(i\).
+- Original-game per-message posterior \(P_{\hat\beta^*}(\cdot\mid m_i)\)
+  at the representative \(m_i\) is the conditional posterior of \(s\)
+  given the joint distribution.
+- These can differ: average being in \(B_W(w_i)\) does not force each
+  per-message posterior to be in \(B_W(w_i)\).
+
+The prompt asks Pro to: identify the exact hypothesis needed, construct
+the kernel, verify or refute the lift. Candidate resolutions:
+(I) τ atomless + null representatives, (II) representative-matching
+of aligned conditional, or admit a stronger primitive condition.
+
+If the lift requires a hypothesis as strong as menu-Hall, the route
+has reached the same closed gate. If it requires something strictly
+weaker, the route extends to original-game robust rationalizability.
 
 ## Prover 02 outcome — finite-menu Pareto-Hall capstone
 
