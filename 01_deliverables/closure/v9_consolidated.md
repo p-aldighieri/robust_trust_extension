@@ -1977,4 +1977,43 @@ This package should be presented to Piotr as follows:
 
 We do not claim an unrestricted infinite-M,Θ proof of Theorem 2 under standing hypotheses alone. We have a strong conditional/classification result. The package proves exact robust rationalizability for several economically meaningful subclasses, gives a fixed-label cone-Hall biconditional for the general regular case, reduces finite-action/polyhedral cases to an LP, and pinpoints the remaining open object as the unstructured ∣Ω∣≥3 case without Reg, without primitive structure, and without a verified Ψ(y)≤0 certificate.
 
+Section G — Weakenings and sharpenings (v9.2 addendum, 2026-05-21)
+
+Three targeted weakening attempts on the load-bearing primitive
+conditions, all reviewer-verified:
+
+**G.1 Binary-TS (weaken R-TD → R-TD\*).**
+Replaces R-TD ("τ no atom at the indifference belief") with R-TD\*
+("τ may have atom $\kappa$ at the indifference belief $s^*$, with
+measurable tie-splitting weights $\lambda^+(s^*), \lambda^-(s^*) \in [0,1]$").
+Prover 21 + Reviewer 18 PASS. Mechanism: Clarke-Danskin stationarity
+at the atom produces the tie weights; modified L_B5 total-balance
+includes the tie-mass; L_B1 applies to adjusted measures; endpoint
+calibration $P_{\hat\beta^*}(\cdot|L) = L$ survives. Effect: binary
+capstone extends to atomic-at-knife-edge τ, covering common
+applications with discrete-time or mass-point signals.
+
+**G.2 P2\*-VM (variable cone-margin).**
+Replaces P2\*'s uniform cone-margin $\eta > 0$ with a Borel-positive
+variable margin $\eta(m): M\to(0,\infty)$, under the integrable
+upper-capacity condition $b_\eta \le \Gamma_\eta$. Prover 22 + Reviewer 19
+PATCH-then-PASS. Effect: P2\* extends to smooth models where the
+Bayes-cone width can shrink at certain boundary points of $M$ (e.g.,
+near the simplex boundary of $\Delta(\Omega)$) but remains positive
+in the interior.
+
+**G.3 Global-TRS derivation for P6^G.**
+Removes Reviewer 17's caveat by deriving the global-TRS hypothesis
+from primitive finite-graph geometry. Prover 23 PASS with stronger
+primitive: "piecewise continuous $w^*$" upgrades to "edgewise
+finite-contact (no-fractal contact) + vertex quotient consistency."
+Effect: P6^G's primitive class becomes fully derivable from
+$(u, A, \Omega, \Theta, \tau, \text{graph}\,G)$.
+
+**Net for v9.2**: three sharpenings, all economically meaningful,
+none changing the headline framing. The package remains a **strong
+conditional / classification result**; the unconditional open object
+is still the unstructured |Ω|≥3 case without Reg/primitive/checkable
+Ψ(y)≤0.
+
 ready to send to Piotr as a strong conditional / classification result
