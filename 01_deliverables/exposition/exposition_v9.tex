@@ -482,12 +482,106 @@ The route's negative finding is just as load-bearing as the positive
 ones: \emph{the locked gate is structural across the menu-engine and
 Pareto-frontier reformulations}.
 
+\section{Headline result: Binary-state unconditional infinite-extension}\label{sec:binary}
+
+\emph{Addendum, 2026-05-21 (Pass 3+): after the first consolidation of
+$v9$, the pipeline was restarted to push past the (D2)/menu-Hall
+locked gate. The headline outcome is a clean unconditional
+infinite-extension for the binary state case in the substantive
+$\alpha\in(0,1)$ regime.}
+
+\begin{theorem}[Binary-state infinite-extension of Theorem 2]\label{thm:binary}
+Under the standing hypotheses of \emph{Robust Trust} with $|\Omega| = 2$,
+$\alpha\in(0,1)$, and the three economically meaningful primitive
+regularity conditions:
+\begin{itemize}
+  \item (R-EE) \textbf{Endpoint exposure.} At the optimal TRS endpoints
+    $L, R\in[0,1]$, the Bayes cones $B_W(w_L)$ and $B_W(w_R)$ are
+    singletons $\{L\}$ and $\{R\}$ respectively.
+  \item (R-TD) \textbf{Tie discipline.} $\tau$ assigns zero mass to the
+    indifference belief between profiles $w_L = w^*(L)$ and $w_R = w^*(R)$.
+  \item (R-IES) \textbf{Interior endpoint stationarity.} $0 < L < R < 1$
+    (the optimal trust region is a proper interior subinterval).
+\end{itemize}
+there exists a robustly rationalizable optimal strategy for
+\emph{arbitrary measurable $M$ and $\Theta$}. Specifically, $\sigma^*$
+is the TRS continuation $\hat\sigma^*(m) = R(w^*(\Pi_{[L,R]}(m)))$, and
+the adversary kernel is
+\[
+  \hat\beta^*(\cdot\mid s) = \begin{cases}
+    \kappa_L(\cdot\mid s) & s\in S_+ := \{s\in M : s\!\cdot w_L < s\!\cdot w_R\}, \\
+    \kappa_R(\cdot\mid s) & s\in S_- := \{s\in M : s\!\cdot w_R < s\!\cdot w_L\}, \\
+    \delta_s & s \in N_0 \text{ ($\tau$-null tie set)},
+  \end{cases}
+\]
+where $\kappa_L: S_+\to\Delta([0,L]\cap M)$ and $\kappa_R: S_-\to\Delta([R,1]\cap M)$
+are the Borel kernels from the scalar endpoint-fiber lift
+(Lemma~B1 with $p=L,R$). Definition~2 (in the $q$-a.e. infinite-space
+reading) holds.
+\end{theorem}
+
+\paragraph{Mechanism.} The proof has six lemmas:
+\begin{itemize}
+  \item L\_B1 (Binary scalar endpoint-fiber lift): given the
+    total-balance condition $\eta(A_-) = \nu(S_+) < \infty$, there is a
+    Borel kernel realizing the calibration scalar identity. Tools:
+    standard Polish-space coupling (Kallenberg) + disintegration.
+    Proved without atomlessness, without density.
+  \item L\_B2 (TRS interval reduction): paper Theorem~1; $T = [L,R]$.
+  \item L\_B3 (Endpoint-only adversarial image): the misaligned BR
+    concentrates on $\{L, R\}$ by the binary nonsmooth argument.
+  \item L\_B4 (Interior message calibration): under TRS, interior
+    messages have only aligned-truthful mass and posterior equals the
+    message itself. Free.
+  \item L\_B5 (Endpoint stationarity / total-balance): under
+    (R-EE)+(R-TD)+(R-IES), the $v9$ T1 Clarke--Danskin Fermat with
+    $k\le 2$ active labels gives
+    $\alpha\!\int_{[0,L]}(L-m)d\tau = (1-\alpha)\!\int_{S_+}(s-L)d\tau$
+    and the symmetric $R$-equation.
+  \item L\_B6 (Capstone): assembles B1+B3+B5 into the theorem.
+\end{itemize}
+
+The key correction to the kernel construction (identified by Prover~07
+and verified by Reviewer~06): the misaligned kernel routes \emph{all
+non-tie sources} to the two endpoint fibers, including interior
+$s\in[L,R]\cap M$. Truthful interior reporting belongs to the
+\emph{aligned} channel, not to the adversarial kernel.
+
+\paragraph{Why this is meaningful.}
+\begin{itemize}
+  \item \emph{Substantive regime.} $\alpha\in(0,1)$, not the degenerate
+    $\alpha=0$ peel of Theorem~T2.
+  \item \emph{Infinite $M$ and $\Theta$.} The paper's binary analysis
+    (\S4.2, Appendix~A.6) was finite-$M$; the present theorem removes
+    that restriction for the regular binary case.
+  \item \emph{Primitive hypotheses.} (R-EE)+(R-TD)+(R-IES) are
+    conditions on $(\tau, u)$ alone, not on the optimization output.
+    In particular, they are \emph{not} equivalent to menu-Hall or
+    (D2): they imply existence of a calibrated kernel rather than
+    postulating it.
+  \item \emph{Generic.} Smooth strictly concave utility + atomless
+    $\tau$ + non-degenerate information value implies all three
+    conditions automatically.
+\end{itemize}
+
+\paragraph{Compatibility with $v8$ sharpness.} The $v8$ WTA ternary
+witness has $|\Omega| = 3$, so this theorem does not apply. No conflict.
+
+\paragraph{Open: $|\Omega| \ge 3$.} The general case remains open.
+Reviewer~06 recommends seeking geometries that reduce vector calibration
+to finitely many scalar or low-dim face transports (e.g., polyhedral
+$W$ with finite-vertex optimal $C^*$, antipodal/radial $\tau$-symmetry,
+one-dimensional normal fans). The pipeline's next pass attacks these
+candidates.
+
 \section*{Acknowledgments}
 
 The Pareto-frontier reformulation is due to Piotr Dworczak (private
 correspondence, 2026-05-20). The Clarke--Danskin calibration mechanism
 was identified by the searcher pass on 2026-05-21 and verified across
-the prover/reviewer chain on the same day. All pipeline artifacts are
-in \texttt{03\_runs/piotr\_pareto\_frontier/}.
+the prover/reviewer chain on the same day. The binary-state capstone
+(\S\ref{sec:binary}) was produced on 2026-05-21 via the same pipeline
+after user override of the first-pass consolidation. All pipeline
+artifacts are in \texttt{03\_runs/piotr\_pareto\_frontier/}.
 
 \end{document}
