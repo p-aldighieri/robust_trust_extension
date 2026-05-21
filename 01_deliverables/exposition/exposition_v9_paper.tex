@@ -1,0 +1,853 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black, urlcolor=blue!50!black}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}{Assumption}
+\renewcommand{\theassumption}{A\arabic{assumption}}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\Om}{\Omega}
+\newcommand{\Th}{\Theta}
+\newcommand{\Si}{\Sigma}
+\newcommand{\suppset}{\operatorname{supp}}
+\newcommand{\essinf}{\operatorname*{essinf}}
+\newcommand{\essup}{\operatorname*{esssup}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\K}{\mathcal{K}}
+
+\title{
+  Extending Theorem~2 of \emph{Robust Trust} beyond finite $M$ and $\Theta$:\\
+  \large Pareto frontiers, binary and fibered islands, and cone-Hall calibration
+}
+\author{Pedro Aldighieri}
+\date{21 May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper-shaped note consolidates the v9 proof package for the infinite-$M$ and infinite-$\Theta$ extension problem surrounding Theorem~2 of Dworczak and Smolin's \emph{Robust Trust}. The original theorem states that robustly rationalizable strategies are optimal and proves existence when the adviser-belief support $M$ and the type space $\Theta$ are finite. The present note keeps the standing primitives of the paper, except where explicitly stated, and records what can be proved without the finite-$M$, finite-$\Theta$ assumption. The optimality direction is unchanged. For existence, the unrestricted problem is not closed under standing assumptions alone; instead, the package gives: (i) an unconditional finite-menu Pareto-Hall theorem in payoff-label coordinates, where Clarke--Danskin stationarity produces calibration multipliers; (ii) an unconditional $\alpha=0$ singleton theorem; (iii) a binary-state capstone for arbitrary $M$ and compact metric $\Theta$ under endpoint exposure, tie discipline, and interior stationarity; (iv) a fibered-binary-normal-fan capstone in higher dimension; (v) a compact-regular cone-Hall biconditional that exactly characterizes when the original-message robust rationalizability lift exists; and (vi) primitive sufficient classes and a finite-facet linear-programming test. The result is an honest narrowing, not a proof of the fully unstructured infinite-dimensional existence theorem. The new durable object is the cone-Hall inequality: it turns the previously informal deletion-compatible Hall obstruction into an explicit dual certificate.
+\end{abstract}
+
+\section{Introduction and honest framing}\label{sec:intro}
+
+Dworczak and Smolin \cite{DworczakSmolin2026} study an agent who combines her private information with advice from an informed system that is aligned with probability $\alpha$ and adversarial with probability $1-\alpha$. The agent solves a max-min problem. The paper's Theorem~2 says, first, that robustly rationalizable strategies are optimal and, second, that such a strategy exists when $M$ and $\Theta$ are finite.
+
+The project behind this note asked whether the existence part survives after removing those two finiteness assumptions. The answer recorded here is precise but not triumphalist. The fully unrestricted existence theorem remains beyond the standing hypotheses alone. What does close is a substantial collection of exact positive results, together with a biconditional that exposes the remaining obstruction as a cone-valued Hall condition. In the proof-landscape, the dragon is no longer hiding in the bushes; it now has a name, a dual price, and a sign convention.
+
+The main contributions are as follows. Section~\ref{sec:pareto} rewrites the robust problem on the weak Pareto frontier of feasible state-contingent payoff profiles. Section~\ref{sec:t1} proves the finite-menu Pareto-Hall theorem: in finite payoff-label coordinates, calibration is a Lagrange multiplier produced by Clarke--Danskin and Fermat normal-cone conditions, not an external assumption. Section~\ref{sec:t2} records the degenerate but complete $\alpha=0$ theorem. Section~\ref{sec:binary} proves the binary-state capstone. Section~\ref{sec:fbnf} proves the higher-dimensional fibered-binary-normal-fan capstone. Section~\ref{sec:hall} gives the cone-Hall biconditional. Section~\ref{sec:primitive} records primitive sufficient classes. Section~\ref{sec:g4} gives a finite-facet LP template, including the winner-take-all ternary test. Section~\ref{sec:phaseb} explains why the compact-regularity package in the biconditional is not automatic under the standing assumptions. Section~\ref{sec:open} lists the remaining open problems.
+
+\section{Setting and notation}\label{sec:setting}
+
+Let $\Om$ be finite, $|\Om|=N$, and let $\mu_0\in\Delta(\Om)$ have full support. The adviser observes a posterior $s\in\Delta(\Om)$ distributed according to $\tau$, and $M=\suppset(\tau)$. Since $\Delta(\Om)$ is compact and $M$ is a support, $M$ is compact in the Robust Trust model. The agent observes a type $\theta\in\Th$, where $\Th$ is compact metric. The action set $A$ is compact metric, and $u(a,\omega,\theta)$ is bounded and continuous in $a$. The adviser posterior $s$ and the type $\theta$ are conditionally independent given $\omega$.
+
+A full agent strategy is a Borel map
+\[
+  \sigma:M\times\Th\to\Delta(A),
+\]
+or equivalently a message-indexed family $\sigma\sim(\hat\sigma(m))_{m\in M}$ with $\hat\sigma(m):\Th\to\Delta(A)$. A misaligned-adviser strategy is a Borel kernel $\beta:M\to\Delta(M)$. The aligned adviser reports truthfully. With alignment probability $\alpha\in[0,1]$, the robust payoff is
+\begin{equation}\label{eq:robustpayoff}
+  U(\sigma)
+  = \alpha\,\E_{{\rm id},\sigma}[u]
+    +(1-\alpha)\inf_{\beta}\E_{\beta,\sigma}[u],
+  \qquad
+  U^* = \sup_{\sigma\in\Si}U(\sigma).
+\end{equation}
+
+For a private strategy $\hat\sigma$ and belief $\mu\in\Delta(\Om)$, write
+\begin{equation}\label{eq:privatepayoff}
+  U(\hat\sigma,\mu)
+  = \E_{\omega\sim\mu,\theta,a\sim\hat\sigma(\theta)}[u(a,\omega,\theta)].
+\end{equation}
+The payoff-profile set is
+\begin{equation}\label{eq:W}
+  W
+  = \big\{w\in\R^N:
+      \exists\hat\sigma,\; w(\omega)=\E_{\hat\sigma}[u(a,\omega,\theta)\mid\omega]
+    \big\}.
+\end{equation}
+Under the standing assumptions, $W$ is compact and convex. Its weak Pareto frontier is
+\[
+  W^P=\{w\in W: \nexists v\in W\;\text{with}\;v(\omega)>w(\omega)\;\forall\omega\}.
+\]
+For $w\in W$, the Bayes cone is
+\begin{equation}\label{eq:bayescone}
+  B_W(w)
+  = \{\mu\in\Delta(\Om): w\in\argmax_{v\in W}\mu\cdot v\}
+  = N_W(w)\cap\Delta(\Om),
+\end{equation}
+where $N_W(w)$ is the normal cone of $W$ at $w$.
+
+We use $\rho_W:W\to\hat\Si$ for a Borel payoff-profile realization selector. Thus $\rho_W(w)$ is a private strategy realizing the profile $w$. This avoids a notation clash with the rowwise-minimizer correspondence below.
+
+Given a kernel $\kappa:M\to\Delta(M)$, define
+\begin{equation}\label{eq:gammaq}
+  \gamma_\alpha
+  = \alpha({\rm id},{\rm id})_\#\tau +(1-\alpha)\tau\otimes\kappa,
+  \qquad
+  q=(\gamma_\alpha)_2.
+\end{equation}
+For Borel $E\subseteq M$, the vector numerator is
+\begin{equation}\label{eq:vectornum}
+  n(E)
+  = \alpha\int_E m\,\tau(dm)
+    +(1-\alpha)\int_M\int_E s\,\kappa(dm\mid s)\tau(ds).
+\end{equation}
+The posterior is the Radon--Nikodym derivative
+\begin{equation}\label{eq:posteriorRN}
+  P_{\gamma_\alpha}(\cdot\mid m)=\frac{dn}{dq}(m)
+  \qquad q\text{-a.e.}
+\end{equation}
+The $q$-a.e. reading is essential. In infinite message spaces the posterior is only defined under the actual mixture message marginal $q$, so Definition~2 is naturally read $q$-a.e., not literally for every $m\in M$.
+
+\begin{definition}[Robust rationalizability]\label{def:RR}
+A strategy $\sigma$ is robustly rationalizable if there exists an adversarial $\beta^*$ attaining the infimum in \eqref{eq:robustpayoff} against $\sigma$ such that
+\[
+  \hat\sigma(m)\in\argmax_{\hat\sigma'} U(\hat\sigma',P_{\beta^*}(\cdot\mid m))
+  \qquad q_{\beta^*}\text{-a.e. }m.
+\]
+\end{definition}
+
+The paper proves that every robustly rationalizable strategy is optimal. That direction does not use finiteness in any substantive way. The difficult direction is existence.
+
+\section{The Pareto-frontier reformulation $\mathcal G_P$}\label{sec:pareto}
+
+Lemma~2 in the proof of Theorem~1 of \cite{DworczakSmolin2026} says that any optimal strategy is equivalent to one using Bayes-optimal private strategies for all messages. In payoff-profile language, one may restrict optimal strategies to profiles in $W^P$.
+
+Let $\K(W^P)$ be the space of nonempty compact subsets of $W^P$, equipped with the Hausdorff metric. Since $W^P$ is compact metric, $\K(W^P)$ is compact metric. In the Pareto-frontier game $\mathcal G_P$, the agent chooses $C\in\K(W^P)$ and the misaligned adviser chooses a measurable selector $b:M\to C$. The value of $C$ is
+\begin{equation}\label{eq:VP}
+  V_P(C)
+  = \alpha\int_M\max_{w\in C}s\cdot w\,\tau(ds)
+    +(1-\alpha)\int_M\min_{w\in C}s\cdot w\,\tau(ds).
+\end{equation}
+The rowwise minimum is attained by compactness, and a Borel minimizer exists by the Kuratowski--Ryll-Nardzewski theorem.
+
+\begin{proposition}[Pareto-frontier value equivalence]\label{prop:paretoequiv}
+Under the standing assumptions,
+\[
+  U^*=\sup_{C\in\K(W^P)}V_P(C).
+\]
+Moreover, the supremum is attained.
+\end{proposition}
+
+\begin{proof}
+Given a strategy $\sigma$, let $w_\sigma(m)$ be its message-contingent payoff profile. By the Pareto-frontier reduction, restrict to $w_\sigma(m)\in W^P$. The aligned term is maximized, for a chosen image $C$, by selecting $w(m)\in\argmax_{w\in C}m\cdot w$. The misaligned term is the integral of $\min_{w\in C}s\cdot w$. Conversely, a Borel maximizer $m\mapsto w(m)\in C$ can be implemented by $\rho_W(w(m))$. Continuity of the max and min support functions in the Hausdorff metric makes $C\mapsto V_P(C)$ continuous on compact $\K(W^P)$.
+\end{proof}
+
+This reformulation removes the rowwise-attainment problem that plagued earlier infinite-dimensional routes. It does not, by itself, solve original-message robust rationalizability. That final step is a messagewise calibration problem.
+
+\section{T1: finite-menu Pareto-Hall via Clarke--Danskin}\label{sec:t1}
+
+The finite-menu theorem is the first new engine. It proves calibration in payoff-label coordinates from local optimality of a finite menu.
+
+Let $C=\{w_1,\ldots,w_k\}\subseteq W^P$ and define
+\begin{equation}\label{eq:Fk}
+  F_k(w_1,\ldots,w_k)
+  = \int_M\left[\alpha\max_i s\cdot w_i +(1-\alpha)
+             \min_i s\cdot w_i\right]\tau(ds).
+\end{equation}
+
+\begin{theorem}[Finite-menu Pareto-Hall via Clarke--Danskin]\label{thm:T1}
+Let $\bar w=(w_1,\ldots,w_k)\in(W^P)^k$ be a Pareto-completed ambient local maximizer of $F_k$ over $W^k$. Then there exist Borel active-face weights
+\[
+  \lambda^+,\lambda^-:M\to\Delta(k)
+\]
+with
+\[
+  \suppset\lambda^+(s)\subseteq\argmax_i s\cdot w_i,
+  \qquad
+  \suppset\lambda^-(s)\subseteq\argmin_i s\cdot w_i
+\]
+for $\tau$-a.e. $s$, such that for each $i$
+\begin{equation}\label{eq:giqi}
+  g_i
+  = \alpha\int_M\lambda_i^+(s)s\,\tau(ds)
+    +(1-\alpha)\int_M\lambda_i^-(s)s\,\tau(ds)
+  \in N_W(w_i).
+\end{equation}
+Let
+\begin{equation}\label{eq:qi}
+  q_i
+  = \alpha\int_M\lambda_i^+(s)\,\tau(ds)
+    +(1-\alpha)\int_M\lambda_i^-(s)\,\tau(ds).
+\end{equation}
+Whenever $q_i>0$,
+\begin{equation}\label{eq:pi}
+  p_i=\frac{g_i}{q_i}\in B_W(w_i).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For each $s$, the integrand in \eqref{eq:Fk} is Lipschitz in $\bar w$ and has Clarke subdifferential contained in the convex hull of active max and min gradients. The integral subdifferential theorem of Clarke \cite{Clarke1983}, together with the Aumann integral of a measurable multifunction \cite{Aumann1965,Hildenbrand1974}, gives Borel weights $\lambda^\pm$ representing a Clarke subgradient $g\in\partial_C F_k(\bar w)$. Positive-measure ties are handled by simplex-valued active weights; no atomlessness is used.
+
+Clarke--Fermat stationarity for maximizing $F_k$ on the compact convex ambient set $W^k$ yields a subgradient $g$ with $g_i\in N_W(w_i)$ for every coordinate. Since each $s$ is a probability vector, $\sum_\omega[g_i]_\omega=q_i$ and $g_i\ge0$. Thus $p_i=g_i/q_i$ lies in $\Delta(\Om)$. Because $N_W(w_i)$ is a cone, $p_i\in N_W(w_i)\cap\Delta(\Om)=B_W(w_i)$.
+\end{proof}
+
+\begin{remark}
+Theorem~\ref{thm:T1} is a payoff-label theorem. It produces calibrated posteriors at finite labels $w_i$. It does not automatically produce an original-message kernel $\beta:M\to\Delta(M)$ satisfying Definition~\ref{def:RR}. The label-to-message lift is exactly where Hall-type obstructions re-enter.
+\end{remark}
+
+\section{T2: the $\alpha=0$ singleton theorem}\label{sec:t2}
+
+The endpoint $\alpha=0$ is degenerate but complete.
+
+\begin{theorem}[$\alpha=0$ singleton extension]\label{thm:T2}
+Under the standing assumptions and $\alpha=0$, there exists a robustly rationalizable optimal strategy without assuming $M$ or $\Theta$ finite.
+\end{theorem}
+
+\begin{proof}
+Choose $w_0\in\argmax_{w\in W}\mu_0\cdot w$, attained by compactness. Define $\hat\sigma^*(m)=\rho_W(w_0)$ for every $m$. The agent ignores advice. Let the adversary send a constant message $m_0\in M$, so $\beta^*(\cdot\mid s)=\delta_{m_0}$.
+
+The agent payoff is independent of the message, so every adversarial kernel is payoff-minimizing. Under the constant message, the unique on-path posterior is the barycenter of the adviser posterior distribution, namely $\mu_0$. Since $w_0$ is Bayes-optimal at $\mu_0$, Definition~\ref{def:RR} holds at the unique $q$-positive message.
+\end{proof}
+
+\section{Binary capstone}\label{sec:binary}
+
+Assume $|\Om|=2$ and identify beliefs with $m\in[0,1]$. The paper's trust-region theorem gives an optimal TRS with connected trust region, hence an interval $T=[L,R]$. The binary capstone proves full original-message robust rationalizability for arbitrary $M$ and compact metric $\Theta$ under three primitive regularity conditions.
+
+\begin{assumption}[Binary regularity]\label{ass:binaryreg}
+The binary optimal trust interval $[L,R]$ satisfies:
+\begin{enumerate}[label=(R-\arabic*)]
+  \item Endpoint exposure: with $w_L=w^*(L)$ and $w_R=w^*(R)$,
+  \[
+    B_W(w_L)=\{L\},\qquad B_W(w_R)=\{R\}.
+  \]
+  \item Tie discipline: $\tau$ gives zero mass to the endpoint tie belief $s^*$ satisfying $s^*\cdot w_L=s^*\cdot w_R$, if such a belief exists.
+  \item Interior endpoint stationarity: $0<L<R<1$.
+\end{enumerate}
+\end{assumption}
+
+\begin{lemma}[Binary endpoint-fiber lift]\label{lem:B1}
+Let $p\in[0,1]$, $A_-\subseteq M\cap(-\infty,p]$, and $S_+\subseteq M\cap[p,\infty)$ be Borel. Define
+\[
+  \eta(X)=\alpha\int_{X\cap A_-}(p-m)\tau(dm),
+  \qquad
+  \nu(Y)=(1-\alpha)\int_{Y\cap S_+}(s-p)\tau(ds).
+\]
+If $\eta(A_-)=\nu(S_+)<\infty$, then there is a Borel kernel $\kappa:S_+\to\Delta(A_-)$ such that for all Borel $X\subseteq A_-$,
+\[
+  (1-\alpha)\int_{S_+}(s-p)\kappa(X\mid s)\tau(ds)
+  =\alpha\int_X(p-m)\tau(dm).
+\]
+The resulting mixture posterior equals $p$ for $q$-a.e. message in $A_-$, provided no other sources send extra mass into $A_-$. The symmetric statement holds on $A_+\subseteq M\cap[p,\infty)$ with sources $S_-\subseteq M\cap(-\infty,p]$.
+\end{lemma}
+
+\begin{proof}
+Normalize $\eta$ and $\nu$ when their common mass is positive; any coupling between the normalized measures exists on standard Borel spaces, and disintegration over $S_+$ gives $\kappa$. If the common mass is zero, any kernel into a nonempty target works. The displayed balance rearranges to
+\[
+  \alpha\int_X m\,d\tau +(1-\alpha)\int_{S_+}s\kappa(X\mid s)d\tau
+  = p\left[\alpha\tau(X)+(1-\alpha)\int_{S_+}\kappa(X\mid s)d\tau\right],
+\]
+which is exactly $n(X)=p q(X)$ for all Borel $X\subseteq A_-$. Hence $dn/dq=p$ on $A_-$.
+\end{proof}
+
+\begin{lemma}[Binary endpoint image]\label{lem:binaryimage}
+For a binary TRS with trust interval $[L,R]$, the projected adversarial payoff image is endpoint-supported:
+\[
+  \min_{\mu\in[L,R]}s\cdot w^*(\mu)
+  =\min\{s\cdot w^*(L),s\cdot w^*(R)\}.
+\]
+\end{lemma}
+
+\begin{proof}
+Let $V(x)=\max_{w\in W}[(1-x)w_0+xw_1]$. Then $V$ is convex. If $w^*(\mu)$ supports $V$ at $\mu$, its slope $d(w^*(\mu))=w_1^*(\mu)-w_0^*(\mu)$ lies in $\partial V(\mu)$. The row payoff can be written as
+\[
+  s\cdot w^*(\mu)=V(\mu)+(s-\mu)d(w^*(\mu)).
+\]
+Monotonicity of subgradients of a convex function implies that every interior supporting line is dominated, for minimization, by at least one endpoint supporting line. This is the nonsmooth version of the binary endpoint argument in Appendix~A.6 of \cite{DworczakSmolin2026}.
+\end{proof}
+
+\begin{lemma}[Binary endpoint stationarity]\label{lem:binarystat}
+Under Assumption~\ref{ass:binaryreg}, the optimal trust interval satisfies
+\begin{align}
+  \alpha\int_{[0,L]\cap M}(L-m)\tau(dm)
+  &= (1-\alpha)\int_{S_+}(s-L)\tau(ds),\label{eq:leftbalance}\\
+  \alpha\int_{[R,1]\cap M}(m-R)\tau(dm)
+  &= (1-\alpha)\int_{S_-}(R-s)\tau(ds),\label{eq:rightbalance}
+\end{align}
+where $S_+$ is the high-source region whose projected minimizer is $L$ and $S_-$ is the low-source region whose projected minimizer is $R$.
+\end{lemma}
+
+\begin{proof}
+Apply the finite-menu stationarity theorem to the two active endpoint labels. Endpoint exposure identifies the Bayes cones with the singleton endpoint beliefs. Tie discipline removes active-minimizer ambiguity on a positive-measure set. Interior stationarity gives equality rather than a one-sided Kuhn--Tucker inequality. The normalized posterior condition at the left label is $p=L$, which rearranges to \eqref{eq:leftbalance}; the right endpoint is symmetric.
+\end{proof}
+
+\begin{theorem}[Binary-state infinite extension]\label{thm:binary}
+Under the standing hypotheses, $|\Om|=2$, $\alpha\in(0,1)$, and Assumption~\ref{ass:binaryreg}, there exists a robustly rationalizable optimal strategy for arbitrary $M$ and compact metric $\Theta$.
+\end{theorem}
+
+\begin{proof}
+Let the optimal TRS be
+\[
+  \hat\sigma^*(m)=\rho_W(w^*(\Pi_{[L,R]}(m))).
+\]
+By Lemma~\ref{lem:binaryimage}, the adversarial projected payoff image is endpoint-supported. By Lemma~\ref{lem:binarystat}, the two balances \eqref{eq:leftbalance} and \eqref{eq:rightbalance} are exactly the hypotheses of Lemma~\ref{lem:B1}. Apply Lemma~\ref{lem:B1} on the left fiber with $p=L$, $A_-=[0,L]\cap M$, and source region $S_+$; apply its symmetric version on the right fiber with $p=R$, $A_+=[R,1]\cap M$, and source region $S_-$. Paste the two kernels and send tie-null leftovers arbitrarily.
+
+For $q$-a.e. interior message $m\in(L,R)\cap M$, the adversary sends no extra mass there, so the posterior is $m$ and the TRS is Bayes-optimal at $m$. On the left endpoint fiber the posterior is $L$; on the right endpoint fiber it is $R$. Endpoint exposure gives Bayes-optimality there. The kernel is supported on rowwise minimizers, so it is adversarial. Definition~\ref{def:RR} holds $q$-a.e.
+\end{proof}
+
+\section{FBNF capstone}\label{sec:fbnf}
+
+For $|\Om|\ge3$, one positive island arises when the multidimensional geometry decomposes into one-dimensional affine fibers. The correct object is endpoint-fiber support, not singleton endpoint support.
+
+\begin{assumption}[Fibered binary normal fan]
+There is a standard Borel coordinate space
+\[
+  E=\{(z,t):z\in Z,\ t\in[a_z,b_z]\}
+\]
+with probability $\bar\tau(dz,dt)=\lambda(dz)\tau_z(dt)$ and jointly Borel affine maps $\ell_z:[a_z,b_z]\to\Delta(\Om)$ such that $\Phi(z,t)=\ell_z(t)$ pushes $\bar\tau$ to $\tau$. Either $\Phi$ is injective on a full-measure Borel subset or overlaps are quotient-consistent: the same message receives the same projected label and posterior prescription.
+
+The optimal trust region has the fibered form
+\[
+  T=\bigcup_z \ell_z([L(z),R(z)]),
+\]
+and projection is fiber-preserving:
+\[
+  \Pi_T(\ell_z(t))=\ell_z(\Pi_{[L(z),R(z)]}(t)).
+\]
+On each fiber, endpoint-supported minimization holds:
+\[
+  \min_{\mu\in T_z}\ell_z(t)\cdot w^*(\mu)
+  =\min\{\ell_z(t)\cdot w^*(\ell_z(L(z))),
+          \ell_z(t)\cdot w^*(\ell_z(R(z)))\}.
+\]
+Endpoint exposure holds along each fiber:
+\[
+  B_W(w_{z,L})\cap\ell_z([a_z,b_z])=\{\ell_z(L(z))\},
+\]
+and symmetrically at $R(z)$. The conditional law $\tau_z$ gives zero mass to endpoint tie sets. Local two-sided perturbations of $L(z)$ and $R(z)$ on Borel patches are admissible in the interior. Finally, global fiber dominance holds:
+\[
+  \min_{\mu\in T}\ell_z(t)\cdot w^*(\mu)
+  =\min_{\mu\in T_z}\ell_z(t)\cdot w^*(\mu)
+  \quad \bar\tau\text{-a.e. }(z,t).
+\]
+\end{assumption}
+
+\begin{lemma}[Conditional B1 and measurable pasting]\label{lem:F1}
+Under the FBNF hypotheses and the fiberwise balance equations below, there is a global Borel kernel $\hat\beta^*:M\to\Delta(M)$ whose support lies in endpoint fibers,
+\[
+  \suppset\hat\beta^*(\cdot\mid\ell_z(t))
+  \subseteq \ell_z([a_z,L(z)])\cup\ell_z([R(z),b_z])
+\]
+for $\bar\tau$-a.e. $(z,t)$, and whose projected payoff image is endpoint-only.
+\end{lemma}
+
+\begin{proof}
+Apply Lemma~\ref{lem:B1} conditionally on each fiber. Standard measurable disintegration and finite-dimensional Borel selection paste the family of conditional kernels through the Borel chart. The quotient-consistency clause prevents different fiber coordinates for the same message from assigning incompatible posteriors.
+\end{proof}
+
+\begin{lemma}[Endpoint-only fiber image]\label{lem:F2}
+The endpoint-supported minimization condition follows from the affine-fiber support-function primitive: for each $z$, $t\mapsto\ell_z(t)$ is affine and $V_z(t)=\max_{w\in W}\ell_z(t)\cdot w$ is convex.
+\end{lemma}
+
+\begin{proof}
+On a fixed fiber, the same subgradient-monotonicity argument as Lemma~\ref{lem:binaryimage} applies to $V_z$. This proves endpoint domination for the fiber-restricted row problem. The global dominance assumption then promotes the fiber-local minimizer to a true original-game rowwise minimizer.
+\end{proof}
+
+\begin{lemma}[Localized stationarity gives fiberwise balance]\label{lem:F3}
+For $\lambda$-a.e. $z$,
+\begin{align}
+  \alpha\int_{a_z}^{L(z)}(L(z)-t)\tau_z(dt)
+  &= (1-\alpha)\int_{S_+(z)}(t-L(z))\tau_z(dt),\label{eq:Fleft}\\
+  \alpha\int_{R(z)}^{b_z}(t-R(z))\tau_z(dt)
+  &= (1-\alpha)\int_{S_-(z)}(R(z)-t)\tau_z(dt).\label{eq:Fright}
+\end{align}
+\end{lemma}
+
+\begin{proof}
+Perturb the trust band by $L_\eps(z)=L(z)+\eps h(z)$ and $R_\eps(z)=R(z)+\eps k(z)$ on Borel patches with positive interior margin. The Clarke--Danskin theorem gives the directional derivative as
+\[
+  \int_Z h(z)\Phi_L(z)+k(z)\Phi_R(z)\,\lambda(dz),
+\]
+where $\Phi_L$ and $\Phi_R$ are the left and right imbalance expressions. Local optimality and testing with positive and negative Borel functions imply $\Phi_L=\Phi_R=0$ a.e. At boundary endpoints one obtains the corresponding one-sided KKT inequalities; the theorem above is the interior two-sided case.
+\end{proof}
+
+\begin{theorem}[FBNF infinite extension]\label{thm:FBNF}
+Under the standing hypotheses, $|\Om|\ge3$, $\alpha\in(0,1)$, and the FBNF assumptions, there exists a robustly rationalizable optimal strategy for arbitrary $M$ and compact metric $\Theta$.
+\end{theorem}
+
+\begin{proof}
+Use the TRS
+\[
+  \hat\sigma^*(m)=\rho_W(w^*(\Pi_T(m))).
+\]
+Lemmas~\ref{lem:F2} and global fiber dominance make the projected adversarial best response endpoint-supported and globally rowwise minimizing. Lemma~\ref{lem:F3} supplies the balances required by conditional B1. Lemma~\ref{lem:F1} pastes the fiberwise kernels into a global Borel adversary. Interior messages are reached only through the aligned truthful channel, hence have posterior $m$. Endpoint-fiber messages have posterior equal to the corresponding fiber endpoint. Fiberwise endpoint exposure gives Bayes-optimality at those endpoint posteriors. Thus Definition~\ref{def:RR} holds $q$-a.e.
+\end{proof}
+
+\begin{remark}
+The WTA ternary witness is not contradicted by Theorem~\ref{thm:FBNF}. Its obstruction is genuinely multidimensional and cross-fiber; it fails the FBNF hypotheses, in particular the scalar fiber-dominance structure.
+\end{remark}
+
+\section{Hall biconditional via cone-Hall duality}\label{sec:hall}
+
+The preceding capstones are constructive islands. The general compact-regular result is an exact biconditional.
+
+Fix an optimal payoff-labeling $w^*:M\to W^P$ and menu $C^*=\overline{w^*(M)}$. Define the rowwise minimizer correspondence
+\begin{equation}\label{eq:Gcorr}
+  G(s)=\{m\in M: s\cdot w^*(m)=\min_{z\in C^*}s\cdot z\}.
+\end{equation}
+Set
+\[
+  B(m)=B_W(w^*(m)).
+\]
+For a closed convex set $B\subseteq\Delta(\Om)$, write
+\[
+  h_B(y)=\sup_{\mu\in B}y\cdot\mu.
+\]
+
+\begin{assumption}[Compact-regular cone-Hall package]\label{ass:reg}
+The graph of $G$ is closed, with nonempty compact values. For each fixed $a\in\R^N$, the map
+\[
+  m\mapsto h_{B(m)}(a)
+\]
+is continuous.
+\end{assumption}
+
+For bounded Borel $y:M\to\R^N$, define
+\begin{equation}\label{eq:Psi}
+  \Psi(y)
+  = \alpha\int_M\big[y(m)\cdot m-h_{B(m)}(y(m))\big]\tau(dm)
+    +(1-\alpha)\int_M\inf_{m'\in G(s)}
+       \big[y(m')\cdot s-h_{B(m')}(y(m'))\big]\tau(ds).
+\end{equation}
+
+\begin{theorem}[Robust Trust Hall biconditional]\label{thm:G3}
+Fix a G2c-admissible optimal labeling $w^*$. Under the standing hypotheses, $\alpha\in(0,1)$, and Assumption~\ref{ass:reg}, the induced optimal TRS is robustly rationalizable if and only if
+\begin{equation}\label{eq:coneHall}
+  \Psi(y)\le 0
+  \qquad\text{for every bounded Borel }y:M\to\R^N.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The primal problem is to find a Borel kernel $\kappa:M\to\Delta(M)$ supported on $G(s)$ such that the posterior $dn/dq$ belongs to $B(m)$ for $q$-a.e. $m$. For any feasible kernel and any bounded Borel $y$, support-function membership gives
+\[
+  y(m)\cdot\frac{dn}{dq}(m)-h_{B(m)}(y(m))\le0
+  \quad q\text{-a.e.}
+\]
+Integrating and using the support restriction of $\kappa$ yields \eqref{eq:coneHall}.
+
+Conversely, under the compact-closed assumptions, the set of joint measures supported on $\operatorname{Gr}G$ with the source marginal fixed is compact, and the calibration cone is closed. If no feasible calibrated joint measure exists, finite-dimensional conic separation gives a bounded Borel support-function price $y$ with $\Psi(y)>0$, contradicting \eqref{eq:coneHall}. Disintegration of the feasible joint measure gives the desired Borel kernel. This is the compact-closed standard-Borel cone-Hall theorem, the infinite analogue of finite Farkas duality.
+\end{proof}
+
+\begin{remark}[Sign convention]
+The sign in \eqref{eq:coneHall} is nonpositive. With the support function convention $h_B(y)=\sup_{\mu\in B}y\cdot\mu$, membership $n/q\in B$ implies $y\cdot n-h_B(y)q\le0$.
+\end{remark}
+
+\subsection{Finite cone-Hall as Farkas duality}\label{subsec:G1}
+
+The finite version is useful both as a proof model for Theorem~\ref{thm:G3} and as a computational diagnostic. Let $S=\{s_1,\ldots,s_I\}\subseteq\Delta(\Om)$ have weights $\tau_i$, let $M_{\rm msg}=\{m_1,\ldots,m_J\}\subseteq\Delta(\Om)$ have aligned baseline weights $\tau_j^M$, and let $R(i)\subseteq\{1,\ldots,J\}$ be the allowed rowwise-minimizer messages for source $i$. Let $B_j\subseteq\Delta(\Om)$ be nonempty closed convex Bayes cones. A flow $x_{ij}\ge0$ is feasible if
+\[
+  x_{ij}=0\quad(j\notin R(i)),
+  \qquad
+  \sum_{j\in R(i)}x_{ij}=(1-\alpha)\tau_i,
+\]
+and, with
+\[
+  n_j=\alpha\tau_j^M m_j+\sum_i x_{ij}s_i,
+  \qquad
+  q_j=\alpha\tau_j^M+\sum_i x_{ij},
+\]
+one has $n_j/q_j\in B_j$ whenever $q_j>0$.
+
+\begin{theorem}[Finite aligned-baseline cone-Hall]\label{thm:G1}
+A feasible finite flow exists if and only if, for every family $y_1,\ldots,y_J\in\R^N$,
+\begin{equation}\label{eq:finiteConeHall}
+  \alpha\sum_j\tau_j^M\big[y_j\cdot m_j-h_{B_j}(y_j)\big]
+  +(1-\alpha)\sum_i\tau_i\min_{j\in R(i)}
+       \big[y_j\cdot s_i-h_{B_j}(y_j)\big]
+  \le 0.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For feasibility implies \eqref{eq:finiteConeHall}, fix $y=(y_j)_j$. Cone membership gives
+\[
+  y_j\cdot n_j-h_{B_j}(y_j)q_j\le0
+  \qquad\forall j.
+\]
+Summing over $j$ and expanding $n_j,q_j$ gives
+\[
+  \alpha\sum_j\tau_j^M[y_j\cdot m_j-h_{B_j}(y_j)]
+  +\sum_{i,j}x_{ij}[y_j\cdot s_i-h_{B_j}(y_j)]\le0.
+\]
+Since $x_{ij}$ is supported on $R(i)$ and has row mass $(1-\alpha)\tau_i$, the last term is at least
+\[
+  (1-\alpha)\sum_i\tau_i\min_{j\in R(i)}[y_j\cdot s_i-h_{B_j}(y_j)],
+\]
+which gives the desired inequality.
+
+For the converse, suppose no feasible flow exists. The set of row-feasible flows is a compact polytope. The set of calibrated vectors is the product cone determined by the support-function inequalities. By finite-dimensional separating hyperplane/Farkas duality, there is a vector price $y_j$ separating every row-feasible flow from the calibration cone. Taking the infimum over each row recovers exactly the minimum term in \eqref{eq:finiteConeHall}, with strict positive violation. Hence \eqref{eq:finiteConeHall} for all $y$ is equivalent to feasibility.
+\end{proof}
+
+\subsection{Compact-closed standard-Borel cone-Hall}\label{subsec:G2c}
+
+The bare standard-Borel theorem is false: if $M$ omits a boundary point that dual prices can approach but a kernel cannot hit, the dual may see an infimum that no primal kernel attains. The compact-closed assumptions in Assumption~\ref{ass:reg} are exactly the no-escape repair.
+
+\begin{theorem}[Compact-closed cone-Hall]\label{thm:G2c}
+Let $S=M$ be compact metric, let $G:S\rightrightarrows M$ have nonempty compact values and closed graph, and let $m\mapsto B(m)$ be a closed convex Bayes-cone correspondence whose support functions are continuous in $m$ for every fixed price vector. Then there exists a Borel kernel $\kappa$ with $\kappa(G(s)\mid s)=1$ and posterior $P_{\gamma_\alpha}(\cdot\mid m)\in B(m)$ for $q$-a.e. $m$ if and only if $\Psi(y)\le0$ for every bounded Borel $y:M\to\R^N$.
+\end{theorem}
+
+\begin{proof}
+The set of probability measures $\pi$ on $M\times M$ with first marginal $\tau$ and support contained in $\operatorname{Gr}G$ is nonempty and compact by Prokhorov compactness and closedness of $\operatorname{Gr}G$. For such $\pi$, define
+\[
+  \gamma_\alpha=\alpha({\rm id},{\rm id})_\#\tau+(1-\alpha)\pi.
+\]
+Calibration is the closed condition that the vector measure $n$ be dominated by the cone field $B(m)$ relative to $q$. Support-function continuity makes this calibration set closed under weak convergence. Thus failure of feasibility separates the compact convex set of admissible joint laws from the closed calibration cone. The separator is a bounded Borel vector price $y$, and evaluating the support function of the rowwise support constraint yields $\Psi(y)>0$. The reverse direction is the integrated support-function inequality already used in Theorem~\ref{thm:G3}. Finally, any feasible $\pi$ disintegrates into a Borel kernel by standard disintegration on compact metric spaces; see \cite{Kallenberg1997}.
+\end{proof}
+
+\begin{remark}[Why this avoids the old v8 obstacles]
+The proof does not pass through compact-patch deletion, so the Borel-to-compact non-monotonicity gap is absent. It does not solve cell LPs and then lift them, so the cell-flow lift gap is absent. It uses exact separation rather than an $\eps$-net argument, so the slack-discipline problem is absent. These are the three obstructions named in the v8 closure memo.
+\end{remark}
+
+\section{Primitive sufficient classes}\label{sec:primitive}
+
+The biconditional reduces existence to the dual inequality. This section records usable primitive sufficient conditions. Smoothness alone is not enough: it supplies topology, not mass balance.
+
+\begin{proposition}[Smooth regularity is topological only]\label{prop:P1}
+If the payoff-profile selector $w^*$ is continuous, $M$ is compact, and the normal-cone field has continuous support functions, then Assumption~\ref{ass:reg} holds. These conditions do not imply $\Psi(y)\le0$.
+\end{proposition}
+
+\begin{proof}
+Continuity of $(s,m)\mapsto s\cdot w^*(m)$ and Berge's theorem give closed graph of $G$. Continuity of the normal-cone support function gives the second regularity condition. But $\Psi\le0$ is a transport-calibration statement. The WTA ternary finite-facet example gives a positive dual certificate despite polyhedral regularity.
+\end{proof}
+
+\begin{proposition}[Bounded-jamming cone-margin class]\label{prop:P2}
+Assume Assumption~\ref{ass:reg}. Suppose there exists a Borel rowwise-minimizer kernel $\kappa_0$ supported on $G(s)$ whose target marginal $\rho$ satisfies $\rho\ll\tau$ and $d\rho/d\tau\le C$. Suppose also there is a cone margin $\eta>0$ such that
+\[
+  \operatorname{dist}(m,\Delta(\Om)\setminus B(m))\ge\eta
+  \qquad \tau\text{-a.e. }m.
+\]
+If
+\begin{equation}\label{eq:margincondition}
+  \frac{(1-\alpha)C}{\alpha+(1-\alpha)C}\,\operatorname{diam}(\Delta(\Om))\le \eta,
+\end{equation}
+then the optimal TRS is robustly rationalizable.
+\end{proposition}
+
+\begin{proof}
+Use $\kappa_0$ as the adversarial kernel. Conditional on a message $m$, the posterior is a convex combination of the truthful point $m$ and an adversarial barycenter, with adversarial weight at most the left side of \eqref{eq:margincondition} divided by the simplex diameter. Thus the posterior remains inside $B(m)$ by the cone-margin condition. The kernel is rowwise minimizing by construction, so Theorem~\ref{thm:G3} gives robust rationalizability.
+\end{proof}
+
+\begin{proposition}[Radial symmetry]\label{prop:P4}
+In radial or antipodal spherical models where $\tau$ is invariant under the symmetry group, the payoff geometry is equivariant, and rowwise minimizers are antipodal radial boundary points, robust rationalizability follows by constructing the symmetric radial kernel.
+\end{proposition}
+
+\begin{proof}
+Disintegrate by radius and direction. The adversary maps each direction to the antipodal boundary direction. Invariance of $\tau$ makes the conditional posterior at a boundary message equal to the corresponding boundary belief. This is a constructive primal proof, not an averaging argument over arbitrary dual prices.
+\end{proof}
+
+\begin{proposition}[Finite-graph FBNF class]\label{prop:graphfbnf}
+If $M$ is a finite union of affine arcs forming a finite embedded graph, the TRS and projection respect the graph, each edge satisfies endpoint-supported minimization and endpoint exposure, global cross-arc dominance holds, and graph vertices satisfy Kirchhoff node balance, then a calibrated adversarial kernel exists.
+\end{proposition}
+
+\begin{proof}
+Apply Lemma~\ref{lem:B1} on each edge-endpoint fiber. Kirchhoff node balance aggregates the tilted measures of half-edges incident at a shared vertex. Since the graph is finite, the edgewise kernels paste measurably through the Borel chart. Cross-arc dominance makes the edgewise minimizers globally rowwise minimizing. The posterior and Bayes-optimality verification is identical to Theorem~\ref{thm:FBNF}.
+\end{proof}
+
+\section{G4: finite-facet LP threshold}\label{sec:g4}
+
+When $W$ is polyhedral and the optimal menu is a finite set of vertices $C^*=\{w_1,\ldots,w_k\}$, cone-Hall becomes a finite LP.
+
+Let $A_j$ be the aligned message cell where the agent uses $w_j$, and let $S_j$ be the rowwise-minimizer source cell whose adversarial projected label is $w_j$. Set
+\[
+  \lambda_j=\tau(A_j),
+  \qquad
+  \bar m_j=\lambda_j^{-1}\int_{A_j}m\,\tau(dm),
+\]
+when $\lambda_j>0$, and
+\[
+  \mu_j=\tau(S_j),
+  \qquad
+  \bar s_j=\mu_j^{-1}\int_{S_j}s\,\tau(ds),
+\]
+when $\mu_j>0$. Then
+\begin{equation}\label{eq:qjnj}
+  q_j=\alpha\lambda_j+(1-\alpha)\mu_j,
+  \qquad
+  n_j=\alpha\lambda_j\bar m_j+(1-\alpha)\mu_j\bar s_j.
+\end{equation}
+If
+\[
+  B_j=B_W(w_j)=\{p\in\Delta(\Om): g_{j\ell}\cdot p\le c_{j\ell},\;\ell=1,\ldots,L_j\},
+\]
+then the LP feasibility condition is
+\begin{equation}\label{eq:LP}
+  g_{j\ell}\cdot n_j\le c_{j\ell}q_j
+  \qquad\forall j,\ell.
+\end{equation}
+
+\begin{theorem}[Finite-facet LP threshold]\label{thm:G4}
+Under finite-cell tie discipline and the compact-regular hypotheses, the finite-vertex optimal TRS is robustly rationalizable if and only if the finitely many inequalities \eqref{eq:LP} hold for all active labels and all facets of their Bayes cones. If any inequality fails, the corresponding facet normal is an explicit dual certificate.
+\end{theorem}
+
+\begin{proof}
+For each $j$, $n_j/q_j\in B_j$ if and only if all facet inequalities hold. This is exactly the finite-dimensional support-function cone-Hall condition. Theorem~\ref{thm:G3} converts it to robust rationalizability.
+\end{proof}
+
+\paragraph{WTA ternary check.} Let $\Om=\{0,1,2\}$ and let WTA vertices be $v_j(j)=1$ and $v_j(k)=-1$ for $k\ne j$. The Bayes cone is
+\[
+  B_j=\{p:p_j\ge p_k\;\forall k\}.
+\]
+The symmetric dual price is $y_j=\mathbf{1}-2e_j$, with $h_{B_j}(y_j)=1/3$. On the rowwise minimizer cell
+\[
+  K_j^- = \{s:s_j\le s_k\;\forall k\},
+\]
+one has
+\[
+  y_j\cdot s-h_{B_j}(y_j)=\frac23-2s_j.
+\]
+For uniform $\tau$ on $\Delta^2$,
+\[
+  \tau(K_j^-)=\frac13,
+  \qquad
+  \E[s_j\mid K_j^-]=\frac19,
+\]
+so the per-vertex contribution is
+\[
+  \frac13\left(\frac23-\frac29\right)=\frac4{27},
+\]
+and the total misaligned contribution is $4/9$. With aligned baseline depth
+\[
+  D=\sum_j\int_{A_j}\left(m_j-\frac13\right)\tau(dm),
+\]
+the binding dual inequality is
+\begin{equation}\label{eq:WTAthreshold}
+  -2\alpha D+(1-\alpha)\frac49\le0,
+  \qquad\text{or equivalently}\qquad
+  D\ge \frac{2(1-\alpha)}{9\alpha}.
+\end{equation}
+At $\alpha=1/2$, this is $D\ge2/9$. With no aligned baseline depth, the certificate is positive: $\Psi=2/9$ at $\alpha=1/2$.
+
+\section{Phase (b): can the regularity package be removed?}\label{sec:phaseb}
+
+The compact support of $M$ removes the boundary-escape counterexample that breaks bare standard-Borel cone-Hall, but it does not make Assumption~\ref{ass:reg} automatic.
+
+\begin{theorem}[Phase (b) verdict]\label{thm:phaseb}
+The regularity package in Assumption~\ref{ass:reg} does not follow from the standing Robust Trust hypotheses alone. It follows from additional smooth or exposed-frontier primitives that give a continuous optimal payoff-labeling $w^*$ and continuous normal-cone support functions. Such primitives give the regularity needed for Theorem~\ref{thm:G3}, but they do not by themselves imply $\Psi\le0$.
+\end{theorem}
+
+\begin{proof}
+Standing assumptions give compact $M$ and compact convex $W$, but only Borel measurable optimal label selections in general. A Borel jump in $w^*$ can make
+\[
+  G(s)=\argmin_{m\in M}s\cdot w^*(m)
+\]
+non-closed. For instance, in a binary two-profile menu with $w^*(m)$ switching at $m=1/2$, the minimizer set can be $[0,1/2)$ for some source $s$, not closed in compact $M$. The Bayes cone $B(m)=B_W(w^*(m))$ jumps at the same point, so $m\mapsto h_{B(m)}(a)$ is discontinuous for suitable $a$.
+
+If instead $w^*$ is continuous and the exposed face or Gauss map is continuous, Berge's theorem gives closed graph of $G$, and support-function continuity follows from normal-cone continuity. This proves the regularity result, but the WTA finite-facet certificate shows that regularity is not a calibration theorem.
+\end{proof}
+
+\section{Hypothesis ledger}\label{sec:ledger}
+
+\begin{center}
+\begin{tabular}{|p{0.22\textwidth}|p{0.43\textwidth}|p{0.25\textwidth}|}
+\hline
+Result & Added hypotheses & Classification \\
+\hline
+T1 finite-menu & finite payoff menu and ambient Pareto-completed local maximizer & payoff-label theorem; not original-message Theorem~2 \\
+\hline
+T2 $\alpha=0$ & $\alpha=0$ & degenerate scope endpoint \\
+\hline
+Binary capstone & $|\Om|=2$, endpoint exposure, tie discipline, interior endpoint stationarity & meaningful primitive narrowing \\
+\hline
+FBNF capstone & affine fiber chart, fiber-preserving TRS, endpoint-supported fiber image, endpoint exposure, tie discipline, local perturbability, global fiber dominance & meaningful primitive narrowing \\
+\hline
+Hall biconditional & closed graph of $G$, continuous Bayes-cone support functions & meaningful regularity, not automatic \\
+\hline
+P2* & cone margin, bounded jamming, sufficient $\alpha$ & meaningful non-foliated sufficient class \\
+\hline
+G4 LP & polyhedral finite-facet Bayes cones and finite-cell tie discipline & computable finite-action class \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Applications and proof dependencies}\label{sec:apps}
+
+\subsection{Application map}
+
+\begin{center}
+\begin{tabular}{|p{0.23\textwidth}|p{0.38\textwidth}|p{0.29\textwidth}|}
+\hline
+Environment & Applicable result & Conclusion \\
+\hline
+Binary state & Theorem~\ref{thm:binary}, under endpoint exposure, tie discipline, and interior stationarity & Full robustly rationalizable optimum for arbitrary $M$ and compact metric $\Theta$ \\
+\hline
+Pure adversarial adviser & Theorem~\ref{thm:T2}, $\alpha=0$ & Singleton prior strategy is robustly rationalizable \\
+\hline
+Finite effective payoff menu & Theorem~\ref{thm:T1} & Label-coordinate calibration by Clarke--Danskin multipliers \\
+\hline
+Radial or spherical model & Proposition~\ref{prop:P4} & Symmetric calibrated kernel by radial disintegration \\
+\hline
+Fibered severity or affine MLR model & Theorem~\ref{thm:FBNF} & Conditional B1 transports pasted along fibers \\
+\hline
+Finite-action polyhedral model & Theorem~\ref{thm:G4} & Finite LP check, with violating facet as certificate \\
+\hline
+Smooth model with bounded jamming & Proposition~\ref{prop:P2} & Cone-margin keeps posteriors inside Bayes cones \\
+\hline
+General compact-regular labeling & Theorem~\ref{thm:G3} & Existence if and only if the cone-Hall inequality holds \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Dependency graph}
+
+The proof dependencies are acyclic.
+\begin{enumerate}[leftmargin=*]
+  \item The setting and Pareto-frontier value equivalence, Proposition~\ref{prop:paretoequiv}, use only compactness of $W$, measurable selection, and the paper's Pareto-frontier lemma.
+  \item The finite-menu theorem, Theorem~\ref{thm:T1}, uses Clarke--Danskin, Aumann integration, and Fermat normal-cone stationarity. It is independent of the binary, FBNF, and cone-Hall capstones.
+  \item The $\alpha=0$ theorem, Theorem~\ref{thm:T2}, uses only compactness of $W$ and Bayes plausibility.
+  \item The binary capstone uses the paper's interval TRS structure, Lemmas~\ref{lem:B1}, \ref{lem:binaryimage}, and \ref{lem:binarystat}. Lemma~\ref{lem:binarystat} is the only point where finite-menu stationarity is invoked.
+  \item The FBNF capstone uses the binary scalar lift conditionally, the one-dimensional endpoint image argument on each fiber, localized stationarity, and global fiber dominance.
+  \item The cone-Hall biconditional uses finite and compact-closed conic duality, not the FBNF or binary constructions.
+  \item The primitive sufficient classes feed into the biconditional by either constructing a primal calibrated kernel or reducing the cone-Hall inequality to a finite LP.
+\end{enumerate}
+
+\subsection{Scope classification}
+
+The package should be read as an objective-narrowed proof package. It removes the finite-$M$ and finite-$\Theta$ restrictions in several meaningful classes, but it does not prove the unrestricted existence theorem under standing assumptions alone. The nontrivial narrowing hypotheses are endpoint exposure, tie discipline, interior stationarity, FBNF geometry, global fiber dominance, compact-regular cone-Hall topology, cone-margin bounded jamming, and finite-facet LP feasibility. They are primitive or checkable, but they are not vacuous.
+
+\section{Open problems}\label{sec:open}
+
+The unrestricted existence direction under standing assumptions alone remains open in the sense clarified by the gatekeeper audit. The optimality direction is unaffected. The existence direction is now covered by exact classes and by a biconditional; it is not covered for a totally unstructured measurable payoff-labeling with discontinuous Bayes cones and no cone-Hall certificate.
+
+The central open problems are:
+\begin{enumerate}[leftmargin=*]
+  \item Prove primitive sufficient conditions for $\Psi(y)\le0$ in smooth strictly convex, full-support environments without assuming bounded jamming or radial symmetry.
+  \item Extend the finite-graph FBNF theorem to countable or continuum graphs while retaining measurable pasting and node balance.
+  \item Develop computable finite-facet LP certificates for richer finite-action examples, especially finite-experiment design models related to \cite{DovalSmolin2024}.
+  \item Characterize when discontinuous optimal labelings can be replaced by continuous ones without changing the robust value.
+  \item Determine whether the cone-Hall biconditional can be phrased in a fully primitive form independent of a selected optimal labeling.
+\end{enumerate}
+
+\appendix
+
+\section{Additional proof details}\label{app:details}
+
+\subsection{The binary scalar transport calculation}
+
+The scalar endpoint-fiber lift is often the easiest place for mistakes, so we spell it out. Suppose $p\in[0,1]$, $A_-\subseteq(-\infty,p]$, $S_+\subseteq[p,\infty)$, and the tilted measures
+\[
+  \eta(dm)=\alpha(p-m)1_{A_-}(m)\tau(dm),
+  \qquad
+  \nu(ds)=(1-\alpha)(s-p)1_{S_+}(s)\tau(ds)
+\]
+have common finite mass. If the mass is positive, choose any coupling $\Gamma$ of $\nu/\nu(S_+)$ and $\eta/\eta(A_-)$. Disintegrate $\Gamma(ds,dm)=\bar\nu(ds)\kappa(dm\mid s)$. Rescaling gives, for every Borel $X\subseteq A_-$,
+\[
+  (1-\alpha)\int_{S_+}(s-p)\kappa(X\mid s)\tau(ds)
+  =\alpha\int_X(p-m)\tau(dm).
+\]
+This identity is stronger than an average posterior statement. It gives $n(X)=p q(X)$ for every $X\subseteq A_-$. Therefore the Radon--Nikodym posterior equals $p$ on the entire endpoint fiber, not merely in aggregate. This is why the binary capstone does not require atomlessness of $\tau$.
+
+The same calculation also explains why endpoint-point support is wrong. If high sources with $s>p$ were sent only to the singleton $p$, the posterior at $p$ would be pulled above $p$ unless the high-source mass were zero. The aligned truthful mass on the whole interval below $p$ supplies the negative tilted mass required to balance the high-source surplus. This is the tiny hinge that makes endpoint-fiber support the right object.
+
+\subsection{Measurable pasting on fibers and graphs}
+
+The FBNF and finite-graph FBNF theorems require a genuine Borel coordinate system. A mere cover of $M$ by curves is not enough, because the same message could have two coordinate descriptions that prescribe different posterior values. The standing chart condition is therefore either:
+\begin{enumerate}[label=(\roman*), leftmargin=*]
+  \item a full-measure Borel set on which the coordinate map is injective, or
+  \item quotient consistency at overlaps: all overlapping coordinates prescribe the same projected label, Bayes cone, and posterior.
+\end{enumerate}
+Under this condition, conditional kernels $\kappa_z$ or $\kappa_e$ paste into a Borel kernel on $M$ by pushforward through the coordinate map. Since the base spaces are standard Borel and the graph is finite in the graph case, no additional topological compactness is required for the pasting step itself. Compactness enters only through rowwise minimizer existence and through the cone-Hall regularity package.
+
+\subsection{Why finite-menu calibration is not menu-Hall}
+
+The finite-menu theorem states that at an ambient finite-menu optimum the label posterior $p_i=g_i/q_i$ is in $B_W(w_i)$. Menu-Hall asks for a kernel on original messages such that every on-path message $m$ receives a posterior in $B_W(w^*(m))$. The gap is the fiber $F_i=(w^*)^{-1}(w_i)$. Label calibration says the average posterior over the label is right. Message calibration says the posterior is right at $q$-a.e. representative inside that label fiber. The latter is stronger and is exactly what cone-Hall measures.
+
+\section{LP implementation details}\label{app:lp}
+
+The LP template in Section~\ref{sec:g4} can be used as follows.
+\begin{enumerate}[leftmargin=*]
+  \item Enumerate active labels $w_j$.
+  \item Compute the Bayes cone $B_j=B_W(w_j)$ and list its facets $g_{j\ell}\cdot p\le c_{j\ell}$.
+  \item Compute aligned cells $A_j$ and rowwise minimizer cells $S_j$.
+  \item Compute $(\lambda_j,\bar m_j)$ and $(\mu_j,\bar s_j)$.
+  \item Check $g_{j\ell}\cdot n_j\le c_{j\ell}q_j$.
+\end{enumerate}
+When cells are polytopes and $\tau$ has a tractable density, all entries are finite-dimensional integrals. When $\tau$ is empirical, they are finite sums. If there is positive tie mass, add tie-splitting variables; the same LP remains linear.
+
+\subsection{Plurality voting with $K$ states}
+
+For the symmetric $K$-state plurality analogue of WTA, take labels $j=1,\ldots,K$ and Bayes cones
+\[
+  B_j=\{p:p_j\ge p_k\;\forall k\}.
+\]
+The natural symmetric dual price is $y_j=\mathbf{1}-K e_j/(K-1)$ after normalization. The finite-facet LP then reduces to a one-dimensional threshold in the aligned baseline depth
+\[
+  D_K=\sum_j\int_{A_j}\left(m_j-\frac1K\right)\tau(dm).
+\]
+The precise coefficient depends on the chosen normalization of $y_j$; the sign of the certificate and the LP feasibility conclusion do not. The ternary calculation in \eqref{eq:WTAthreshold} is the $K=3$ case with normalization $y_j=\mathbf{1}-2e_j$.
+
+\subsection{Finite experiments}
+
+For finite-experiment design examples in the style of \cite{DovalSmolin2024}, the posterior support is finite or polyhedral. The LP template applies after enumerating the finite induced posterior cells. The economic reading is simple: aligned truthful mass supplies a baseline posterior at the label, while the adversarial source cell supplies the worst-case inflow. The LP asks whether their mixture remains in the Bayes cone of the action used at that label.
+
+\section{Objective conformance note}\label{app:scope}
+
+The original target was unrestricted existence of a robustly rationalizable optimal strategy under the standing Robust Trust assumptions, with finite $M$ and finite $\Theta$ removed. This note does not claim that target. The final classification is objective-narrowed:
+\begin{itemize}[leftmargin=*]
+  \item the optimality direction is preserved;
+  \item the existence direction is proved in several primitive classes;
+  \item the general compact-regular case is characterized by cone-Hall;
+  \item without regularity or a cone-Hall certificate, the problem remains open.
+\end{itemize}
+This is not a weakness of phrasing. Phase (b) shows that regularity and calibration are not automatic from compactness and Borel measurability alone. The current contribution is to identify exactly which additional structure closes the problem and exactly which dual prices certify failure.
+
+\section*{References}
+\begin{thebibliography}{99}
+
+\bibitem{Aumann1965}
+Aumann, R. J. (1965): ``Integrals of Set-Valued Functions,'' \emph{Journal of Mathematical Analysis and Applications}, 12, 1--12.
+
+\bibitem{BertsekasShreve1978}
+Bertsekas, D. P. and S. E. Shreve (1978): \emph{Stochastic Optimal Control: The Discrete-Time Case}, Academic Press.
+
+\bibitem{Clarke1983}
+Clarke, F. H. (1983): \emph{Optimization and Nonsmooth Analysis}, Wiley.
+
+\bibitem{DovalSmolin2024}
+Doval, L. and A. Smolin (2024): ``Persuasion and Welfare,'' \emph{Journal of Political Economy}, 132, 2451--2487.
+
+\bibitem{DworczakPavan2022}
+Dworczak, P. and A. Pavan (2022): ``Preparing for the Worst but Hoping for the Best: Robust (Bayesian) Persuasion,'' \emph{Econometrica}, 90, 2017--2051.
+
+\bibitem{DworczakSmolin2026}
+Dworczak, P. and A. Smolin (2026): ``Robust Trust,'' working paper.
+
+\bibitem{Hildenbrand1974}
+Hildenbrand, W. (1974): \emph{Core and Equilibria of a Large Economy}, Princeton University Press.
+
+\bibitem{Kallenberg1997}
+Kallenberg, O. (1997): \emph{Foundations of Modern Probability}, Springer.
+
+\bibitem{Sion1958}
+Sion, M. (1958): ``On General Minimax Theorems,'' \emph{Pacific Journal of Mathematics}, 8, 171--176.
+
+\bibitem{Strassen1965}
+Strassen, V. (1965): ``The Existence of Probability Measures with Given Marginals,'' \emph{Annals of Mathematical Statistics}, 36, 423--439.
+
+\end{thebibliography}
+
+\end{document}

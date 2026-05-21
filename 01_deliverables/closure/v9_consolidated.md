@@ -213,28 +213,12 @@ n
 
 and the posterior is the Radon-Nikodym derivative
 
-P
-β
-	​
+  P_β(·|m) = (dn_β / dq_β)(m),   q_β-a.e.
 
-(⋅∣m)=
-dq
-β
-	​
-
-dn
-β
-	​
-
-	​
-
-(m)q
-β
-	​
-
--a.e.
-
-This fixes the prior orientation typo: it is dn/dq, not dq/dn.
+That is, n_β is absolutely continuous with respect to q_β, and the
+posterior at on-path m is the unique vector-valued Radon-Nikodym
+derivative of n_β with respect to q_β at m. The orientation is
+**dn/dq, not dq/dn** — this was the prior typo.
 
 A.4 Payoff-profile geometry
 
@@ -525,50 +509,15 @@ i
 
 (s)dτ(s).
 
-If q
-i
-	​
+If q_i > 0, then
 
->0, then
+  p_i := g_i / q_i  ∈  B_W(w_i).
 
-p
-i
-	​
-
-:=
-q
-i
-	​
-
-g
-i
-	​
-
-	​
-
-∈B
-W
-	​
-
-(w
-i
-	​
-
-).
-
-This fixes the T1 posterior formula: vector numerator over scalar mass, p
-i
-	​
-
-=g
-i
-	​
-
-/q
-i
-	​
-
-.
+(Vector numerator g_i ∈ R^|Ω|, scalar mass q_i > 0; the quotient is
+the unique posterior in Δ(Ω) supporting profile w_i.) This is the
+T1 posterior formula in hardened form: the displayed p_i is the
+vector g_i divided by the scalar q_i — *not* a fraction with vector
+numerator and vector denominator.
 
 Interpretation. T1 is a payoff-label theorem. It proves calibration in the finite menu coordinates, not by itself a full original-message Theorem 2 result. The original-message lift is exactly where binary, FBNF, and cone-Hall enter.
 
@@ -1931,13 +1880,15 @@ No banned route is used: no product-of-narrow Sion master theorem, no τ-AC rest
 gatekeeper_response
 
 Section E — Application table
-Application	Applies theorem	Conditions to check	Conclusion
-Binary state, (	\Omega	=2)	Binary capstone
-α=0	T2 singleton	none beyond standing and Bayes selector	Degenerate pure-adversarial robust rationalizability
-Smooth (	\Omega	\ge3)	G3 plus Phase (b)
+
+| Application | Applies theorem | Conditions to check | Conclusion |
+|---|---|---|---|
+| Binary state, \|Ω\|=2 | Binary capstone | R-EE, R-TD, R-IES; arbitrary measurable M, compact metric Θ | Unconditional full infinite-M, Θ Theorem 2 existence |
+| α=0 | T2 singleton | none beyond standing and Bayes selector | Degenerate pure-adversarial robust rationalizability |
+| Smooth \|Ω\|≥3 | G3 + Phase (b) | continuous w*, support-continuous Bayes cones, plus verified Ψ≤0 or one of P2*/P3/P4 | G3 applies under Reg; biconditional / classification under Ψ≤0 |
 Polyhedral finite-action	G4 LP	finite active vertex menu, finite-facet Bayes cones, closed/tie-free active cells or tie-splitting variables	Theorem 2 holds iff finite LP is feasible; violation gives dual certificate
 WTA ternary full vertex, no aligned baseline	G1/G4	WTA cones and minimizer regions	fails Ψ≤0 by explicit certificate
-Baseline-augmented WTA	G4 LP	aligned depth D under fixed normalization	holds once D≥2(1−α)/(9α), subject to all finite-facet hypotheses
+Baseline-augmented WTA	G4 LP	aligned depth D under fixed normalization	holds once D ≥ 2(1−α)/(9α) (i.e., at α=1/2, D ≥ 2/9), subject to all finite-facet hypotheses
 Spherical/radial	P4 or FBNF	radial/equivariant U,τ, ball trust region, antipodal boundary routing, scalar radial balance	constructive calibrated kernel; G2c then gives Ψ≤0
 Affine MLR / single-crossing	FBNF if affine-fiber exact	affine belief fibers, fiber-preserving TRS, endpoint exposure, global dominance	conditional FBNF theorem
 General curved MLR	not closed	need affine reparameterization or non-affine fiber theorem	open
