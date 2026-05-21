@@ -86,4 +86,6 @@ _To be populated after the decomposition pass via Extended Pro._
 
 - 2026-05-21 T+0  Branch v9-formalization created, v8 artifacts renamed.
 - 2026-05-21 T+1  Durable sources written (this file + source_proof.md).
-- 2026-05-21 T+2  Heartbeat live, decomposition pass dispatched to Extended Pro (port 9227).
+- 2026-05-21 T+2  Heartbeat live (job ffa61811, 15m). Browser CDP up on port 9227.
+- 2026-05-21 T+3  ChatGPT project Sources panel pruned: 21 → 12. Removed prover_05/12/13/19/21/22, searcher_04/05/07, sanity_chunk1/2, theorem_2_extension_proof_v8.md, exposition_v8.2_final.pdf, project_closure_memo.md. Added exposition_v9_paper.tex, v9_executive_summary.md, source_proof.md, lean_state.md, v8_main.lean. (prior_attempts_digest.md refused removal — historical, harmless.)
+- 2026-05-21 T+4  v9 decomposition prompt submitted to Extended Pro. Chat: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f9a2b-4f64-83ea-9c08-1e4672bf49ca. Awaiting decomposition.md output.
