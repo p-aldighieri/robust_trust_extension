@@ -42,8 +42,132 @@
 | Prover 14 (G3 Robust Trust biconditional) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f356a-6fa8-83ea-aad8-b46c38555ed7 | DONE — PASS conditional on G2c instance | 2026-05-21 |
 | Reviewer 13 (G3 verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3896-9850-83ea-97ba-c3c5e590033a | DONE — PASS with quantifier patch (∀ optimal $w^*$) | 2026-05-21 |
 | Prover 15 (primitive sufficient conditions) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f38a9-c1d8-83ea-add9-3cfb99a31481 | DONE — P1 HOLD; P2/P3 PASS (high-alignment/cone-margin); P4 PASS (radial) | 2026-05-21 |
-| Reviewer 14 (primitive P* verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3c1f-1380-83ea-b263-e49d315f6a3b | generating | 2026-05-21 |
-| Prover 16 (G4 finite-facet polyhedral LP) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3c31-aeb0-83ea-bcdd-8b9deba80a35 | generating | 2026-05-21 |
+| Reviewer 14 (primitive P* verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3c1f-1380-83ea-b263-e49d315f6a3b | DONE — **P2*/P3/P4 PASS**; P2* cleanest publishable | 2026-05-21 |
+| Prover 16 (G4 finite-facet polyhedral LP) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3c31-aeb0-83ea-bcdd-8b9deba80a35 | DONE — **PASS** under finite-cell/tie-discipline | 2026-05-21 |
+| Reviewer 15 (G4 LP verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f3f66-2b48-83ea-8021-aacc138b6014 | DONE — **PASS** for G4 as finite-facet LP theorem | 2026-05-21 |
+| Prover 17 (implementable LP + worked examples) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f42b9-ff60-83ea-8d3e-45642fbd365a | DONE — LP template + WTA/plurality/finite-experiment worked tables | 2026-05-21 |
+| Prover 18 (Phase b: bare standard-Borel) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f4661-223c-83ea-a708-7b4463459f48 | DONE — regularity NOT eliminable from standing; AUTOMATIC under smooth/exposed-frontier primitives | 2026-05-21 |
+| Reviewer 16 (Phase b verify) | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f49e7-f054-83ea-94fd-68520605c72c | DONE — PASS with wording patch ("Borel-positive" = continuous selection) | 2026-05-21 |
+| Consolidator 01 | https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f49f8-8228-83ea-b6d1-dba4067c72a7 | DONE (28k chars) — ready for verification block | 2026-05-21 |
+
+## Verification block in flight (6 parallel passes)
+
+| Pass | Chat | Status |
+|---|---|---|
+| General reviewer | 6a0f4d98 | generating |
+| Objective conformance | 6a0f4da9 | generating |
+| Gatekeeper scope-audit | 6a0f4dbb | generating |
+| Math sanity chunk 1 (T1+T2+Binary) | 6a0f4e00 | generating |
+| Math sanity chunk 2 (FBNF) | 6a0f4e12 | generating |
+| Math sanity chunk 3 (Hall+P*+G4) | 6a0f4e24 | generating |
+
+## VERIFICATION BLOCK RESULTS (all 6 done)
+
+| Pass | Verdict |
+|---|---|
+| General reviewer | PATCH_SMALL (notation, RN orientation, ledger, table omissions, WTA threshold typo) |
+| Objective conformance | **OBJECTIVE_NARROWED**: send as strong conditional / classification, NOT unconditional unrestricted Th 2 |
+| Gatekeeper | **OBJECTIVE_NARROWED** confirmed |
+| Sanity chunk 1 (T1+T2+Binary) | T2 SOUND; T1+Binary MINOR_FIXES |
+| Sanity chunk 2 (FBNF) | MINOR_FIXES (FBNF-1 wording: τ̄-a.e. Borel chart, endpoint-fiber not singleton) |
+| Sanity chunk 3 (Hall+P*+G4) | G1/G2c/G3 + WTA Ψ=2/9 SOUND; PATCH for threshold normalization + scope guards |
+
+## Honest position
+
+**Math is sound at the spine** — the headline results (G1 cone-Hall,
+G2c compact-closed, G3 biconditional, WTA explicit dual cert Ψ=2/9,
+binary capstone, FBNF capstone, P2*/P3/P4 primitive classes, G4 LP
+threshold) all reviewer-PASS'd. The verification chunks confirm.
+
+**Framing must be honest**: this is NOT the unrestricted standing-only
+Theorem 2 (gatekeeper + objective both verdict-ed OBJECTIVE_NARROWED).
+It IS a "strong conditional / classification result" combining
+unconditional subclass theorems with the cone-Hall biconditional for
+the rest.
+
+**Consolidator 02 in flight** to apply all patches + honest reframing.
+
+After Consolidator 02 lands, the document will be ready for the user
+to review and decide whether to send to Piotr.
+
+If all 6 PASS, the consolidated proof is ready for Piotr.
+
+## Phase (b) DEFINITIVE verdict
+
+**Regularity package (Reg-1)+(Reg-2) is NOT eliminable from standing
+Robust Trust hypotheses alone**, even with M compact. **BUT it is
+AUTOMATIC under smooth/exposed-frontier primitives** (smooth utility,
+exposed Pareto frontier — generic in real applications).
+
+This is the clean answer the user wanted.
+
+## Pipeline now in final stretch
+
+- **Reviewer 16** (Phase b verify) in flight.
+- **Consolidator 01** in flight — single coherent document covering
+  all 5 theorems + LP examples + Phase (b) verdict.
+
+After consolidator + reviewer 16:
+1. General reviewer pass on consolidated.
+2. Objective conformance pass.
+3. Gatekeeper scope-restriction audit.
+4. Math sanity-check chunks 1+2+3.
+
+Then ready for Piotr.
+
+## Phase (b) — Eliminate regularity package
+
+User authorized phase (b) after Prover 17 completion. Goal: determine
+DEFINITIVELY whether (Reg-1)+(Reg-2) follow from standing Robust Trust
+hypotheses + compactness of $M$. Three outcomes possible:
+- (b)+ success: unconditional Theorem 2 biconditional.
+- (b)+ partial: identify minimal extra primitive.
+- (b)+ neither: regularity package is essential.
+
+Prover 18 in flight.
+
+## Post-(b) verification workflow (queued)
+
+After Phase (b) lands:
+1. Consolidator pass (full proof, all 5 theorems + LP examples + (b)).
+2. General reviewer on consolidated.
+3. Objective conformance pass.
+4. Gatekeeper scope-audit pass.
+5. Math sanity-check chunks 1+2+3.
+
+## FIVE THEOREMS PROVED + REVIEWER-VERIFIED ✓
+
+All five theorems in v9 are now reviewer-PASS'd. The deletion-compatible
+Hall duality theorem named by the v8 closure memo is PROVED and
+characterized via the cone-Hall biconditional Ψ(y)≤0.
+
+Pipeline currently running one final pass:
+- **Prover 17**: implementable LP template + worked examples for
+  WTA, plurality, finite-experiment design — turning G4 from
+  abstract theorem into a concrete computational deliverable.
+
+## MILESTONE 6 — Hall biconditional + 3 primitive classes + LP threshold
+
+**v9 exposition now 14 pages** with FIVE reviewer-PASS'd unconditional
+or biconditional theorems for Robust Trust Theorem 2:
+
+1. (T1) Finite-menu Pareto-Hall via Clarke-Danskin.
+2. (T2) α=0 singleton (degenerate).
+3. **Binary capstone** under (R-EE)+(R-TD)+(R-IES).
+4. **FBNF capstone** under FBNF-1...5+FBNF-7.
+5. **Hall biconditional (G3) + primitive classes P2*/P3/P4 + LP threshold G4**.
+
+The deletion-compatible Hall duality theorem the v8 closure memo named
+as the single most consequential open question is PROVED. Theorem 2 is
+either UNCONDITIONALLY proved in primitive classes or CHARACTERIZED by
+the checkable cone-Hall inequality Ψ(y)≤0.
+
+WTA ternary explicit dual certificate: Ψ(y)=2/9>0 excludes WTA without
+baseline; threshold $D \ge 2(1-\alpha)/(9\alpha)$ reopens it.
+
+**Reviewer 15** in flight on G4 polyhedral LP — last verification needed.
+
+Committed to git. Push notification sent.
 
 ## G3 PROVED + reviewer-PASS'd + primitive sufficient classes identified
 
