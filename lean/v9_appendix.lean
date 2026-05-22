@@ -21,7 +21,18 @@ Conventions:
   primitive-class data, not vacuous pass-throughs.
 -/
 
-namespace Inventory
+namespace Inventory.V9
+
+/-!
+v9 external dependencies — separate sub-namespace so the v9 surface declares
+exactly its required external axioms, distinct from v8's `Inventory.*` block
+(measurable_argmax_selector / krn_borel_right_inverse /
+kernel_infimum_epsilon_selection / UniversallyMeasurable / GepsRegularity).
+
+Per user request 2026-05-22, this split makes v9's external surface explicit
+and lets the new `/lean-inventory-match` auditor verify `Inventory.V9` against
+the v9 declared dependencies without v8 baggage.
+-/
 
 open MeasureTheory ProbabilityTheory
 
@@ -187,7 +198,7 @@ axiom hausdorff_alexandroff_continuous_surjection
     [SecondCountableTopology K] :
     Prop
 
-end Inventory
+end Inventory.V9
 
 namespace RobustTrustV9
 
