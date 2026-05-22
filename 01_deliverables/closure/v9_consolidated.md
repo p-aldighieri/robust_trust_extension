@@ -1507,11 +1507,16 @@ Suppose also that there exists a rowwise-minimizer kernel κ
  supported on G(s) whose target marginal ρ satisfies
 
 ρ≪τ,
-dτ
 dρ
+dτ
 	​
 
 ≤C.
+
+(Corrected 2026-05-21: prior display `dτ/dρ ≤ C` was the reciprocal-
+direction error. The posterior-displacement estimate requires the
+adversarial target density `dρ/dτ` to be controlled relative to truthful
+mass, not the reverse. See decomposition_review_response.md item G.)
 
 Let D
 Δ
@@ -1759,11 +1764,11 @@ Therefore the WTA finite-facet condition is
 
 ≤0,
 
-equivalently
+equivalently (dividing by 2α>0, then simplifying 4/18 = 2/9):
 
 D≥
-9α
 2(1−α)
+9α
 	​
 
 .
@@ -1771,11 +1776,16 @@ D≥
 At α=1/2,
 
 D≥
-9
 2
+9
 	​
 
 .
+
+(Corrected 2026-05-21: prior reciprocal-form display D ≥ 9α/(2(1−α)) was
+a transcription error; the Lean theorem `Hall-WTA-reopening-threshold-D`
+verifies the corrected algebra. See lean/decomposition.md §13 and
+03_runs/v9_lean_formalization/decomposition_review_response.md item A.)
 
 This is the single normalization used in this memo. The reciprocal formula is discarded.
 
