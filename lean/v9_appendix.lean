@@ -89,21 +89,12 @@ axiom farkas_lp_duality_conic
     (inst : ConicFarkasInstance) :
     inst.primalFeasible ↔ inst.dualNonpositive
 
-structure BergeMaximumHyp
-    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (_F : X → Set Y) (_f : X → Y → ℝ) where
-  compactValues : Prop
-  closedGraph : Prop
-  continuousObjective : Prop
-
-/-- **Berge maximum theorem (set-valued).** Audit task: many uses may be
-dischargeable from Mathlib's existing compactness/continuity. Source:
-Aliprantis–Border §17. -/
-axiom berge_maximum_set_valued
-    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (_F : X → Set Y) (_f : X → Y → ℝ)
-    (_h : BergeMaximumHyp _F _f) :
-    Prop
+-- REMOVED: Inventory.berge_maximum_set_valued
+-- Per decomposition reviewer (item H): the axiom was a bare-Prop trapdoor.
+-- For the v9 uses (compact argmax existence, closed-graph correspondences),
+-- discharge directly from Mathlib's `IsCompact.exists_isMaxOn`,
+-- `IsCompact.exists_isMinOn`, `ContinuousOn.exists_forall_le`, and the
+-- KRN selector in v8 `Inventory.measurable_argmax_selector`.
 
 /-- **Hausdorff–Alexandroff continuous surjection.** Every nonempty compact
 metric space is a continuous image of the Cantor space. Source: Kechris 1995,
@@ -140,6 +131,35 @@ def WP : Set (Profile model) :=
 
 abbrev WPProfile : Type :=
   { w : Profile model // w ∈ WP model }
+
+/-! ### WP topology sub-lemmas (per decomposition reviewer item I) -/
+
+/-- `WP model` is closed inside `PayoffProfileSet model`. Proof: if `wₙ → w`
+and some `v` strictly dominates `w`, finite `Ω` gives a positive minimum
+coordinate gap; `v` then strictly dominates `wₙ` eventually, contradiction.
+TODO: discharge in a downstream per-lemma round. -/
+theorem WeakParetoProfile_isClosed
+    {model : RobustTrustModel}
+    (_hWclosed : IsClosed (PayoffProfileSet model)) :
+    IsClosed (WP model) := by
+  sorry
+
+/-- `WP model` is compact, derived from compactness of `PayoffProfileSet model`
+plus closedness of the no-strict-domination relation. -/
+theorem WP_isCompact
+    {model : RobustTrustModel}
+    (hWcompact : IsCompact (PayoffProfileSet model))
+    (hWclosed : IsClosed (PayoffProfileSet model)) :
+    IsCompact (WP model) := by
+  -- WP ⊆ PayoffProfileSet, WP closed (above), PayoffProfileSet compact
+  -- → WP closed in compact ⇒ compact.
+  have hWPclosed : IsClosed (WP model) :=
+    WeakParetoProfile_isClosed (model := model) hWclosed
+  -- Need: WP ⊆ PayoffProfileSet model.
+  have hSubset : WP model ⊆ PayoffProfileSet model := by
+    intro w hw
+    exact hw.1
+  exact hWcompact.of_isClosed_subset hWPclosed hSubset
 
 /-- The Bayes cone at a payoff profile `w`: the set of beliefs `μ` under which
 `w` maximizes the expected payoff against all feasible profiles. -/
@@ -227,6 +247,11 @@ structure BinaryCapstoneData where
   interiorEndpointStationarity : Prop
   endpointFiberLift : Prop
   trsIntervalReduction : Prop
+  /-- The misaligned BR's PAYOFF-PROJECTED image is `{w_L, w_R}`. NOTE: the
+  literal message kernel spreads over endpoint *fibers* `[0,L]∩M` and
+  `[R,1]∩M`; only the projected payoff lies in `{w_L, w_R}`. Per the
+  decomposition reviewer (item E), keep the slug name but mind the
+  distinction. -/
   endpointOnlyImage : Prop
   interiorMessageCalibration : Prop
   endpointStationarityTotalBalance : Prop
@@ -526,6 +551,21 @@ theorem «Hall-biconditional»
     {model : RobustTrustModel}
     (reg : RegPackage model) :
     reg.robustRationalizableLabeling ↔ PsiNonpos model reg := by
+  sorry
+
+/-- Bridge from fixed-label Hall labeling to strategy existence. Per
+decomposition reviewer item N: P2*/P3/P4/G addendum theorems conclude
+`HasRobustRationalizableStrategy model reg.pd` but `Hall-biconditional`
+gives `reg.robustRationalizableLabeling`. This bridge unfolds the labeling
+into strategy existence by constructing a Borel kernel + q-a.e. Bayes
+optimality from the calibrated labeling. TODO: discharge in downstream
+per-lemma round (consumes `Inventory.measurable_argmax_selector` and
+`Inventory.krn_borel_right_inverse`). -/
+theorem robustRationalizableLabeling_to_strategy
+    {model : RobustTrustModel}
+    (reg : RegPackage model)
+    (_h : reg.robustRationalizableLabeling) :
+    HasRobustRationalizableStrategy model reg.pd := by
   sorry
 
 theorem «Hall-WTA-dual-certificate-psi-two-ninths»

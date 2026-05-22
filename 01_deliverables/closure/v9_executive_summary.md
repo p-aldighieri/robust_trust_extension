@@ -74,14 +74,18 @@ Since the corrected cone-Hall condition is Ψ(y)≤0, this excludes WTA-uniform 
 
 ≤0,
 
-equivalently
+equivalently (dividing by 2α>0, then simplifying 4/18 = 2/9):
 
 D≥
-9α
 2(1−α)
+9α
 	​
 
 .
+
+(Corrected 2026-05-21: the prior displayed form D ≥ 9α/(2(1−α)) was a
+reciprocal-direction transcription error. The Lean ledger `Hall-WTA-reopening-threshold-D`
+proves the corrected algebra.)
 
 This is a useful diagnostic, not just a counterexample: WTA is no longer a foggy “maybe impossible” case. It has an explicit dual certificate and an explicit reopening threshold.
 
