@@ -9,7 +9,7 @@
   - `01_deliverables/exposition/exposition_v9_paper.tex` — long-form paper (900 lines)
 - Provenance slug: `robust-trust-v9` (codex thread id seed)
 - Initialized: 2026-05-21
-- Current phase: scaffolding (branch v9-formalization created, v8 artifacts renamed to v8_*, fresh v9 tree set up)
+- Current phase: skeleton-built (main.lean compiles with 26 sorries; awaiting decomposition reviewer pass + first per-lemma round)
 - Target Lean toolchain: lean-4.29.0 (carry over from v8 unless a v9 dependency forces a bump)
 - AXLE log: `lean/axle_log.jsonl`
 - Heartbeat: 15m orchestrator loop, job ffa61811 (`*/15 * * * *`); reset on session restart
@@ -89,3 +89,6 @@ _To be populated after the decomposition pass via Extended Pro._
 - 2026-05-21 T+2  Heartbeat live (job ffa61811, 15m). Browser CDP up on port 9227.
 - 2026-05-21 T+3  ChatGPT project Sources panel pruned: 21 → 12. Removed prover_05/12/13/19/21/22, searcher_04/05/07, sanity_chunk1/2, theorem_2_extension_proof_v8.md, exposition_v8.2_final.pdf, project_closure_memo.md. Added exposition_v9_paper.tex, v9_executive_summary.md, source_proof.md, lean_state.md, v8_main.lean. (prior_attempts_digest.md refused removal — historical, harmless.)
 - 2026-05-21 T+4  v9 decomposition prompt submitted to Extended Pro. Chat: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f9a2b-4f64-83ea-9c08-1e4672bf49ca. Awaiting decomposition.md output.
+- 2026-05-21 T+5  Decomposition received (54k chars, 1880 lines, 28 lemma stubs, 6 new Inventory axioms). Saved to lean/decomposition.md.
+- 2026-05-21 T+6  Decomposition reviewer dispatched (fresh session). Chat: https://chatgpt.com/g/g-p-69fab2d4ab288191a33c6245f4e28957-robust-trust-extension/c/6a0f9fbe-1254-83ea-b3a4-9951105693d6.
+- 2026-05-21 T+7  main.lean skeleton built and PASS in MathlibStarter v4.30.0-rc1 (8264 jobs, 0 errors, 26 sorries). v9_appendix.lean (620 lines) ⊕ v8_main.lean (4981) = main.lean (5601). v9 namespace `RobustTrustV9` carries: WP, KCompactWP, Bayes cones, RegPackage, Foliation, FBNFPackage, BinaryCapstoneData, AlphaZeroSingletonData, FiniteMenuData, BoundedBorelProfile, PsiNonpos, P2*/P3/P4/VariableMargin/GraphFBNF packages, all 28 theorems as `sorry` stubs (3 corollaries as trivial pass-through term-mode proofs).
