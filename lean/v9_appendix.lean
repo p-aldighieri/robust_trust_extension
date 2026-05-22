@@ -603,23 +603,60 @@ theorem «T1-clarke-danskin-multiplier-bayes-cone»
     data.multiplierBayesCone := by
   sorry
 
-/-! ## §13 Theorem T2 — α=0 unconditional singleton -/
+/-! ## §13 Theorem T2 — α=0 unconditional singleton
 
+Per T2 reviewer (chat `6a0fb2b0`, item R3): the certificate-to-conclusion
+work is split into a helper lemma `AlphaZeroSingletonData.to_hasRobustRationalizableStrategy`
+(no `_hα` dependence — α=0 content is fully absorbed into the data
+fields), and the α=0 wrapper `«T2-alpha-zero-singleton-prior-strategy»`
+delegating to it. The missing existence lemma
+`AlphaZeroSingletonData_exists` (item R4) is declared with `sorry` — it
+is its own per-lemma proving round and is what makes the v9 α=0 endpoint
+"a theorem rather than a well-labeled gift basket". -/
+
+/-- Helper: given an `AlphaZeroSingletonData` certificate (constant adversary,
+prior-Bayes strategy uniformly Bayes-optimal at the prior, q-a.e. posterior
+collapse to μ_0, and adversarial-infimum attainment), construct a robustly
+rationalizable strategy. Pure certificate-verification: does not use `α=0`. -/
+theorem AlphaZeroSingletonData.to_hasRobustRationalizableStrategy
+    {model : RobustTrustModel}
+    (pd : PosteriorDisintegration model)
+    (data : AlphaZeroSingletonData model) :
+    HasRobustRationalizableStrategy model pd := by
+  refine ⟨data.constantAdversary, data.priorStrategy,
+    data.adversaryOptimal, ?_⟩
+  filter_upwards [data.posteriorAtConstantMessageIsPrior pd] with m hmPost
+  simpa [hmPost] using data.priorOptimal m
+
+/-- **Missing α=0 existence lemma.** Given `α = 0`, construct the
+`AlphaZeroSingletonData` certificate. The construction requires:
+1. Existence of a private strategy Bayes-optimal at `priorBelief model` for
+   every message (use the standard Bayes selector / KRN with a constant
+   posterior, or the existence-of-Bayes-best-action lemma).
+2. A Dirac/constant adversarial kernel concentrated at `constantMessage`.
+3. The q-a.e. posterior collapse `pd.Pβ constantAdversary m = priorBelief model`
+   under the mixture message law (when `α = 0`, that law reduces to the
+   Dirac second-marginal, and the disintegration identities then collapse
+   the posterior).
+4. The "message-ignoring strategy makes every adversary optimal" identity,
+   which gives `IsAdversarialFull` for the constant adversary.
+
+Each sub-step is its own per-lemma round. -/
+theorem AlphaZeroSingletonData_exists
+    {model : RobustTrustModel}
+    (_hα : model.α = 0) :
+    Nonempty (AlphaZeroSingletonData model) := by
+  sorry
+
+/-- v9 α=0 endpoint: unconditional infinite-extension of Robust Trust
+Theorem 2 in the pure-adversarial regime. -/
 theorem «T2-alpha-zero-singleton-prior-strategy»
     {model : RobustTrustModel}
     (pd : PosteriorDisintegration model)
-    (_hα : model.α = 0)
-    (data : AlphaZeroSingletonData model) :
+    (hα : model.α = 0) :
     HasRobustRationalizableStrategy model pd := by
-  -- Witness: the constant adversary + the prior-Bayes strategy.
-  refine ⟨data.constantAdversary, data.priorStrategy,
-    data.adversaryOptimal, ?_⟩
-  -- For q-a.e. m the posterior collapses to the prior μ_0, and the
-  -- prior-Bayes strategy is Bayes-optimal at μ_0 for every m.
-  filter_upwards [data.posteriorAtConstantMessageIsPrior pd] with m hmPost
-  -- After rewriting `pd.Pβ constantAdversary m = priorBelief model`,
-  -- the goal is exactly `data.priorOptimal m`.
-  simpa [hmPost] using data.priorOptimal m
+  obtain ⟨data⟩ := AlphaZeroSingletonData_exists (model := model) hα
+  exact AlphaZeroSingletonData.to_hasRobustRationalizableStrategy pd data
 
 /-! ## §14 Binary capstone L_B1 … L_B6 -/
 
