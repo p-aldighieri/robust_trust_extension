@@ -5172,12 +5172,18 @@ For compact argmax/argmin existence, use Mathlib's
 /-! ## §1.5 Hausdorff–Alexandroff continuous surjection (Kechris 1995, Thm 4.18) -/
 
 /-- **Hausdorff–Alexandroff theorem.** Every nonempty compact metric
-space is a continuous image of the Cantor space. (Placeholder Prop until
-`CantorSpace` is fixed in Mathlib for v9 use sites.) -/
+space is a continuous image of the Cantor space (modeled as `ℕ → Bool`).
+Source: Kechris 1995, *Classical Descriptive Set Theory*, Theorem 4.18.
+
+This axiom was earlier flagged as a TRAPDOOR (bare Prop conclusion). The
+present concrete statement matches the source citation. The axiom is
+currently UNUSED by the discharged v9 theorems; it's retained for the
+Cantor-canvas / atomless-τ constructions that may surface in deeper
+consolidation (v8 §10 atomless Tier 1b → v9 Reg-2 derivation paths). -/
 axiom hausdorff_alexandroff_continuous_surjection
     (K : Type*) [TopologicalSpace K] [CompactSpace K] [T2Space K]
-    [SecondCountableTopology K] :
-    Prop
+    [SecondCountableTopology K] [Nonempty K] :
+    ∃ f : (ℕ → Bool) → K, Continuous f ∧ Function.Surjective f
 
 /-! ## §1.6 Bayes best-response existence and α=0 posterior collapse
 
