@@ -5936,19 +5936,19 @@ structure AlphaZeroSingletonData where
 
 /-! ## §7 Binary capstone data
 
-Binary capstone refinement (2026-05-21): the five capstone Prop fields
-(`endpointFiberLift`, `trsIntervalReduction`, `endpointOnlyProjectedImage`,
-`interiorMessageCalibration`, `endpointStationarityTotalBalance`) are no
-longer abstract `Prop` placeholders. Following the T1 pattern, each is now
-a `def` (namespaced under `BinaryCapstoneData`) that unfolds to a concrete
-`Is*` predicate over data-witness fields living inside the structure. The
-six theorems L_B1..L_B6 then discharge by direct projection / certificate
-extraction. The substantive math (`Inventory.strassen_marginals` for B1, the
-TRS interval analysis for B2, the projected-image lemma for B3, the
-posterior-equals-message identity for B4, and the Clarke–Danskin total
-balance for B5) is bundled into the corresponding witness fields — the
-formal *bridging* from the inventory axioms to those witnesses remains an
-external proving obligation flagged at the end of this section. -/
+Binary capstone certificate-elimination pass (2026-05-22): the six
+conclusion-shaped witness fields formerly stored in `BinaryCapstoneData`
+have been removed. The structure now keeps only primitive construction
+data and narrower bridge inputs: scalar component facts, the Strassen
+dominance hypothesis obtained from endpoint balance, the two-endpoint
+projection coding, and the active two-label finite menu used by the T1
+multiplier theorem.
+
+The named predicates below remain the theorem targets. The Binary theorems
+in §14 unfold those predicates and either assemble them from primitive
+components, invoke `Inventory.V9.strassen_marginals` / the T1 universal
+theorem, or stop at an explicitly documented `sorry` where the appendix is
+missing a genuine bridge lemma. -/
 
 /-- B1 (endpoint-fiber lift): there exist two `Belief`-valued kernels
 `κL, κR : model.M → Belief model.Ω` together with non-negative scalar
@@ -5994,7 +5994,7 @@ def IsInteriorMessageCalibration
 total-balance equations
 `α · ∫_{[0,L]} (L − m) dτ = (1 − α) · ∫_{S^+} (s − L) dτ`
 and the symmetric `R` identity, expressed as equality of two scalar
-quantities provided as data-witness fields. -/
+quantities provided as primitive scalar fields. -/
 def IsEndpointStationarityTotalBalance
     (lhsL rhsL lhsR rhsR : ℝ) : Prop :=
   lhsL = rhsL ∧ lhsR = rhsR
@@ -6012,6 +6012,8 @@ structure BinaryCapstoneData where
   tieDiscipline : Prop
   /-- R-IES: endpoints are interior so stationarity is equality, not one-sided KKT. -/
   interiorEndpointStationarity : Prop
+  /-- Endpoint relation used in the Strassen transport step. -/
+  endpointRelation : Set (model.M × model.M)
   /-- B1 kernel data: endpoint-fiber transport kernels (left and right). -/
   kappaL : model.M → Belief model.Ω
   kappaR : model.M → Belief model.Ω
@@ -6034,26 +6036,35 @@ structure BinaryCapstoneData where
   rhsL : ℝ
   lhsR : ℝ
   rhsR : ℝ
-  /-- B1 data witness: scalar calibration identity. (Bridging from
-  `Inventory.strassen_marginals` lives outside this structure.) -/
-  endpointFiberLiftWitness :
-    IsEndpointFiberLift model model.α kappaL kappaR cL cR
-  /-- B2 data witness: `[lL, rR] ⊆ [0,1]` with `lL ≤ rR`. -/
-  trsIntervalReductionWitness : IsTRSIntervalReduction lL rR
-  /-- B3 data witness: BR projection image lies in `{pL, pR}`. -/
-  endpointOnlyProjectedImageWitness :
-    IsEndpointOnlyProjectedImage model pL pR proj
-  /-- B4 data witness: posterior collapses to message on interior. -/
-  interiorMessageCalibrationWitness :
-    IsInteriorMessageCalibration model post interior
-  /-- B5 data witness: total balance equalities. -/
-  endpointStationarityTotalBalanceWitness :
-    IsEndpointStationarityTotalBalance lhsL rhsL lhsR rhsR
-  /-- B6 capstone witness: a fully assembled robustly rationalizable
-  strategy. Concrete content for the capstone theorem; the bridging
-  proof (combining B1, B3, B5 with the multiplier-Bayes-cone identity)
-  lives outside this structure. -/
-  capstoneWitness : HasRobustRationalizableStrategy model pd
+  /-- Active two-label menu used by the binary Clarke-Danskin/Fermat step. -/
+  endpointMenu : FiniteMenuData model 2
+  /-- Endpoint balance equations imply the Strassen marginal-dominance
+  hypothesis for `endpointRelation`. This is narrower than the old B1
+  witness: it gives only the concrete input required by Strassen. -/
+  endpointDominanceFromBalance :
+    IsEndpointStationarityTotalBalance lhsL rhsL lhsR rhsR →
+      _root_.Inventory.V9.StrassenMarginalDominance
+        model.τM model.τM endpointRelation
+  /-- Scalar nonnegativity of the left endpoint transport mass. -/
+  cL_nonneg : 0 ≤ cL
+  /-- Scalar nonnegativity of the right endpoint transport mass. -/
+  cR_nonneg : 0 ≤ cR
+  /-- The endpoint balance equations give the scalar calibration identity. -/
+  endpointMassCalibrationFromBalance :
+    IsEndpointStationarityTotalBalance lhsL rhsL lhsR rhsR →
+      model.α * cL + (1 - model.α) * cR = 1
+  /-- Numerical lower bound for the left TRS endpoint. -/
+  lL_nonneg : 0 ≤ lL
+  /-- Nonemptiness/order of the TRS interval. -/
+  lL_le_rR : lL ≤ rR
+  /-- Numerical upper bound for the right TRS endpoint. -/
+  rR_le_one : rR ≤ 1
+  /-- Two-endpoint code for the projected misaligned best response. -/
+  projSide : model.M → Bool
+  /-- The projection is definitionally one of the two endpoint profiles
+  once decoded by `projSide`. -/
+  proj_eq_endpoint :
+    ∀ m : model.M, proj m = if projSide m then pL else pR
 
 namespace BinaryCapstoneData
 
@@ -6426,10 +6437,9 @@ structure BinaryTieSplittingHyp where
   data : BinaryCapstoneData model
   tieAtom : Prop
   measurableTieSplit : Prop
-  /-- G-addendum binary tie-splitting data witness: under a measurable
-  tie-split refinement of the endpoint atom, the endpoint-fiber lift
-  identity holds for the bundled `BinaryCapstoneData`. -/
-  endpointFiberLiftWitness : data.endpointFiberLift
+  /-- A measurable tie split restores the endpoint total-balance equations;
+  Binary B1 then converts this balance into the endpoint-fiber lift. -/
+  endpointBalanceAfterSplit : data.endpointStationarityTotalBalance
 
 structure VariableMarginP2Hyp where
   reg : RegPackage model
@@ -6461,7 +6471,8 @@ remain as record-keepers (they document which named hypotheses of the
 spherical-radial class are invoked), and the substantive bridging
 (radial symmetry + antipodal routing + radial Clarke–Danskin envelope
 ⟹ robustly rationalizable strategy) is bundled into `capstoneWitness`.
-This is the same certificate-verifier pattern used by `BinaryCapstoneData`. -/
+Unlike the Binary capstone after the 2026-05-22 pass, this FBNF primitive
+class still carries its own capstone bridge field. -/
 structure SphericalRadialFBNFPrimitive where
   radial : P4Hyp model
   pd : PosteriorDisintegration model
@@ -6484,7 +6495,7 @@ structure SphericalRadialFBNFPrimitive where
 
 /-- Affine-MLR single-crossing primitive class. FBNF refinement
 (2026-05-21): carries a `capstoneWitness` data field; see the
-spherical-radial primitive for the certificate-verifier rationale. -/
+spherical-radial primitive for the remaining FBNF bridge-field rationale. -/
 structure AffineMLRSingleCrossingPrimitive where
   pd : PosteriorDisintegration model
   card_ge_three : 3 ≤ Fintype.card model.Ω
@@ -7108,27 +7119,45 @@ Given the v9 §B.3 endpoint-balance hypothesis `_hBalance`, the
 Strassen marginal axiom delivers Borel kernels
 `κL : S^+ → Δ([0,L] ∩ M)` and `κR : S^- → Δ([R,1] ∩ M)` whose mass
 satisfies the scalar calibration identity `α·cL + (1−α)·cR = 1`. The
-substantive `Inventory.strassen_marginals` invocation is bundled into
-`data.endpointFiberLiftWitness`; the theorem discharges by
-projection. -/
+proof now invokes `Inventory.V9.strassen_marginals` on the endpoint
+relation derived from `_hBalance`; the remaining scalar identity is
+assembled from primitive scalar component facts. -/
 theorem «binary-L_B1-endpoint-fiber-lift»
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model)
     (_hBalance : data.endpointStationarityTotalBalance) :
-    data.endpointFiberLift :=
-  data.endpointFiberLiftWitness
+    data.endpointFiberLift := by
+  classical
+  have hBalance :
+      IsEndpointStationarityTotalBalance
+        data.lhsL data.rhsL data.lhsR data.rhsR := by
+    simpa [BinaryCapstoneData.endpointStationarityTotalBalance] using _hBalance
+  have hDominance :
+      _root_.Inventory.V9.StrassenMarginalDominance
+        model.τM model.τM data.endpointRelation :=
+    data.endpointDominanceFromBalance hBalance
+  obtain ⟨π, hπ_coupling, hπ_support⟩ :=
+    _root_.Inventory.V9.strassen_marginals
+      model.τM model.τM data.endpointRelation hDominance
+  have _hEndpointCoupling :
+      _root_.Inventory.V9.IsCoupling π model.τM model.τM := hπ_coupling
+  have _hEndpointSupport : π data.endpointRelationᶜ = 0 := hπ_support
+  unfold BinaryCapstoneData.endpointFiberLift IsEndpointFiberLift
+  exact ⟨data.cL_nonneg, data.cR_nonneg,
+    data.endpointMassCalibrationFromBalance hBalance⟩
 
 /--
 **L_B2 (TRS interval reduction).**
 
 The paper Theorem 1 lifts the binary best-response to an interval
-`T = [lL, rR] ⊆ [0,1]`. The data-witness records the numerical
-endpoints with `0 ≤ lL ≤ rR ≤ 1`. -/
+`T = [lL, rR] ⊆ [0,1]`. The theorem assembles the interval statement
+from the primitive endpoint inequalities. -/
 theorem «binary-L_B2-TRS-interval-reduction»
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model) :
-    data.trsIntervalReduction :=
-  data.trsIntervalReductionWitness
+    data.trsIntervalReduction := by
+  unfold BinaryCapstoneData.trsIntervalReduction IsTRSIntervalReduction
+  exact ⟨data.lL_nonneg, data.lL_le_rR, data.rR_le_one⟩
 
 /--
 **L_B3 (endpoint-only PROJECTED image).**
@@ -7140,8 +7169,16 @@ theorem «binary-L_B3-endpoint-only-projected-image»
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model)
     (_hTRS : data.trsIntervalReduction) :
-    data.endpointOnlyProjectedImage :=
-  data.endpointOnlyProjectedImageWitness
+    data.endpointOnlyProjectedImage := by
+  unfold BinaryCapstoneData.endpointOnlyProjectedImage
+    IsEndpointOnlyProjectedImage
+  intro m
+  have hm := data.proj_eq_endpoint m
+  by_cases hside : data.projSide m
+  · left
+    simpa [hside] using hm
+  · right
+    simpa [hside] using hm
 
 /--
 **L_B4 (interior message calibration).**
@@ -7154,8 +7191,32 @@ theorem «binary-L_B4-interior-message-calibration»
     (data : BinaryCapstoneData model)
     (_hTRS : data.trsIntervalReduction)
     (_hEndpoint : data.endpointOnlyProjectedImage) :
-    data.interiorMessageCalibration :=
-  data.interiorMessageCalibrationWitness
+    data.interiorMessageCalibration := by
+  have hTRS :
+      IsTRSIntervalReduction data.lL data.rR := by
+    simpa [BinaryCapstoneData.trsIntervalReduction] using _hTRS
+  have hEndpoint :
+      IsEndpointOnlyProjectedImage model data.pL data.pR data.proj := by
+    simpa [BinaryCapstoneData.endpointOnlyProjectedImage] using _hEndpoint
+  unfold BinaryCapstoneData.interiorMessageCalibration
+    IsInteriorMessageCalibration
+  intro m hm
+  /-
+  Honest gap: the appendix does not yet contain the binary-simplex algebra
+  lemma that turns TRS interval reduction plus endpoint-only projected image
+  into the aligned-truthful posterior identity on interior messages. The
+  missing local lemma should have shape
+
+    binary_interior_message_calibration
+      (hTRS : IsTRSIntervalReduction data.lL data.rR)
+      (hEndpoint : IsEndpointOnlyProjectedImage model data.pL data.pR data.proj)
+      (hm : data.interior m) :
+        data.post m = model.inclM m
+
+  and is the formal version of v9_consolidated.md §B.3/L_B4 (also
+  exposition_v9.tex §8).
+  -/
+  sorry
 
 /--
 **L_B5 (endpoint stationarity total balance).**
@@ -7171,8 +7232,39 @@ theorem «binary-L_B5-endpoint-stationarity-total-balance»
     (_hTRS : data.trsIntervalReduction)
     (_hEndpoint : data.endpointOnlyProjectedImage)
     (_hIES : data.interiorEndpointStationarity) :
-    data.endpointStationarityTotalBalance :=
-  data.endpointStationarityTotalBalanceWitness
+    data.endpointStationarityTotalBalance := by
+  have hT1Binary : data.endpointMenu.multiplierBayesCone :=
+    _hT1 2 data.endpointMenu
+  have hTRS :
+      IsTRSIntervalReduction data.lL data.rR := by
+    simpa [BinaryCapstoneData.trsIntervalReduction] using _hTRS
+  have hEndpoint :
+      IsEndpointOnlyProjectedImage model data.pL data.pR data.proj := by
+    simpa [BinaryCapstoneData.endpointOnlyProjectedImage] using _hEndpoint
+  have hIES : data.interiorEndpointStationarity := _hIES
+  unfold BinaryCapstoneData.endpointStationarityTotalBalance
+    IsEndpointStationarityTotalBalance
+  /-
+  Honest gap: `hT1Binary` gives the two active normalized multiplier
+  posteriors in the Bayes cones. The appendix is still missing the binary
+  endpoint bookkeeping lemma that identifies those two cone inequalities,
+  under TRS, endpoint-only image, and R-IES, with the two scalar integral
+  total-balance equations `lhsL = rhsL` and `lhsR = rhsR`.
+
+  Expected local lemma shape:
+
+    binary_t1_multiplier_balance
+      (hT1Binary : data.endpointMenu.multiplierBayesCone)
+      (hTRS : IsTRSIntervalReduction data.lL data.rR)
+      (hEndpoint :
+        IsEndpointOnlyProjectedImage model data.pL data.pR data.proj)
+      (hIES : data.interiorEndpointStationarity) :
+        data.lhsL = data.rhsL ∧ data.lhsR = data.rhsR
+
+  This is the formal Clarke-Danskin/Fermat-to-total-balance calculation for
+  the `k = 2` binary active-label case in v9_consolidated.md §B.3/L_B5.
+  -/
+  sorry
 
 /--
 **L_B6 (capstone).**
@@ -7180,8 +7272,8 @@ theorem «binary-L_B5-endpoint-stationarity-total-balance»
 Assembling B1 (endpoint-fiber lift), B3 (endpoint-only projected
 image), and B5 (total balance) — together with B2 and B4 as
 intermediate ingredients — produces a robustly rationalizable
-strategy for `data.pd`. The assembled strategy is bundled into
-`data.capstoneWitness`. -/
+strategy for `data.pd`. The final QAE bridge remains a documented local
+gap rather than a bundled capstone witness. -/
 theorem «binary-L_B6-capstone»
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model)
@@ -7190,8 +7282,33 @@ theorem «binary-L_B6-capstone»
     (_hB3 : data.endpointOnlyProjectedImage)
     (_hB4 : data.interiorMessageCalibration)
     (_hB5 : data.endpointStationarityTotalBalance) :
-    HasRobustRationalizableStrategy model data.pd :=
-  data.capstoneWitness
+    HasRobustRationalizableStrategy model data.pd := by
+  have hBinaryGeometry :
+      data.endpointFiberLift ∧ data.endpointOnlyProjectedImage ∧
+        data.endpointStationarityTotalBalance :=
+    ⟨_hB1, _hB3, _hB5⟩
+  have hTRSCalibration :
+      data.trsIntervalReduction ∧ data.interiorMessageCalibration :=
+    ⟨_hB2, _hB4⟩
+  /-
+  Honest gap: the appendix lacks the bridge from the binary construction
+  pieces above to `Definition2QAEPredicate`/`HasRobustRationalizableStrategy`.
+  The missing lemma should assemble the endpoint-fiber transport, endpoint
+  projected image, and total-balance stationarity into an adviser kernel and
+  strategy, then discharge the v8 QAE predicate using the same posterior-law
+  alignment pattern documented in `robustRationalizableKernelExists_to_strategy`.
+
+  Expected local lemma shape:
+
+    binary_capstone_to_qae
+      (hBinaryGeometry :
+        data.endpointFiberLift ∧ data.endpointOnlyProjectedImage ∧
+          data.endpointStationarityTotalBalance)
+      (hTRSCalibration :
+        data.trsIntervalReduction ∧ data.interiorMessageCalibration) :
+        HasRobustRationalizableStrategy model data.pd
+  -/
+  sorry
 
 /-! ## §15 FBNF F1 … F4 (corollaries moved to §17 as instantiation lemmas) -/
 
@@ -7653,7 +7770,8 @@ theorem «G-addendum-binary-tie-splitting»
     (_hTie : hyp.tieAtom)
     (_hSplit : hyp.measurableTieSplit) :
     hyp.data.endpointFiberLift :=
-  hyp.endpointFiberLiftWitness
+  «binary-L_B1-endpoint-fiber-lift» (model := model)
+    hyp.data hyp.endpointBalanceAfterSplit
 
 theorem «G-addendum-variable-margin-P2-star-prime»
     {model : RobustTrustModel}
