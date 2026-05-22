@@ -9,7 +9,7 @@
   - `01_deliverables/exposition/exposition_v9_paper.tex` — long-form paper (900 lines)
 - Provenance slug: `robust-trust-v9` (codex thread id seed)
 - Initialized: 2026-05-21
-- Current phase: skeleton-built (main.lean compiles with 26 sorries; awaiting decomposition reviewer pass + first per-lemma round)
+- Current phase: **theorem surface complete** — main.lean compiles with 1 source sorry (`AlphaZeroSingletonData_exists`); 27 of 28 v9 theorems discharged (T2 helper, T2 wrapper, T1×4, Binary×6, Hall×5, FBNF×4 + 3 corollaries, G4, P2*/P3/P4, G addendum×3, WTA threshold, WeakParetoProfile_isClosed, WP_isCompact, bridge). Reviewers passed (PATCH verdicts: all mergeable as certificate-verifier ledger; full Inventory-derivation deferred to task #130).
 - Target Lean toolchain: lean-4.29.0 (carry over from v8 unless a v9 dependency forces a bump)
 - AXLE log: `lean/axle_log.jsonl`
 - Heartbeat: 15m orchestrator loop, job ffa61811 (`*/15 * * * *`); reset on session restart

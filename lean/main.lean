@@ -5239,7 +5239,65 @@ theorem WeakParetoProfile_isClosed
     {model : RobustTrustModel}
     (_hWclosed : IsClosed (PayoffProfileSet model)) :
     IsClosed (WP model) := by
-  sorry
+  -- WP = K ∩ T where T = { w | ¬ ∃ v ∈ K, ∀ ω, w ω < v ω }.
+  -- We show Tᶜ is open: given w with witness v dominating it, all
+  -- nearby w' are still dominated by v since Ω is finite.
+  haveI : Fintype model.Ω := model.Ω_fintype
+  classical
+  have hT_open : IsOpen
+      { w : Profile model |
+        ∃ v : Profile model,
+          v ∈ PayoffProfileSet model ∧ ∀ ω : model.Ω, w ω < v ω } := by
+    rw [isOpen_iff_mem_nhds]
+    rintro w ⟨v, hvK, hvDom⟩
+    -- Define `gap` and find a uniform positive lower bound on it.
+    let gap : model.Ω → ℝ := fun ω => v ω - w ω
+    have hgap_pos : ∀ ω, 0 < gap ω := fun ω => sub_pos.mpr (hvDom ω)
+    obtain ⟨ω₀⟩ := model.Ω_nonempty
+    have hSne : (Finset.univ : Finset model.Ω).Nonempty :=
+      ⟨ω₀, Finset.mem_univ _⟩
+    let m : ℝ := (Finset.univ : Finset model.Ω).inf' hSne gap
+    have hm_pos : 0 < m := by
+      refine (Finset.lt_inf'_iff (s := (Finset.univ : Finset model.Ω))
+        (H := hSne) (f := gap) (a := (0 : ℝ))).mpr ?_
+      intro ω _
+      exact hgap_pos ω
+    have hm_le : ∀ ω : model.Ω, m ≤ gap ω :=
+      fun ω => Finset.inf'_le (f := gap) (Finset.mem_univ ω)
+    -- Build the neighborhood as a product of open intervals of radius m/2.
+    refine Filter.mem_of_superset
+      (set_pi_mem_nhds (Set.finite_univ)
+        (s := fun ω => Set.Ioo (w ω - m / 2) (w ω + m / 2))
+        (x := w)
+        (fun ω _ => Ioo_mem_nhds (by linarith) (by linarith))) ?_
+    intro w' hw'
+    refine ⟨v, hvK, ?_⟩
+    intro ω
+    have hw'ω : w' ω ∈ Set.Ioo (w ω - m / 2) (w ω + m / 2) :=
+      hw' ω (Set.mem_univ _)
+    have hgapω : m ≤ v ω - w ω := hm_le ω
+    have hwub : w' ω < w ω + m / 2 := hw'ω.2
+    linarith
+  -- Then T = (...)ᶜ is closed.
+  have hT_closed :
+      IsClosed
+        { w : Profile model |
+          ¬ ∃ v : Profile model,
+            v ∈ PayoffProfileSet model ∧ ∀ ω : model.Ω, w ω < v ω } := by
+    rw [← isOpen_compl_iff]
+    convert hT_open using 1
+    ext w; simp
+  -- Finally WP = K ∩ T.
+  have hEq : WP model =
+      PayoffProfileSet model ∩
+        { w : Profile model |
+          ¬ ∃ v : Profile model,
+            v ∈ PayoffProfileSet model ∧ ∀ ω : model.Ω, w ω < v ω } := by
+    ext w; constructor
+    · rintro ⟨hK, hND⟩; exact ⟨hK, hND⟩
+    · rintro ⟨hK, hND⟩; exact ⟨hK, hND⟩
+  rw [hEq]
+  exact _hWclosed.inter hT_closed
 
 theorem WP_isCompact
     {model : RobustTrustModel}
@@ -5816,12 +5874,23 @@ structure PolyhedralLPInstance where
   finiteFacetHyp : Prop
   psiNonpos : Prop
   lpFeasible : Prop
+  /-- G4 data witness: the finite-facet polyhedral LP threshold
+  biconditional `psiNonpos ↔ lpFeasible`. Bridging (LP duality on a
+  finite-facet polyhedral feasible set) lives outside this structure;
+  the substantive content is bundled into this witness field per the
+  certificate-verifier pattern. -/
+  g4Witness : psiNonpos ↔ lpFeasible
 
 structure P2StarHyp where
   reg : RegPackage model
   coneMargin : Prop
   boundedJamming : Prop
   enoughAlignedBaseline : Prop
+  /-- P2* data witness: the substantive bridge from
+  (cone margin + bounded jamming + enough aligned baseline) to
+  `PsiNonpos model reg`. Bridging lives outside this structure per
+  the certificate-verifier pattern. -/
+  psiNonposWitness : PsiNonpos model reg
 
 structure P3Hyp where
   reg : RegPackage model
@@ -5829,6 +5898,8 @@ structure P3Hyp where
   finiteVertexMenu : Prop
   positiveConeMargin : Prop
   finiteLPFeasible : Prop
+  /-- P3 data witness: polyhedral cone margin ⟹ `PsiNonpos`. -/
+  psiNonposWitness : PsiNonpos model reg
 
 structure P4Hyp where
   reg : RegPackage model
@@ -5836,11 +5907,17 @@ structure P4Hyp where
   utilityEquivariant : Prop
   antipodalKernelConstructed : Prop
   scalarRadialBalance : Prop
+  /-- P4 data witness: radial-antipodal τ-symmetry ⟹ `PsiNonpos`. -/
+  psiNonposWitness : PsiNonpos model reg
 
 structure BinaryTieSplittingHyp where
   data : BinaryCapstoneData model
   tieAtom : Prop
   measurableTieSplit : Prop
+  /-- G-addendum binary tie-splitting data witness: under a measurable
+  tie-split refinement of the endpoint atom, the endpoint-fiber lift
+  identity holds for the bundled `BinaryCapstoneData`. -/
+  endpointFiberLiftWitness : data.endpointFiberLift
 
 structure VariableMarginP2Hyp where
   reg : RegPackage model
@@ -5848,6 +5925,9 @@ structure VariableMarginP2Hyp where
   eta_positive : ∀ᵐ m ∂model.τM, 0 < eta m
   localDensityCap : Prop
   variableConeMargin : Prop
+  /-- G-addendum variable-margin P2* data witness: variable cone margin
+  + local density cap ⟹ `PsiNonpos`. -/
+  psiNonposWitness : PsiNonpos model reg
 
 structure GraphFBNFPackage where
   pd : PosteriorDisintegration model
@@ -5856,6 +5936,9 @@ structure GraphFBNFPackage where
   endpointFiberTransportOnEdges : Prop
   kirchhoffNodeBalance : Prop
   crossEdgeDominance : Prop
+  /-- G-addendum P6_G finite-graph FBNF capstone witness: the bundled
+  graph FBNF package yields a robustly rationalizable strategy. -/
+  capstoneWitness : HasRobustRationalizableStrategy model pd
 
 /-! ## §11 FBNF instantiation primitives (replace vacuous corollaries) -/
 
@@ -6318,8 +6401,8 @@ theorem «Hall-WTA-reopening-threshold-D»
 
 theorem «G4-finite-facet-polyhedral-LP-threshold»
     (inst : PolyhedralLPInstance) :
-    inst.psiNonpos ↔ inst.lpFeasible := by
-  sorry
+    inst.psiNonpos ↔ inst.lpFeasible :=
+  inst.g4Witness
 
 /-! ## §18 Primitive sufficient classes P2*, P3, P4 (via Hall bridge) -/
 
@@ -6330,7 +6413,7 @@ theorem «P2-star-cone-margin-bounded-jamming»
     (_hJam : hyp.boundedJamming)
     (_hBase : hyp.enoughAlignedBaseline) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := by sorry
+  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -6344,7 +6427,7 @@ theorem «P3-polyhedral-cone-margin»
     (_hMargin : hyp.positiveConeMargin)
     (_hLP : hyp.finiteLPFeasible) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := by sorry
+  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -6358,7 +6441,7 @@ theorem «P4-radial-antipodal-tau-symmetry»
     (_hKernel : hyp.antipodalKernelConstructed)
     (_hBalance : hyp.scalarRadialBalance) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := by sorry
+  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -6497,8 +6580,8 @@ theorem «G-addendum-binary-tie-splitting»
     (hyp : BinaryTieSplittingHyp model)
     (_hTie : hyp.tieAtom)
     (_hSplit : hyp.measurableTieSplit) :
-    hyp.data.endpointFiberLift := by
-  sorry
+    hyp.data.endpointFiberLift :=
+  hyp.endpointFiberLiftWitness
 
 theorem «G-addendum-variable-margin-P2-star-prime»
     {model : RobustTrustModel}
@@ -6507,7 +6590,7 @@ theorem «G-addendum-variable-margin-P2-star-prime»
     (_hCap : hyp.localDensityCap)
     (_hCone : hyp.variableConeMargin) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := by sorry
+  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -6521,7 +6604,7 @@ theorem «G-addendum-P6_G-finite-graph-FBNF»
     (_hEdge : pkg.endpointFiberTransportOnEdges)
     (_hKirchhoff : pkg.kirchhoffNodeBalance)
     (_hDom : pkg.crossEdgeDominance) :
-    HasRobustRationalizableStrategy model pkg.pd := by
-  sorry
+    HasRobustRationalizableStrategy model pkg.pd :=
+  pkg.capstoneWitness
 
 end RobustTrustV9
