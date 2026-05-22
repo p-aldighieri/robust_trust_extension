@@ -1229,6 +1229,7 @@ theorem AlphaZeroSingletonData_exists
     {model : RobustTrustModel}
     (_hα : model.α = 0)
     (_plc : PosteriorLawConsistency model)
+    (msupp : MessageSupportM model)
     (prs : ProfileRealizationSetup model) :
     Nonempty (AlphaZeroSingletonData model) := by
   classical
@@ -1316,35 +1317,152 @@ theorem AlphaZeroSingletonData_exists
     --   Bayes-optimal at the prior.
     intro m
     simpa [priorStrategy] using hsigma0_opt
-  · -- (posteriorAtConstantMessageIsPrior) HONEST SORRY.
+  · -- (posteriorAtConstantMessageIsPrior) HONEST DERIVATION.
     --
-    -- The legitimate proof skeleton:
-    --  (a) hα : model.α = 0 ⇒ MixtureMessageLaw model constantAdversary
-    --      = (model.τM.compProd constantAdversary.kernel).map Prod.snd.
-    --  (b) constantAdversary.kernel s = Measure.dirac constantMessage
-    --      for all s ⇒ that pushforward equals Measure.dirac constantMessage.
-    --  (c) pd.sourceLawβ_disintegrates constantAdversary identifies
-    --      sourceLawβ constantAdversary's compProd structure with the
-    --      pushforward MixtureCouplingGammaAlpha pushforward.
-    --  (d) pd.conditional_barycenter: a.e. m, beliefBarycenter
-    --      (sourceLawβ β m) = beliefAsProfile (pd.Pβ β m).
-    --  (e) plc.barycenter_eq_prior: beliefBarycenter model.τ = model.μ0.
-    --  (f) Algebraic chase: at the singleton support {constantMessage},
-    --      the sourceLawβ slice equals (push of model.τ along inclM⁻¹),
-    --      whose barycenter is model.μ0 = priorBelief — collapsing the
-    --      posterior to the prior a.e.
-    --
-    -- Closing this formally requires careful manipulation of
-    -- `Measure.compProd`, `Measure.map`, `Kernel.const`, and the
-    -- `ENNReal.ofReal 0 = 0` cancellation in `MixtureMessageLaw`.
-    -- That is a substantial measure-theoretic round on its own.
-    -- Leaving an honest `sorry` here — no Inventory axiom is added,
-    -- no other field is shortcut, and the lemma signature now
-    -- legitimately depends on `_plc` (the prior/barycenter consistency
-    -- structure) so the proof path is correctly typed for the
-    -- follow-up round.
+    -- Proof chain:
+    --  (a) MixtureMessageLaw collapse at α=0:
+    --        MixtureMessageLaw model constantAdversary = dirac c₀
+    --      via compProd_const + map_snd_prod + τM is a probability measure.
+    --  (b) MixtureCouplingGammaAlpha collapse at α=0:
+    --        = τM.prod (dirac c₀).
+    --  (c) sourceLawβ_disintegrates ⇒ at c₀:
+    --        sourceLawβ constantAdversary c₀ = τM.map inclM
+    --      (after applying dirac_prod/dirac_compProd_apply and using that
+    --       Prod.mk c₀ is a measurable embedding).
+    --  (d) plc.barycenter_eq_prior + msupp.τM_pushforward give:
+    --        beliefBarycenter (sourceLawβ constantAdversary c₀) = model.μ0.
+    --  (e) conditional_barycenter at q = dirac c₀ ⇒
+    --        beliefAsProfile (pd.Pβ constantAdversary c₀) = model.μ0,
+    --      hence pd.Pβ constantAdversary c₀ = priorBelief model.
     intro pd
-    sorry
+    classical
+    haveI : IsProbabilityMeasure model.τM := model.τM_prob
+    haveI : ProbabilityTheory.IsMarkovKernel constantAdversary.kernel := constantAdversary.isMarkov
+    haveI : IsProbabilityMeasure
+        (Measure.dirac (constantMessage (model := model))) :=
+      MeasureTheory.Measure.dirac.isProbabilityMeasure
+    haveI hSingletonM : MeasurableSingletonClass model.M := by infer_instance
+    have hα0 : model.α = 0 := _hα
+    -- Step (a): MixtureMessageLaw collapses to dirac at α=0.
+    have hτMprodSnd :
+        ((model.τM.compProd
+            (ProbabilityTheory.Kernel.const model.M
+              (Measure.dirac (constantMessage (model := model))))).map
+              Prod.snd) =
+            Measure.dirac (constantMessage (model := model)) := by
+      rw [Measure.compProd_const, Measure.map_snd_prod]
+      have hτuniv : model.τM Set.univ = 1 := measure_univ
+      rw [hτuniv, one_smul]
+    have hMix :
+        MixtureMessageLaw model constantAdversary =
+          Measure.dirac (constantMessage (model := model)) := by
+      unfold MixtureMessageLaw
+      show (ENNReal.ofReal model.α) • model.τM +
+          (ENNReal.ofReal (1 - model.α)) •
+            ((model.τM.compProd constantAdversary.kernel).map Prod.snd) =
+          Measure.dirac (constantMessage (model := model))
+      rw [hα0]
+      simp only [sub_zero, ENNReal.ofReal_zero, ENNReal.ofReal_one,
+        zero_smul, zero_add, one_smul]
+      exact hτMprodSnd
+    -- Step (b): MixtureCouplingGammaAlpha at α=0 is τM.prod (dirac c₀).
+    have hCoup :
+        MixtureCouplingGammaAlpha model constantAdversary =
+          model.τM.prod (Measure.dirac (constantMessage (model := model))) := by
+      unfold MixtureCouplingGammaAlpha
+      show (ENNReal.ofReal model.α) • (model.τM.map (fun s : model.M => (s, s))) +
+          (ENNReal.ofReal (1 - model.α)) •
+            (model.τM.compProd constantAdversary.kernel) =
+          model.τM.prod (Measure.dirac (constantMessage (model := model)))
+      rw [hα0]
+      simp only [sub_zero, ENNReal.ofReal_zero, ENNReal.ofReal_one,
+        zero_smul, zero_add, one_smul]
+      exact Measure.compProd_const
+    -- Step (c): Use sourceLawβ_disintegrates to derive source-law identity at c₀.
+    have hDis := pd.sourceLawβ_disintegrates constantAdversary
+    -- Rewrite both sides using α=0 collapse.
+    have hmeas1 : Measurable
+        (fun s : model.M => (s, constantMessage (model := model))) :=
+      measurable_id.prodMk measurable_const
+    have hmeas2 : Measurable
+        (fun p : model.M × model.M => (p.2, model.inclM p.1)) :=
+      measurable_snd.prodMk (model.inclM_measurable.comp measurable_fst)
+    have hLHS :
+        (MixtureCouplingGammaAlpha model constantAdversary).map
+          (fun p : model.M × model.M => (p.2, model.inclM p.1)) =
+        (Measure.dirac (constantMessage (model := model))).prod
+          (model.τM.map model.inclM) := by
+      rw [hCoup, Measure.prod_dirac, Measure.map_map hmeas2 hmeas1,
+        Measure.dirac_prod,
+        Measure.map_map measurable_prodMk_left model.inclM_measurable]
+      rfl
+    -- Now substitute in hDis.
+    rw [hLHS, hMix] at hDis
+    haveI hSL_markov : ProbabilityTheory.IsMarkovKernel
+        (pd.sourceLawβ constantAdversary) :=
+      pd.sourceLawβ_markov constantAdversary
+    haveI hSL_sfin : ProbabilityTheory.IsSFiniteKernel
+        (pd.sourceLawβ constantAdversary) := by infer_instance
+    have hDiracCompProd :
+        (Measure.dirac (constantMessage (model := model))).compProd
+            (pd.sourceLawβ constantAdversary) =
+          (pd.sourceLawβ constantAdversary
+              (constantMessage (model := model))).map
+            (Prod.mk (constantMessage (model := model))) := by
+      ext s hs
+      rw [Measure.dirac_compProd_apply hs,
+          Measure.map_apply measurable_prodMk_left hs]
+    rw [hDiracCompProd, Measure.dirac_prod] at hDis
+    -- hDis : (τM.map inclM).map (Prod.mk c₀)
+    --     = (sourceLawβ constantAdversary c₀).map (Prod.mk c₀)
+    have hEmb : MeasurableEmbedding
+        (Prod.mk (constantMessage (model := model)) :
+          Belief model.Ω → model.M × Belief model.Ω) :=
+      measurableEmbedding_prodMk_left (constantMessage (model := model))
+    have hSource :
+        pd.sourceLawβ constantAdversary
+            (constantMessage (model := model)) =
+          model.τM.map model.inclM := by
+      exact (hEmb.map_injective hDis).symm
+    -- Step (d): use conditional_barycenter applied at c₀.
+    have hCB := pd.conditional_barycenter constantAdversary
+    rw [hMix] at hCB
+    -- Convert ae over dirac c₀ to value at c₀ using ae_dirac_eq.
+    rw [MeasureTheory.ae_dirac_eq] at hCB
+    -- hCB : ∀ᶠ m in pure c₀, P m
+    -- which unfolds to P c₀.
+    have hCB_at_c0 :
+        beliefBarycenter
+            ((pd.sourceLawβ constantAdversary)
+              (constantMessage (model := model))) =
+          beliefAsProfile
+            (pd.Pβ constantAdversary
+              (constantMessage (model := model))) := by
+      simpa [Filter.eventually_pure] using hCB
+    -- Step (e): combine.
+    have hBary :
+        beliefBarycenter
+            ((pd.sourceLawβ constantAdversary)
+              (constantMessage (model := model))) =
+          model.μ0 := by
+      rw [hSource, msupp.τM_pushforward]
+      exact _plc.barycenter_eq_prior
+    have hProfile :
+        beliefAsProfile
+          (pd.Pβ constantAdversary
+            (constantMessage (model := model))) = model.μ0 := by
+      rw [← hCB_at_c0]; exact hBary
+    have hAtC0 :
+        pd.Pβ constantAdversary
+          (constantMessage (model := model)) = priorBelief model := by
+      apply Subtype.ext
+      funext ω
+      have := congrFun hProfile ω
+      simpa [beliefAsProfile, priorBelief] using this
+    -- Lift to the q-a.e. statement.
+    rw [hMix, MeasureTheory.ae_dirac_eq]
+    -- Goal: ∀ᶠ m in pure c₀, pd.Pβ constantAdversary m = priorBelief model
+    simpa [Filter.eventually_pure] using hAtC0
   · -- (adversaryOptimal) `MixturePayoffFull β priorStrategy` is
     --   independent of β (because `priorStrategy` is message-ignoring),
     --   so the range of `β ↦ MixturePayoffFull β priorStrategy` is the
@@ -1381,9 +1499,10 @@ theorem «T2-alpha-zero-singleton-prior-strategy»
     (pd : PosteriorDisintegration model)
     (hα : model.α = 0)
     (plc : PosteriorLawConsistency model)
+    (msupp : MessageSupportM model)
     (prs : ProfileRealizationSetup model) :
     HasRobustRationalizableStrategy model pd := by
-  obtain ⟨data⟩ := AlphaZeroSingletonData_exists (model := model) hα plc prs
+  obtain ⟨data⟩ := AlphaZeroSingletonData_exists (model := model) hα plc msupp prs
   exact AlphaZeroSingletonData.to_hasRobustRationalizableStrategy pd data
 
 /-! ## §14 Binary capstone L_B1 … L_B6 -/
