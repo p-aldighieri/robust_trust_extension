@@ -1114,19 +1114,12 @@ end BinaryCapstoneData
 
 /-! ## §8 FBNF foliation + package
 
-FBNF refinement (2026-05-21): the three FBNF derived-output Prop fields
-(`conditionalB1Pasting`, `endpointSupportedFiberImage`,
-`localizedStationarityFBNF6`) are no longer abstract `Prop` placeholders.
-Following the T1 / Binary pattern they are now namespaced `def`s
-(`FBNFPackage.{conditionalB1Pasting,…}`) that unfold to concrete `Is*`
-predicates over data-witness fields living inside the structure. The four
-theorems F1..F4 then discharge by direct projection / certificate
-extraction. The substantive math (conditional B1 pasting from
-`Inventory.strassen_marginals`, fiberwise endpoint exposure from
-`Inventory.clarke_fermat_normal_cone` applied fiberwise, and the
-fiberwise localised stationarity equalities) is bundled into the
-corresponding witness fields. The capstone strategy is bundled into
-`capstoneWitness`. -/
+FBNF certificate-elimination pass (2026-05-22): the derived-output witness
+fields formerly stored in `FBNFPackage` have been removed.  The package keeps
+only primitive construction data and the theorem conclusions are derived in
+F1--F4 theorem bodies, stopping at documented `sorry`s where the appendix does
+not yet contain the fiberwise Strassen / endpoint-projection / QAE bridge
+lemmas. -/
 
 structure Foliation where
   Z : Type
@@ -1198,21 +1191,6 @@ structure FBNFPackage where
   /-- F3 localised stationarity scalars. -/
   fbnf6Lhs : ℝ
   fbnf6Rhs : ℝ
-  /-- F1 data witness: scalar calibration identity along the foliation.
-  Bundles `Inventory.strassen_marginals` lifted to the fibered chart. -/
-  conditionalB1PastingWitness :
-    IsConditionalB1Pasting model.α wL wR
-  /-- F2 data witness: projected fiber payoff is endpoint-supported. -/
-  endpointSupportedFiberImageWitness :
-    IsEndpointSupportedFiberImage model foliation fiberProj
-  /-- F3 data witness: fiberwise total-balance scalar equality. -/
-  localizedStationarityFBNF6Witness :
-    IsLocalizedStationarityFBNF6 fbnf6Lhs fbnf6Rhs
-  /-- F4 capstone witness: a fully assembled robustly rationalizable
-  strategy. The bridging proof (combining F1, F2, F3 with FBNF-7 global
-  fiber dominance via the Binary capstone applied fiberwise) lives
-  outside this structure. -/
-  capstoneWitness : HasRobustRationalizableStrategy model pd
 
 namespace FBNFPackage
 
@@ -1413,15 +1391,27 @@ theorem wta_psi_value_eq_two_ninths (wta : WTAData) :
   norm_num
 
 structure PolyhedralLPInstance where
+  I : Type
+  J : Type
+  [I_fintype : Fintype I]
+  [J_fintype : Fintype J]
   finiteFacetHyp : Prop
-  psiNonpos : Prop
-  lpFeasible : Prop
-  /-- G4 data witness: the finite-facet polyhedral LP threshold
-  biconditional `psiNonpos ↔ lpFeasible`. Bridging (LP duality on a
-  finite-facet polyhedral feasible set) lives outside this structure;
-  the substantive content is bundled into this witness field per the
-  certificate-verifier pattern. -/
-  g4Witness : psiNonpos ↔ lpFeasible
+  /-- Concrete finite-facet conic LP obtained from the polyhedral threshold
+  system.  The G4 theorem unfolds `psiNonpos` and `lpFeasible` to the dual and
+  primal sides of this instance and applies finite conic Farkas directly. -/
+  conic : _root_.Inventory.V9.ConicFarkasInstance I J
+
+attribute [instance]
+  PolyhedralLPInstance.I_fintype
+  PolyhedralLPInstance.J_fintype
+
+def PolyhedralLPInstance.psiNonpos
+    (inst : PolyhedralLPInstance) : Prop :=
+  _root_.Inventory.V9.conicDualNonpositive inst.conic
+
+def PolyhedralLPInstance.lpFeasible
+    (inst : PolyhedralLPInstance) : Prop :=
+  _root_.Inventory.V9.conicPrimalFeasible inst.conic
 
 structure P2StarHyp where
   reg : RegPackage model
@@ -1483,15 +1473,9 @@ structure GraphFBNFPackage where
 
 /-! ## §11 FBNF instantiation primitives (replace vacuous corollaries) -/
 
-/-- Spherical-radial primitive class. FBNF refinement (2026-05-21):
-the structure carries a `capstoneWitness` data field of type
-`HasRobustRationalizableStrategy model pd`. The Prop bridge fields
-remain as record-keepers (they document which named hypotheses of the
-spherical-radial class are invoked), and the substantive bridging
-(radial symmetry + antipodal routing + radial Clarke–Danskin envelope
-⟹ robustly rationalizable strategy) is bundled into `capstoneWitness`.
-Unlike the Binary capstone after the 2026-05-22 pass, this FBNF primitive
-class still carries its own capstone bridge field. -/
+/-- Spherical-radial primitive class.  The Prop bridge fields record the named
+hypotheses invoked by the FBNF instantiation theorem; the capstone conclusion
+is no longer stored as a primitive witness. -/
 structure SphericalRadialFBNFPrimitive where
   radial : P4Hyp model
   pd : PosteriorDisintegration model
@@ -1506,15 +1490,10 @@ structure SphericalRadialFBNFPrimitive where
   fiberTieDiscipline_from_radialTau : Prop
   localTwoSidedPerturbability_from_radialBand : Prop
   globalFiberDominance_from_radialSymmetry : Prop
-  /-- Capstone data witness: a fully assembled robustly rationalizable
-  strategy delivered by the spherical-radial class. Bridging (radial
-  symmetry + antipodal routing + radial Clarke–Danskin envelope) lives
-  outside this structure and is a documented per-class proving round. -/
-  capstoneWitness : HasRobustRationalizableStrategy model pd
 
 /-- Affine-MLR single-crossing primitive class. FBNF refinement
-(2026-05-21): carries a `capstoneWitness` data field; see the
-spherical-radial primitive for the remaining FBNF bridge-field rationale. -/
+(2026-05-22): no capstone witness is stored; the corollary applies the FBNF
+capstone theorem to an assembled package. -/
 structure AffineMLRSingleCrossingPrimitive where
   pd : PosteriorDisintegration model
   card_ge_three : 3 ≤ Fintype.card model.Ω
@@ -1528,12 +1507,10 @@ structure AffineMLRSingleCrossingPrimitive where
   tieDiscipline_or_split : Prop
   localTwoSidedPerturbability_from_MLR : Prop
   globalFiberDominance_from_MLR : Prop
-  /-- Capstone data witness: a fully assembled robustly rationalizable
-  strategy delivered by the affine-MLR single-crossing class. -/
-  capstoneWitness : HasRobustRationalizableStrategy model pd
 
 /-- Polyhedral scalarizable primitive class. FBNF refinement
-(2026-05-21): carries a `capstoneWitness` data field. -/
+(2026-05-22): no capstone witness is stored; the corollary applies the FBNF
+capstone theorem to an assembled package. -/
 structure PolyhedralScalarizablePrimitive where
   pd : PosteriorDisintegration model
   card_ge_three : 3 ≤ Fintype.card model.Ω
@@ -1548,9 +1525,6 @@ structure PolyhedralScalarizablePrimitive where
   finiteFacetTieDiscipline_or_split : Prop
   localTwoSidedPerturbability_on_faces : Prop
   globalFiberDominance_or_LP_certificate : Prop
-  /-- Capstone data witness: a fully assembled robustly rationalizable
-  strategy delivered by the polyhedral scalarizable class. -/
-  capstoneWitness : HasRobustRationalizableStrategy model pd
 
 end -- noncomputable section
 
@@ -2337,16 +2311,44 @@ theorem «binary-L_B6-capstone»
 The Binary B1 endpoint-fiber-lift identity, applied fiberwise along the
 FBNF affine foliation, yields scalar pasting weights `wL, wR ≥ 0`
 satisfying the α-calibration identity `α·wL + (1−α)·wR = 1`. The
-substantive `Inventory.strassen_marginals` invocation lifted to the
-fibered chart is bundled into `pkg.conditionalB1PastingWitness`; the
-theorem discharges by projection. -/
+proof records the Binary B1 theorem as the fiberwise input and then stops at
+the missing measurable-pasting bridge from those binary endpoint lifts to the
+global foliation weights. -/
 theorem «FBNF-F1-conditional-B1-measurable-pasting»
     {model : RobustTrustModel}
     (pkg : FBNFPackage model)
-    (_hB1 : ∀ data : BinaryCapstoneData model,
+    (hB1 : ∀ data : BinaryCapstoneData model,
       data.endpointStationarityTotalBalance → data.endpointFiberLift) :
-    pkg.conditionalB1Pasting :=
-  pkg.conditionalB1PastingWitness
+    pkg.conditionalB1Pasting := by
+  classical
+  have hFiberBinary :
+      ∀ data : BinaryCapstoneData model,
+        data.endpointStationarityTotalBalance → data.endpointFiberLift := hB1
+  let stdBorelBaseProp : Prop := pkg.foliation.standardBorelZ
+  let chartMeasurableProp : Prop := pkg.foliation.chartMeasurable
+  let disintegrationProp : Prop := pkg.foliation.disintegration
+  unfold FBNFPackage.conditionalB1Pasting IsConditionalB1Pasting
+  /-
+  Honest gap: the appendix does not yet contain the foliation-conditional
+  measurable-pasting lemma.  The needed bridge applies the binary endpoint
+  fiber lift `hFiberBinary` on almost every affine fiber, uses the recorded
+  foliation predicates `stdBorelBaseProp`, `chartMeasurableProp`, and
+  `disintegrationProp` to paste the fiber kernels measurably, and identifies
+  the resulting global masses with `pkg.wL` and `pkg.wR`.
+
+  Expected local lemma shape:
+
+    fbnf_conditional_b1_pasting
+      (hFiberBinary :
+        ∀ data : BinaryCapstoneData model,
+          data.endpointStationarityTotalBalance → data.endpointFiberLift)
+      (hStdBorelBase : pkg.foliation.standardBorelZ)
+      (hChartMeasurable : pkg.foliation.chartMeasurable)
+      (hDisintegration : pkg.foliation.disintegration) :
+        0 ≤ pkg.wL ∧ 0 ≤ pkg.wR ∧
+          model.α * pkg.wL + (1 - model.α) * pkg.wR = 1
+  -/
+  sorry
 
 /--
 **FBNF-F2 (endpoint-only projected fiber image).**
@@ -2354,14 +2356,39 @@ theorem «FBNF-F1-conditional-B1-measurable-pasting»
 Under the fiber-preserving TRS hypothesis, the projected fiber payoff
 takes only the two endpoint values `ell z ⟨a z, …⟩` and
 `ell z ⟨b z, …⟩` on every fiber. This is the fibered analogue of
-`«binary-L_B3-endpoint-only-projected-image»` and discharges by the
-data witness `pkg.endpointSupportedFiberImageWitness`. -/
+`«binary-L_B3-endpoint-only-projected-image»`. -/
 theorem «FBNF-F2-endpoint-only-projected-fiber-image»
     {model : RobustTrustModel}
     (pkg : FBNFPackage model)
-    (_hTRS : pkg.fiberPreservingTRS) :
-    pkg.endpointSupportedFiberImage :=
-  pkg.endpointSupportedFiberImageWitness
+    (hTRS : pkg.fiberPreservingTRS) :
+    pkg.endpointSupportedFiberImage := by
+  classical
+  have hFiberTRS : pkg.fiberPreservingTRS := hTRS
+  let endpointExposureProp : Prop := pkg.fiberEndpointExposure
+  let tieDisciplineProp : Prop := pkg.fiberTieDiscipline
+  unfold FBNFPackage.endpointSupportedFiberImage
+    IsEndpointSupportedFiberImage
+  /-
+  Honest gap: the appendix lacks the fiberwise endpoint-projection algebra
+  lemma turning FBNF-2 TRS preservation, FBNF-4 endpoint exposure, and FBNF-5
+  tie discipline into endpoint-only projected fiber image.  At present,
+  endpoint exposure and tie discipline are recorded as package predicates
+  (`endpointExposureProp`, `tieDisciplineProp`), not supplied as proof
+  arguments to this theorem.
+
+  Expected local lemma shape:
+
+    fbnf_endpoint_supported_fiber_image
+      (hFiberTRS : pkg.fiberPreservingTRS)
+      (hEndpointExposure : pkg.fiberEndpointExposure)
+      (hTieDiscipline : pkg.fiberTieDiscipline) :
+        ∀ z m,
+          pkg.fiberProj z m = pkg.foliation.ell z
+            ⟨pkg.foliation.a z, le_refl _, pkg.foliation.intervalNonempty z⟩
+          ∨ pkg.fiberProj z m = pkg.foliation.ell z
+            ⟨pkg.foliation.b z, pkg.foliation.intervalNonempty z, le_refl _⟩
+  -/
+  sorry
 
 /--
 **FBNF-F3 (localised stationarity, FBNF-6).**
@@ -2370,16 +2397,39 @@ Combining the universal T1 multiplier-Bayes-cone identity with F2
 (endpoint-supported projected fiber image) and local two-sided
 perturbability of the foliation chart, the Clarke–Danskin–Fermat
 envelope applied fiberwise yields the localised stationarity total-
-balance scalar equality. Bundled into
-`pkg.localizedStationarityFBNF6Witness`; discharges by projection. -/
+balance scalar equality. -/
 theorem «FBNF-F3-localized-stationarity-FBNF6»
     {model : RobustTrustModel}
     (pkg : FBNFPackage model)
-    (_hT1 : ∀ k (fd : FiniteMenuData model k), fd.multiplierBayesCone)
-    (_hF2 : pkg.endpointSupportedFiberImage)
-    (_hPert : pkg.localTwoSidedPerturbability) :
-    pkg.localizedStationarityFBNF6 :=
-  pkg.localizedStationarityFBNF6Witness
+    (hT1 : ∀ k (fd : FiniteMenuData model k), fd.multiplierBayesCone)
+    (hF2 : pkg.endpointSupportedFiberImage)
+    (hPert : pkg.localTwoSidedPerturbability) :
+    pkg.localizedStationarityFBNF6 := by
+  classical
+  have hT1Universal :
+      ∀ k (fd : FiniteMenuData model k), fd.multiplierBayesCone := hT1
+  have hEndpointImage : pkg.endpointSupportedFiberImage := hF2
+  have hTwoSided : pkg.localTwoSidedPerturbability := hPert
+  let affineFibersProp : Prop := pkg.foliation.affineFibers
+  unfold FBNFPackage.localizedStationarityFBNF6
+    IsLocalizedStationarityFBNF6
+  /-
+  Honest gap: the appendix lacks the FBNF-6 bookkeeping lemma that specializes
+  the universal T1 multiplier-Bayes-cone theorem to the two endpoint labels on
+  each fiber and converts the resulting two-sided perturbation inequalities
+  into the scalar equality `pkg.fbnf6Lhs = pkg.fbnf6Rhs`.
+
+  Expected local lemma shape:
+
+    fbnf_t1_endpoint_stationarity
+      (hT1Universal :
+        ∀ k (fd : FiniteMenuData model k), fd.multiplierBayesCone)
+      (hEndpointImage : pkg.endpointSupportedFiberImage)
+      (hTwoSided : pkg.localTwoSidedPerturbability)
+      (hAffineFibers : pkg.foliation.affineFibers) :
+        pkg.fbnf6Lhs = pkg.fbnf6Rhs
+  -/
+  sorry
 
 /--
 **FBNF-F4 (capstone).**
@@ -2387,17 +2437,43 @@ theorem «FBNF-F3-localized-stationarity-FBNF6»
 Assembling F1 (conditional B1 pasting), F2 (endpoint-supported
 projected fiber image), F3 (localised stationarity), and FBNF-7
 (global fiber dominance) — together with the foliation's affine-fiber
-chart — produces a robustly rationalizable strategy for `pkg.pd`. The
-assembled strategy is bundled into `pkg.capstoneWitness`. -/
+chart — produces a robustly rationalizable strategy for `pkg.pd`. -/
 theorem «FBNF-F4-capstone»
     {model : RobustTrustModel}
     (pkg : FBNFPackage model)
-    (_hF1 : pkg.conditionalB1Pasting)
-    (_hF2 : pkg.endpointSupportedFiberImage)
-    (_hF3 : pkg.localizedStationarityFBNF6)
-    (_hDom : pkg.globalFiberDominance) :
-    HasRobustRationalizableStrategy model pkg.pd :=
-  pkg.capstoneWitness
+    (hF1 : pkg.conditionalB1Pasting)
+    (hF2 : pkg.endpointSupportedFiberImage)
+    (hF3 : pkg.localizedStationarityFBNF6)
+    (hDom : pkg.globalFiberDominance) :
+    HasRobustRationalizableStrategy model pkg.pd := by
+  classical
+  have hFBNFGeometry :
+      pkg.conditionalB1Pasting ∧ pkg.endpointSupportedFiberImage ∧
+        pkg.localizedStationarityFBNF6 :=
+    ⟨hF1, hF2, hF3⟩
+  have hDominance : pkg.globalFiberDominance := hDom
+  let affineFibersProp : Prop := pkg.foliation.affineFibers
+  let quotientConsistentProp : Prop := pkg.foliation.quotientConsistent
+  /-
+  Honest gap: the appendix lacks the FBNF capstone-to-QAE bridge.  The missing
+  lemma constructs the adviser kernel and agent strategy from the conditional
+  B1 pasting, endpoint-supported fiber image, FBNF-6 stationarity, global
+  fiber dominance, and the recorded affine/quotient foliation predicates
+  (`affineFibersProp`, `quotientConsistentProp`), then proves the v8
+  `Definition2QAEPredicate` alignment.
+
+  Expected local lemma shape:
+
+    fbnf_capstone_to_qae
+      (hFBNFGeometry :
+        pkg.conditionalB1Pasting ∧ pkg.endpointSupportedFiberImage ∧
+          pkg.localizedStationarityFBNF6)
+      (hDominance : pkg.globalFiberDominance)
+      (hAffineFibers : pkg.foliation.affineFibers)
+      (hQuotientConsistent : pkg.foliation.quotientConsistent) :
+        HasRobustRationalizableStrategy model pkg.pd
+  -/
+  sorry
 
 /-! ## §16 Hall biconditional + WTA certificate + bridge -/
 
@@ -2609,8 +2685,10 @@ theorem «Hall-WTA-reopening-threshold-D»
 
 theorem «G4-finite-facet-polyhedral-LP-threshold»
     (inst : PolyhedralLPInstance) :
-    inst.psiNonpos ↔ inst.lpFeasible :=
-  inst.g4Witness
+    inst.psiNonpos ↔ inst.lpFeasible := by
+  change _root_.Inventory.V9.conicDualNonpositive inst.conic ↔
+    _root_.Inventory.V9.conicPrimalFeasible inst.conic
+  exact (_root_.Inventory.V9.farkas_lp_duality_conic inst.conic).symm
 
 /-! ## §18 Primitive sufficient classes P2*, P3, P4 (via Hall bridge) -/
 
@@ -2704,18 +2782,28 @@ theorem «FBNF-corollary-spherical-radial»
       wR := 1
       fiberProj := fbnf_trivial_fiberProj model prim.foliation
       fbnf6Lhs := 0
-      fbnf6Rhs := 0
-      conditionalB1PastingWitness := fbnf_trivial_pasting model.α
-      endpointSupportedFiberImageWitness :=
-        fbnf_trivial_fiberImage model prim.foliation
-      localizedStationarityFBNF6Witness := rfl
-      -- F4 capstone bridging is bundled into `prim.capstoneWitness` per
-      -- the certificate-verifier pattern: the substantive math
-      -- (radial-symmetry + antipodal routing + radial Clarke–Danskin
-      -- envelope ⟹ robust rationalizability) lives in the primitive
-      -- class and is a documented per-class proving round.
-      capstoneWitness := prim.capstoneWitness }
-  exact ⟨pkg, pkg.capstoneWitness⟩
+      fbnf6Rhs := 0 }
+  have hF1 : pkg.conditionalB1Pasting := by
+    change IsConditionalB1Pasting model.α (1 : ℝ) (1 : ℝ)
+    exact fbnf_trivial_pasting model.α
+  have hF2 : pkg.endpointSupportedFiberImage := by
+    change IsEndpointSupportedFiberImage model prim.foliation
+      (fbnf_trivial_fiberProj model prim.foliation)
+    exact fbnf_trivial_fiberImage model prim.foliation
+  have hF3 : pkg.localizedStationarityFBNF6 := by
+    change IsLocalizedStationarityFBNF6 (0 : ℝ) (0 : ℝ)
+    rfl
+  have hDom : pkg.globalFiberDominance := by
+    change prim.globalFiberDominance_from_radialSymmetry
+    /-
+    Honest gap: the spherical-radial primitive currently records
+    `globalFiberDominance_from_radialSymmetry` as a predicate label, not as a
+    proof field.  The missing bridge proves FBNF-7 global fiber dominance from
+    radial symmetry/antipodal routing before F4 is applied.
+    -/
+    sorry
+  exact ⟨pkg,
+    «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom⟩
 
 theorem «FBNF-corollary-affine-MLR-single-crossing»
     {model : RobustTrustModel}
@@ -2737,17 +2825,28 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
       wR := 1
       fiberProj := fbnf_trivial_fiberProj model prim.foliation
       fbnf6Lhs := 0
-      fbnf6Rhs := 0
-      conditionalB1PastingWitness := fbnf_trivial_pasting model.α
-      endpointSupportedFiberImageWitness :=
-        fbnf_trivial_fiberImage model prim.foliation
-      localizedStationarityFBNF6Witness := rfl
-      -- F4 capstone bridging is bundled into `prim.capstoneWitness`
-      -- per the certificate-verifier pattern: the substantive math
-      -- (MLR single-crossing + affine chart ⟹ robust rationalizability)
-      -- lives in the primitive class.
-      capstoneWitness := prim.capstoneWitness }
-  exact ⟨pkg, pkg.capstoneWitness⟩
+      fbnf6Rhs := 0 }
+  have hF1 : pkg.conditionalB1Pasting := by
+    change IsConditionalB1Pasting model.α (1 : ℝ) (1 : ℝ)
+    exact fbnf_trivial_pasting model.α
+  have hF2 : pkg.endpointSupportedFiberImage := by
+    change IsEndpointSupportedFiberImage model prim.foliation
+      (fbnf_trivial_fiberProj model prim.foliation)
+    exact fbnf_trivial_fiberImage model prim.foliation
+  have hF3 : pkg.localizedStationarityFBNF6 := by
+    change IsLocalizedStationarityFBNF6 (0 : ℝ) (0 : ℝ)
+    rfl
+  have hDom : pkg.globalFiberDominance := by
+    change prim.globalFiberDominance_from_MLR
+    /-
+    Honest gap: the affine-MLR primitive currently records
+    `globalFiberDominance_from_MLR` as a predicate label, not as a proof field.
+    The missing bridge proves FBNF-7 global fiber dominance from the MLR
+    single-crossing hypotheses before F4 is applied.
+    -/
+    sorry
+  exact ⟨pkg,
+    «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom⟩
 
 theorem «FBNF-corollary-polyhedral-scalarizable»
     {model : RobustTrustModel}
@@ -2769,17 +2868,28 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
       wR := 1
       fiberProj := fbnf_trivial_fiberProj model prim.foliation
       fbnf6Lhs := 0
-      fbnf6Rhs := 0
-      conditionalB1PastingWitness := fbnf_trivial_pasting model.α
-      endpointSupportedFiberImageWitness :=
-        fbnf_trivial_fiberImage model prim.foliation
-      localizedStationarityFBNF6Witness := rfl
-      -- F4 capstone bridging is bundled into `prim.capstoneWitness`
-      -- per the certificate-verifier pattern: the substantive math
-      -- (polyhedral scalarization + LP certificate ⟹ robust
-      -- rationalizability) lives in the primitive class.
-      capstoneWitness := prim.capstoneWitness }
-  exact ⟨pkg, pkg.capstoneWitness⟩
+      fbnf6Rhs := 0 }
+  have hF1 : pkg.conditionalB1Pasting := by
+    change IsConditionalB1Pasting model.α (1 : ℝ) (1 : ℝ)
+    exact fbnf_trivial_pasting model.α
+  have hF2 : pkg.endpointSupportedFiberImage := by
+    change IsEndpointSupportedFiberImage model prim.foliation
+      (fbnf_trivial_fiberProj model prim.foliation)
+    exact fbnf_trivial_fiberImage model prim.foliation
+  have hF3 : pkg.localizedStationarityFBNF6 := by
+    change IsLocalizedStationarityFBNF6 (0 : ℝ) (0 : ℝ)
+    rfl
+  have hDom : pkg.globalFiberDominance := by
+    change prim.globalFiberDominance_or_LP_certificate
+    /-
+    Honest gap: the polyhedral-scalarizable primitive currently records
+    `globalFiberDominance_or_LP_certificate` as a predicate label, not as a
+    proof field.  The missing bridge proves FBNF-7 global fiber dominance from
+    scalarized faces / the finite LP certificate before F4 is applied.
+    -/
+    sorry
+  exact ⟨pkg,
+    «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom⟩
 
 /-! ## §20 Section G v9.2 sharpenings -/
 
