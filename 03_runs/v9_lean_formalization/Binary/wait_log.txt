@@ -1,0 +1,2 @@
+[poll 1 @ 0min] stop=true assistants=0 lastLen=0
+[poll 2 @ 2min] stop=true assistants=0 lastLen=0
