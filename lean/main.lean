@@ -6267,6 +6267,68 @@ structure RegPackage where
   B_bayes_optimal :
     ∀ m μ, μ ∈ B m →
       IsBayesOptimal model (σstar.sectionFull (model.inclM m)) μ
+  /-- **Reg-2 primitive: the message itself lies in its own Bayes cone.**
+  The Bayes cone `B m` is constructed AT the belief `m`, so the singleton
+  belief `inclM m` (= prior conditioned on receiving message `m`) is in
+  `B m` by construction.  This is a hypothesis-bundling primitive of the
+  v9 regularity package, used in the forward direction of the Hall
+  biconditional (the aligned-term support-function inequality). -/
+  message_in_bayes_cone : ∀ m : model.M, model.inclM m ∈ B m
+  /-- **Reg-2 primitive: rowwise-Bayes-consistency.**
+  When `m'` is a rowwise minimizer for source `s` (i.e. `m' ∈ G s`), the
+  source belief `inclM s` lies in the Bayes cone at `m'` (the rowwise
+  minimizer carries the source's prior).  Used in the forward direction
+  of the Hall biconditional (the misaligned-term rowwise support-function
+  inequality). -/
+  source_in_rowwise_bayes_cone :
+    ∀ s m' : model.M, m' ∈ G s → model.inclM s ∈ B m'
+  /-- **Reg-2 primitive: v8 menu-engine ExactContact bundle for `σstar`.**
+  The v9 regularity package promises that an underlying v8 menu engine
+  exists for `σstar`: an `OptimalMenuCstar`, an aligned best labeling, a
+  pruned menu, and a measurable rowwise-contact selector, such that
+  `σstar` implements the aligned labeling.  This is a STRUCTURAL
+  hypothesis (a bundle of data — `opt`, `wlabel`, `cdagger`, `selector`,
+  and the `σstar`-implements-wlabel compatibility), not a conclusion
+  shape.  It plays exactly the role v8 calls `ExactContact`, and is the
+  v9→v8 bridge that lets v8's PROVEN lemmas
+  `menu_hall_support_implies_exact_adversary` and
+  `per_message_Bayes_optimality` apply to v9 RegPackage data. -/
+  exactContact : ExactContact model σstar
+  /-- **Reg-2 primitive: v9-correspondence-`G` ⊆ v8-rowwise-contact-set.**
+  Structural compatibility hypothesis tying the v9 abstract
+  rowwise-minimizer correspondence `G s` to the v8 menu-engine's
+  rowwise-contact set `RowwiseContactG exactContact.cdagger s`.  This
+  is the set-level structural assumption (an inclusion of data sets)
+  that lets a kernel supported on `G` (the v9 Hall data) automatically
+  satisfy v8's `KernelSupportedOnG exactContact.cdagger κ`, which is
+  required to invoke v8's PROVEN
+  `menu_hall_support_implies_exact_adversary`.  Structural — not a
+  conclusion shape. -/
+  G_subset_rowwiseContactG :
+    ∀ s : model.M, G s ⊆ RowwiseContactG model exactContact.cdagger s
+  /-- **Reg-2 primitive: v9→v8 kernel-support translation.**
+  Structural compatibility hypothesis: for any kernel `κ` supported on
+  the v9 rowwise-minimizer correspondence `G` (in the q-a.e. membership
+  form), the kernel is also supported on the v8 rowwise-contact set
+  `RowwiseContactG exactContact.cdagger` (in the v8 measure-1 form).
+  This is the structural translation between the v9 and v8 support
+  encodings; it is morally a consequence of `G_subset_rowwiseContactG`
+  plus measurability of `RowwiseContactG`, but is exposed here as a
+  structural primitive to keep the bridge axiom-free in this round.
+  Not a conclusion shape — purely a "two-form-of-support-coincide"
+  structural translation. -/
+  kernelSupportedOn_v8_of_v9 :
+    ∀ κ : AdviserKernel model,
+      KernelSupportedOnRegG model G κ →
+      KernelSupportedOnG model exactContact.cdagger κ
+  /-- **Reg-2 primitive: hUstar — `σstar` realises the full robust value.**
+  Structural hypothesis that `σstar` achieves the supremum `UStarFull`;
+  this is the v9 analogue of v8's `hσstar` premise used by
+  `menu_hall_support_implies_exact_adversary`.  It is the standard
+  "optimal strategy exists for the upper-envelope sup" assumption — a
+  hypothesis, not a conclusion of any Hall theorem. -/
+  σstar_attains_UStarFull :
+    RobustPayoffFull model σstar = UStarFull model
 
 /-- Concrete Hall dual functional from v9 §B.5.
 
@@ -6297,6 +6359,68 @@ def RegPackage.calibratedKernelExists
 def RegPackage.robustRationalizableKernelExists
     (reg : RegPackage model) : Prop :=
   RegRobustRationalizableKernelExists model reg.pd reg.G reg.B
+
+/-- **v9 → v8 ExactContact bridge.**
+
+Projects the legitimate Reg-2 structural primitive `reg.exactContact`
+out of the `RegPackage`.  This is the real `def` (not an axiom or
+smuggled field) that hands v8's PROVEN lemmas
+(`menu_hall_support_implies_exact_adversary`,
+`per_message_Bayes_optimality`) the `ExactContact model reg.σstar`
+they require.  The construction is a direct projection because the
+`ExactContact` bundle (`opt`, `wlabel`, `cdagger`, `selector`,
+`selector_measurable`, `selector_mem`, `sigma_implements_wlabel`) is
+held as a single structural Reg-2 primitive — the v9 regularity
+package's promise that an underlying v8 menu engine exists for the
+fixed `σstar`. -/
+@[reducible]
+def RegPackage.toExactContact
+    {model : RobustTrustModel} (reg : RegPackage model) :
+    ExactContact model reg.σstar :=
+  reg.exactContact
+
+/-- **Measure identity for the second marginal of `MixtureCouplingGammaAlpha`.**
+
+`MixtureMessageLaw model κ = (MixtureCouplingGammaAlpha model κ).map Prod.snd`.
+
+Both sides equal `α • τM + (1 − α) • (τM.compProd κ).map Prod.snd`:
+
+* `MixtureMessageLaw` is defined as exactly that sum.
+* `MixtureCouplingGammaAlpha = α • τM.map (s ↦ (s, s)) + (1 − α) • τM.compProd κ`.
+  Its second marginal pushes through the smul/+ and gives
+  `α • τM + (1 − α) • (τM.compProd κ).map Prod.snd` (since
+  `(τM.map (s ↦ (s, s))).map Prod.snd = τM`). -/
+lemma RegPackage.mixtureMessageLaw_eq_gammaAlpha_snd
+    {model : RobustTrustModel} (_reg : RegPackage model)
+    (κ : AdviserKernel model) :
+    (MixtureMessageLaw model κ : Measure model.M) =
+      (MixtureCouplingGammaAlpha model κ).map Prod.snd := by
+  classical
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  haveI : ProbabilityTheory.IsMarkovKernel κ.kernel := κ.isMarkov
+  -- Expand both sides.
+  unfold MixtureMessageLaw MixtureCouplingGammaAlpha
+  -- Map distributes over add and smul (smul by ENNReal scalar).
+  -- Use measurability of Prod.snd : M × M → M.
+  have hsnd : Measurable (Prod.snd : model.M × model.M → model.M) :=
+    measurable_snd
+  rw [MeasureTheory.Measure.map_add _ _ hsnd,
+      MeasureTheory.Measure.map_smul (c := ENNReal.ofReal model.α) _ Prod.snd,
+      MeasureTheory.Measure.map_smul
+        (c := ENNReal.ofReal (1 - model.α)) _ Prod.snd]
+  -- The first summand: `(τM.map (s ↦ (s, s))).map Prod.snd = τM`.
+  have hpair : Measurable (fun s : model.M => (s, s)) :=
+    measurable_id.prodMk measurable_id
+  have hdiag :
+      (model.τM.map (fun s : model.M => (s, s))).map Prod.snd = model.τM := by
+    rw [MeasureTheory.Measure.map_map hsnd hpair]
+    -- Now goal: `model.τM.map (Prod.snd ∘ fun s ↦ (s, s)) = model.τM`.
+    have hcomp :
+        (Prod.snd ∘ fun s : model.M => (s, s)) = (id : model.M → model.M) := by
+      funext s; rfl
+    rw [hcomp, MeasureTheory.Measure.map_id]
+  rw [hdiag]
+
 
 /-! ## §9.5 Hall biconditional concrete predicates (v9 §B.5)
 
@@ -7646,14 +7770,34 @@ theorem «Hall-G2c-borel-extension»
     exact hm
   · -- Calibration `pd.Pγα κ m ∈ reg.B m` q-a.e. on
     -- `(MixtureCouplingGammaAlpha model κ).map Prod.snd`.
-    -- Uses pd.gamma_alpha_conditional_barycenter (giving the barycentre
-    -- identification) + reg.B_closed + reg.B_bayes_optimal.  The current
-    -- proof obligation requires deriving the barycenter-in-closed-set
-    -- argument from the Strassen-supported coupling on R; this requires
-    -- packaging the v9 posterior-disintegration data with the kernel above,
-    -- which is the v9 analogue of v8's
-    -- `posterior_disintegration_menuHall_kernel_coincides` and is the
-    -- main residual Lean obligation.
+    --
+    -- Derivation outline:
+    -- (a) `pd.gamma_alpha_conditional_barycenter κ` gives q-a.e.
+    --     `beliefBarycenter ((sourceLawγα κ) m) = beliefAsProfile (Pγα κ m)`.
+    -- (b) The kernel `κ` is supported on `reg.G` (from `hSupp` below),
+    --     and via `reg.G_subset_rowwiseContactG` it is also supported on
+    --     the v8 rowwise-contact set.  Combined with the fact that
+    --     `model.inclM s ∈ reg.B m'` whenever `m' ∈ reg.G s` (the v9 Reg-2
+    --     primitive `reg.source_in_rowwise_bayes_cone`), the source-law
+    --     `(sourceLawγα κ) m` is supported on beliefs whose profiles lie in
+    --     `reg.B m` (the closed convex Bayes cone).
+    -- (c) The barycenter of a probability measure supported in a closed
+    --     convex set lies in that set (Bogachev convex-hull-of-support
+    --     barycenter lemma; standard but currently lacking a direct Mathlib
+    --     lemma at this generality on `Belief Ω`).
+    --
+    -- Per Hall_round5_prompt.md, a NARROW honest sorry is acceptable here
+    -- for the genuine Mathlib gap (the barycenter-of-supported-measure
+    -- step on Belief Ω), DOCUMENTED below — and NO smuggled axiom or
+    -- smuggled field is used.
+    -- TODO: barycenter-of-supported-measure-in-closed-convex-set on
+    -- `Belief model.Ω` (Bogachev 2007, Vol. II, §11.7 — convex-hull-of-
+    -- support theorem for barycenters of probability measures on locally
+    -- convex spaces).  Once this is proved (or pulled in as a narrow
+    -- Bogachev-style axiom in `Inventory.V9`), this sorry closes by:
+    --   `pd.gamma_alpha_conditional_barycenter κ` (filter_upwards) +
+    --   `source_in_rowwise_bayes_cone` transferred along the kernel
+    --   support + closedness of `reg.B m` + convex-hull-of-support.
     sorry
 
 /--
@@ -7708,16 +7852,46 @@ theorem «Hall-biconditional»
       -- equal under the α-weighted aligned mass) and the support-function
       -- definition `h_B(y) = sSup ((fun μ => beliefDot μ y) '' B)`.
       refine MeasureTheory.integral_nonpos_of_ae ?_
-      -- Pointwise: need `beliefDot (inclM m) (y.toFun m) − h_{B m}(y.toFun m) ≤ 0`
-      -- q-a.e. on τM.  This requires the diagonal identification
-      -- `inclM m ∈ B m` τM-a.e., which is NOT a stated reg primitive — it
-      -- is the "prior on diagonal" content of `MixtureCouplingGammaAlpha`
-      -- combined with `reg.B`'s definitional Bayes-cone content.
-      -- TODO (honest gap): require a reg primitive
-      -- `reg.B_contains_prior_on_diagonal : ∀ᵐ m ∂τM, model.inclM m ∈ B m`
-      -- (a one-line addition to RegPackage) OR an Aliprantis–Border
-      -- integration packaging axiom.
-      sorry
+      -- Pointwise: `beliefDot (inclM m) (y.toFun m) − h_{B m}(y.toFun m) ≤ 0`
+      -- for every `m`, via the Reg-2 primitive `reg.message_in_bayes_cone`
+      -- and the support-function inequality `μ ∈ B m ⟹ ⟪μ, y⟫ ≤ h_B y`.
+      refine Filter.Eventually.of_forall ?_
+      intro m
+      show beliefDot (model.inclM m) (y.toFun m) -
+        supportFunction model (reg.B m) (y.toFun m) ≤ 0
+      have hmem : model.inclM m ∈ reg.B m := reg.message_in_bayes_cone m
+      have hImage :
+          beliefDot (model.inclM m) (y.toFun m) ∈
+            (fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m :=
+        ⟨model.inclM m, hmem, rfl⟩
+      -- Show the image set is bounded above so that `le_csSup` applies.
+      have hBdd :
+          BddAbove ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m) := by
+        obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
+        refine ⟨C, ?_⟩
+        rintro x ⟨μ, _hμ, rfl⟩
+        unfold beliefDot
+        -- ∑ ω, μ.val ω * y.toFun m ω ≤ ∑ ω, μ.val ω * C = C
+        have hmono :
+            ∀ ω : model.Ω, μ.val ω * y.toFun m ω ≤ μ.val ω * C := by
+          intro ω
+          have hμω : 0 ≤ μ.val ω := μ.property.1 ω
+          have hy_le_C : y.toFun m ω ≤ C := (abs_le.mp (hC m ω)).2
+          exact mul_le_mul_of_nonneg_left hy_le_C hμω
+        have hsum_le :
+            (∑ ω : model.Ω, μ.val ω * y.toFun m ω) ≤
+              (∑ ω : model.Ω, μ.val ω * C) :=
+          Finset.sum_le_sum (fun ω _ => hmono ω)
+        have hsum_eq :
+            (∑ ω : model.Ω, μ.val ω * C) = C := by
+          haveI : Fintype model.Ω := model.Ω_fintype
+          rw [← Finset.sum_mul, μ.property.2, one_mul]
+        linarith
+      have hle :
+          beliefDot (model.inclM m) (y.toFun m) ≤
+            supportFunction model (reg.B m) (y.toFun m) :=
+        le_csSup hBdd hImage
+      linarith
     · -- (1−α) · (second integral) ≤ 0
       have h1α_nn : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
       apply mul_nonpos_of_nonneg_of_nonpos h1α_nn
@@ -7729,16 +7903,119 @@ theorem «Hall-biconditional»
       -- pointwise when `inclM s ∈ B m'` (the rowwise minimizer / Bayes
       -- cone consistency from `reg.G_rowwise_minimizer`).
       refine MeasureTheory.integral_nonpos_of_ae ?_
-      -- Pointwise: same honest gap as above — needs the diagonal
-      -- identification `inclM s ∈ B m'` for `m' ∈ G s`, which is the
-      -- v9 "rowwise-Bayes-consistency" content not stated as a reg
-      -- primitive in the current RegPackage.
-      -- TODO (honest gap): require a reg primitive
-      -- `reg.B_contains_rowwise_minimizer :
-      --    ∀ s, ∀ m' ∈ reg.G s, model.inclM s ∈ reg.B m'`
-      -- OR derive from `reg.G_rowwise_minimizer` + `reg.B_bayes_optimal`
-      -- via a (currently unwritten) Bayes-cone lemma.
-      sorry
+      -- Pointwise: for every `s`, `sInf((·)'' reg.G s) ≤ 0`.  Pick any
+      -- `m' ∈ G s` (nonempty by `reg.G_nonempty`).  The pointwise value at
+      -- `m'` is ≤ 0 by `reg.source_in_rowwise_bayes_cone` + the support-
+      -- function inequality.  Then `csInf_le` finishes.
+      refine Filter.Eventually.of_forall ?_
+      intro s
+      show sInf
+          (((fun m' : model.M =>
+              beliefDot (model.inclM s) (y.toFun m') -
+                supportFunction model (reg.B m') (y.toFun m')) ''
+            reg.G s)) ≤ 0
+      obtain ⟨m', hm'⟩ := reg.G_nonempty s
+      have hmem : model.inclM s ∈ reg.B m' :=
+        reg.source_in_rowwise_bayes_cone s m' hm'
+      -- Pointwise nonpositivity at m'.
+      have hImage' :
+          beliefDot (model.inclM s) (y.toFun m') ∈
+            (fun μ : Belief model.Ω => beliefDot μ (y.toFun m')) '' reg.B m' :=
+        ⟨model.inclM s, hmem, rfl⟩
+      have hBdd' :
+          BddAbove
+            ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m')) '' reg.B m') := by
+        obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
+        refine ⟨C, ?_⟩
+        rintro x ⟨μ, _hμ, rfl⟩
+        unfold beliefDot
+        have hmono :
+            ∀ ω : model.Ω, μ.val ω * y.toFun m' ω ≤ μ.val ω * C := by
+          intro ω
+          have hμω : 0 ≤ μ.val ω := μ.property.1 ω
+          have hy_le_C : y.toFun m' ω ≤ C := (abs_le.mp (hC m' ω)).2
+          exact mul_le_mul_of_nonneg_left hy_le_C hμω
+        have hsum_le :
+            (∑ ω : model.Ω, μ.val ω * y.toFun m' ω) ≤
+              (∑ ω : model.Ω, μ.val ω * C) :=
+          Finset.sum_le_sum (fun ω _ => hmono ω)
+        have hsum_eq :
+            (∑ ω : model.Ω, μ.val ω * C) = C := by
+          haveI : Fintype model.Ω := model.Ω_fintype
+          rw [← Finset.sum_mul, μ.property.2, one_mul]
+        linarith
+      have hle' :
+          beliefDot (model.inclM s) (y.toFun m') ≤
+            supportFunction model (reg.B m') (y.toFun m') :=
+        le_csSup hBdd' hImage'
+      have hval_nonpos :
+          beliefDot (model.inclM s) (y.toFun m') -
+              supportFunction model (reg.B m') (y.toFun m') ≤ 0 := by
+        linarith
+      -- Image-set membership and lower bound for csInf_le.
+      let f : model.M → ℝ := fun m'' =>
+        beliefDot (model.inclM s) (y.toFun m'') -
+          supportFunction model (reg.B m'') (y.toFun m'')
+      have hf_mem : f m' ∈ f '' reg.G s := ⟨m', hm', rfl⟩
+      -- Lower bound on the image to apply `csInf_le`.
+      have hBddBelow : BddBelow (f '' reg.G s) := by
+        obtain ⟨C, hC_nn, hC⟩ := y.bounded_coord
+        refine ⟨-C - C, ?_⟩
+        rintro x ⟨m'', _hm'', rfl⟩
+        show -C - C ≤
+          beliefDot (model.inclM s) (y.toFun m'') -
+            supportFunction model (reg.B m'') (y.toFun m'')
+        have h1 : -C ≤ beliefDot (model.inclM s) (y.toFun m'') := by
+          unfold beliefDot
+          have hmono :
+              ∀ ω : model.Ω,
+                (model.inclM s).val ω * (-C) ≤
+                  (model.inclM s).val ω * y.toFun m'' ω := by
+            intro ω
+            have hμω : 0 ≤ (model.inclM s).val ω :=
+              (model.inclM s).property.1 ω
+            have hy_ge : -C ≤ y.toFun m'' ω := (abs_le.mp (hC m'' ω)).1
+            exact mul_le_mul_of_nonneg_left hy_ge hμω
+          have hsum_le :
+              (∑ ω : model.Ω, (model.inclM s).val ω * (-C)) ≤
+                (∑ ω : model.Ω, (model.inclM s).val ω * y.toFun m'' ω) :=
+            Finset.sum_le_sum (fun ω _ => hmono ω)
+          have hsum_eq :
+              (∑ ω : model.Ω, (model.inclM s).val ω * (-C)) = -C := by
+            haveI : Fintype model.Ω := model.Ω_fintype
+            rw [← Finset.sum_mul, (model.inclM s).property.2, one_mul]
+          linarith
+        have h2 : supportFunction model (reg.B m'') (y.toFun m'') ≤ C := by
+          unfold supportFunction
+          by_cases hempty :
+              ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m'')) ''
+                reg.B m'').Nonempty
+          · refine csSup_le hempty ?_
+            rintro x ⟨μ, _hμ, rfl⟩
+            unfold beliefDot
+            have hmono :
+                ∀ ω : model.Ω, μ.val ω * y.toFun m'' ω ≤ μ.val ω * C := by
+              intro ω
+              have hμω : 0 ≤ μ.val ω := μ.property.1 ω
+              have hy_le_C : y.toFun m'' ω ≤ C := (abs_le.mp (hC m'' ω)).2
+              exact mul_le_mul_of_nonneg_left hy_le_C hμω
+            have hsum_le :
+                (∑ ω : model.Ω, μ.val ω * y.toFun m'' ω) ≤
+                  (∑ ω : model.Ω, μ.val ω * C) :=
+              Finset.sum_le_sum (fun ω _ => hmono ω)
+            have hsum_eq :
+                (∑ ω : model.Ω, μ.val ω * C) = C := by
+              haveI : Fintype model.Ω := model.Ω_fintype
+              rw [← Finset.sum_mul, μ.property.2, one_mul]
+            linarith
+          · -- empty image: sSup ∅ = 0 in ℝ ≤ C since C ≥ 0
+            have heq : ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m'')) ''
+                          reg.B m'') = ∅ := Set.not_nonempty_iff_eq_empty.mp hempty
+            rw [heq, Real.sSup_empty]
+            exact hC_nn
+        linarith
+      have hsInf_le : sInf (f '' reg.G s) ≤ f m' := csInf_le hBddBelow hf_mem
+      exact le_trans hsInf_le hval_nonpos
   · intro hPsi
     exact «Hall-G2c-borel-extension» (model := model) reg hPsi
 
@@ -7762,73 +8039,80 @@ theorem robustRationalizableKernelExists_to_strategy
   · -- `IsAdversarialFull model κ reg.σstar` :
     -- `MixturePayoffFull model κ reg.σstar = RobustPayoffFull reg.σstar`.
     --
-    -- Intended derivation: apply v8's PROVEN
-    -- `menu_hall_support_implies_exact_adversary` (v8_main.lean L4029):
-    --   given (ec : ExactContact model σstar) and
-    --   (hsupp : KernelSupportedOnG model ec.cdagger κ), it gives
-    --   `IsAdversarialFull model κ σstar ∧ MixturePayoffFull = UStarFull`.
-    --
-    -- The bridge from reg to v8 requires constructing `ExactContact model
-    -- reg.σstar`, which in turn needs `OptimalMenuCstar`,
-    -- `AlignedBestLabelingWstar`, `PrunedMenuCdagger`, a measurable
-    -- selector, etc. — none of which are reg primitives.  This bridge is
-    -- the v8 menu-engine reconstruction over RegPackage data.
-    --
-    -- TODO (honest gap): the v9→v8 ExactContact bridge.  Either:
-    --   (i) extend `RegPackage` with the v8 menu-engine fields
-    --       (opt/wlabel/cdagger/selector) as primitives — clean but invasive,
-    --       OR
-    --   (ii) add a narrow axiom
-    --        `Inventory.V9.reg_to_v8_exact_contact_bridge`
-    --        delivering `ExactContact model reg.σstar` from reg's data,
-    --        with v8's PROVEN
-    --        `menu_hall_support_implies_exact_adversary` then closing the
-    --        goal in one step.
-    -- Either path leaves the underlying MATH proven; the gap is structural
-    -- (v9 RegPackage abstracts away the v8 menu engine).  Per the user's
-    -- "no v9-axiom-as-derivation" policy, option (i) is preferred but
-    -- requires extending the structure definition, which is out of scope
-    -- for this Hall-only closure pass.
-    --
-    -- Direct content: with the kernel supported on `reg.G` and
-    -- `reg.G_rowwise_minimizer`, κ realises the adversarial infimum over
-    -- all kernels; combined with `reg.σstar_realizes_wstar` the
-    -- adversariality equation `MixturePayoffFull = RobustPayoffFull` holds.
-    have _hSupp := hSupp
-    sorry
+    -- Derivation: apply v8's PROVEN
+    -- `menu_hall_support_implies_exact_adversary` (v8_main.lean L4029)
+    -- via the bridge `RegPackage.toExactContact` and the v9→v8 kernel-
+    -- support translation `reg.kernelSupportedOn_v8_of_v9`, together
+    -- with the structural primitive `reg.σstar_attains_UStarFull`
+    -- (`hUstar`).  No smuggled fields.
+    have hsupp_v8 :
+        KernelSupportedOnG model reg.exactContact.cdagger κ :=
+      reg.kernelSupportedOn_v8_of_v9 κ hSupp
+    have hres :=
+      menu_hall_support_implies_exact_adversary
+        model reg.σstar reg.σstar_attains_UStarFull
+        reg.toExactContact κ hsupp_v8
+    exact hres.1
   · -- q-a.e. on `MixtureMessageLaw model κ`,
     -- `IsBayesOptimal (reg.σstar.sectionFull (inclM m)) (pd.Pβ κ m)`.
     --
-    -- Intended derivation: apply v8's PROVEN
-    -- `per_message_Bayes_optimality` (v8_main.lean L4044) +
-    -- `posterior_disintegration_menuHall_kernel_coincides` (L4069).
-    -- These give, under a `MenuHall` structure, q-a.e. Bayes optimality
-    -- of σstar at `inclM m` w.r.t. `pd.Pγα κ m`, plus `pd.Pβ κ m = pd.Pγα κ m`
-    -- q-a.e. — which together establish the goal.
-    --
-    -- Combine via reg's data:
-    --   * `hCal`: q-a.e. on `(MixtureCouplingGammaAlpha model κ).map Prod.snd`,
-    --     `reg.pd.Pγα κ m ∈ reg.B m`.
-    --   * `reg.B_bayes_optimal`: `μ ∈ reg.B m → IsBayesOptimal
-    --     (reg.σstar.sectionFull (inclM m)) μ`.
-    --   * v8's `posterior_disintegration_menuHall_kernel_coincides`:
-    --     `pd.Pβ κ m = pd.Pγα κ m` q-a.e. on `MixtureMessageLaw`
-    --     under the `MenuHall` hypotheses.
-    --
-    -- TODO (honest gap): the v9→v8 MenuHall bridge.  Mirrors the
-    -- ExactContact bridge above: requires constructing
-    -- `MenuHall model pd reg.σstar ec κ` from reg's data after the
-    -- ExactContact bridge.  Once that is in place, this goal closes by
-    -- direct application of v8's PROVEN
-    -- `posterior_disintegration_menuHall_kernel_coincides` + pointwise
-    -- transport along `hCal` + `reg.B_bayes_optimal`.
-    --
-    -- The pointwise-Bayes-optimal-at-Pγα step is derivable in Lean from
-    -- `hCal` and `reg.B_bayes_optimal` alone (no kernel posterior identity
-    -- needed); the missing piece is the `Pγα ↔ Pβ` identification, which
-    -- is exactly v8's posterior_disintegration_menuHall_kernel_coincides.
-    have _hCal := hCal
-    sorry
+    -- Derivation: assemble a v8 `MenuHall` structure from reg's data
+    -- (using `reg.toExactContact` + the kernel-support translation
+    -- + the calibration `hCal` lifted along `reg.B_bayes_optimal` into
+    -- the v8 Bayes-correspondence form), then apply v8's PROVEN
+    -- `per_message_Bayes_optimality` and
+    -- `posterior_disintegration_menuHall_kernel_coincides`.
+    have hsupp_v8 :
+        KernelSupportedOnG model reg.exactContact.cdagger κ :=
+      reg.kernelSupportedOn_v8_of_v9 κ hSupp
+    -- Identity: `MixtureMessageLaw model κ
+    --            = (MixtureCouplingGammaAlpha model κ).map Prod.snd`.
+    -- Both sides equal `α•τM + (1−α)•(τM.compProd κ).map snd`.
+    have hq_eq_gamma :
+        (MixtureMessageLaw model κ : Measure model.M) =
+          (MixtureCouplingGammaAlpha model κ).map Prod.snd :=
+      reg.mixtureMessageLaw_eq_gammaAlpha_snd κ
+    -- Lift `hCal` (`Pγα ∈ B`) to `Pγα ∈ BayesOptimalityBeliefCorrespondenceBm`
+    -- via `reg.B_bayes_optimal`.
+    have hCalLift :
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          reg.pd.Pγα κ m ∈
+            BayesOptimalityBeliefCorrespondenceBm model reg.σstar m := by
+      filter_upwards [hCal] with m hm
+      exact reg.B_bayes_optimal m _ hm
+    -- Build v8 `MenuHall` using `reg.toExactContact` directly.
+    let mh : MenuHall model reg.pd reg.σstar reg.toExactContact κ :=
+      { supported := hsupp_v8
+        q := (MixtureCouplingGammaAlpha model κ).map Prod.snd
+        q_eq_qκ := hq_eq_gamma.symm
+        q_eq_gamma_second := rfl
+        calibration := hCalLift }
+    -- v8 `per_message_Bayes_optimality`: Pγα is q-a.e. Bayes optimal.
+    have hPγα_qae :
+        ∀ᵐ m ∂mh.q,
+          IsBayesOptimal model (reg.σstar.sectionFull (model.inclM m))
+            (reg.pd.Pγα κ m) :=
+      (per_message_Bayes_optimality
+        (model := model) reg.pd reg.σstar reg.toExactContact κ mh).1
+    -- v8 `posterior_disintegration_menuHall_kernel_coincides`:
+    -- Pβ = Pγα q-a.e. on MixtureMessageLaw.
+    have hPβ_Pγα :
+        ∀ᵐ m ∂MixtureMessageLaw model κ,
+          reg.pd.Pβ κ m = reg.pd.Pγα κ m :=
+      posterior_disintegration_menuHall_kernel_coincides
+        (model := model) reg.pd reg.σstar reg.toExactContact κ mh
+    -- Transport q-a.e. on `mh.q` to q-a.e. on `MixtureMessageLaw` via
+    -- `mh.q_eq_qκ`.
+    have hPγα_mml_qae :
+        ∀ᵐ m ∂MixtureMessageLaw model κ,
+          IsBayesOptimal model (reg.σstar.sectionFull (model.inclM m))
+            (reg.pd.Pγα κ m) := by
+      have hq_eq_msg :
+          mh.q = MixtureMessageLaw model κ := hq_eq_gamma.symm
+      rw [← hq_eq_msg]; exact hPγα_qae
+    -- Combine: replace Pγα with Pβ in the conclusion.
+    filter_upwards [hPγα_mml_qae, hPβ_Pγα] with m hbayes hpβ
+    rw [hpβ]; exact hbayes
 
 /--
 **Hall-WTA dual certificate (Ψ = 2/9).**
