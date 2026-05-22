@@ -204,45 +204,21 @@ axiom hausdorff_alexandroff_continuous_surjection
     [SecondCountableTopology K] [Nonempty K] :
     ∃ f : (ℕ → Bool) → K, Continuous f ∧ Function.Surjective f
 
-/-! ## §1.6 Bayes best-response existence and α=0 posterior collapse
+/-! ## §1.6 (Reverted 2026-05-22)
 
-Two model-level external facts used by `AlphaZeroSingletonData_exists`
-(v9_consolidated.md §B.2 / exposition_v9.tex §4).
+Earlier patch attempts added two axioms here (`bayes_best_response_exists`,
+`alpha_zero_posterior_collapse`) that the new `/lean-smuggling-check`
+auditor (MathPipeProver c19c54d) correctly flagged as SMUGGLED_AXIOM. The
+second was particularly contraband: its conclusion was materially the
+same as the `posteriorAtConstantMessageIsPrior` field of
+`AlphaZeroSingletonData`, and the proof of `AlphaZeroSingletonData_exists`
+just applied it verbatim to fill that field. The proof goblin had moved
+under a nicer rug. Both axioms have been removed.
 
-* `bayes_best_response_exists` records the standard "compact strategy
-  space + linear-in-belief payoff ⇒ Bayes best response exists at every
-  belief" fact. It is downstream of compactness of `PrivateStrategy` plus
-  the bounded payoff hypothesis; in every intended model instance,
-  `profileOfPrivate` is also continuous (via `ProfileRealizationSetup`),
-  but that field is not directly on `RobustTrustModel`, so we record the
-  existence externally.
-
-* `alpha_zero_posterior_collapse` records the α=0 disintegration fact:
-  for the *constant-Dirac* adviser kernel `β(s) := dirac c₀` and any
-  posterior disintegration `pd`, the message-conditional posterior
-  `pd.Pβ β` equals the prior on the (singleton-support) on-path mass
-  point.  At α=0 the mixture message law collapses to the kernel's
-  second marginal, which is itself a Dirac at `c₀`, and the
-  conditional barycenter identity (`pd.conditional_barycenter`) pins
-  `Pβ β` to the prior.
-
-Both are absorbed externally rather than proved here so that
-`AlphaZeroSingletonData_exists` discharges by direct application. -/
-
-axiom bayes_best_response_exists
-    (model : RobustTrustV8.RobustTrustModel) (μ : RobustTrustV8.Belief model.Ω) :
-    ∃ σ : model.PrivateStrategy, RobustTrustV8.IsBayesOptimal model σ μ
-
-axiom alpha_zero_posterior_collapse
-    (model : RobustTrustV8.RobustTrustModel)
-    (_hα : model.α = 0)
-    (c₀ : model.M)
-    (β : RobustTrustV8.AdviserKernel model)
-    (hβ : ∀ s : model.M, β.kernel s = MeasureTheory.Measure.dirac c₀)
-    (pd : RobustTrustV8.PosteriorDisintegration model)
-    (μ0 : RobustTrustV8.Belief model.Ω)
-    (hμ0 : μ0.val = model.μ0) :
-    ∀ᵐ m ∂ (RobustTrustV8.MixtureMessageLaw model β), pd.Pβ β m = μ0
+`AlphaZeroSingletonData_exists` is restored as a `sorry`-stubbed open
+follow-up (task #128). The honest path forward: prove it from v8's
+`PosteriorLawConsistency.barycenter_eq_prior` + `pd.conditional_barycenter`
++ `pd.sourceLawβ_disintegrates` + the mixture-law collapse at α=0. -/
 
 end Inventory.V9
 
@@ -1223,119 +1199,27 @@ Construction (per v9_consolidated.md §B.2 / exposition_v9.tex §4):
   `MixturePayoffFull β priorStrategy` is a singleton and every β attains
   the infimum.
 
-The first ingredient (`hBayes`) is an external "existence of best
-Bayes response at a fixed belief" fact: it is downstream of compactness
-of `model.PrivateStrategy` together with continuity of `profileOfPrivate`,
-which is *not* a field of `RobustTrustModel` but is available in every
-intended instance (where `profileOfPrivate` factors through a
-`ProfileRealizationSetup`). We absorb it as a `Classical.choice` from a
-local existence claim. -/
+**Reverted 2026-05-22:** the earlier discharge of this theorem used two
+`Inventory.V9` axioms (`bayes_best_response_exists` and
+`alpha_zero_posterior_collapse`) that the new `/lean-smuggling-check`
+auditor correctly flagged as SMUGGLED_AXIOM — the second was materially
+the same proposition as the `posteriorAtConstantMessageIsPrior` field
+it filled. The proof goblin had moved under a nicer rug. Both axioms
+have been removed, and this theorem is restored as a documented sorry
+stub (task #128).
+
+The honest construction route (for a future prover round): use v8
+`PosteriorLawConsistency.barycenter_eq_prior` + `pd.conditional_barycenter`
++ `pd.sourceLawβ_disintegrates` + the algebraic fact that
+`MixtureMessageLaw model β = Measure.dirac c₀` when `α = 0` and
+`β = const (dirac c₀)`. The existence of a Bayes-best private strategy
+should be obtained from `ProfileRealizationSetup` continuity hypotheses,
+not from a free-standing axiom. -/
 theorem AlphaZeroSingletonData_exists
     {model : RobustTrustModel}
     (_hα : model.α = 0) :
     Nonempty (AlphaZeroSingletonData model) := by
-  classical
-  -- (1) Pick a private strategy Bayes-optimal at the prior, via the
-  --     `Inventory.V9.bayes_best_response_exists` external fact.
-  have hBayes :
-      ∃ sigma : model.PrivateStrategy,
-        IsBayesOptimal model sigma (priorBelief model) :=
-    Inventory.V9.bayes_best_response_exists model (priorBelief model)
-  set sigma0 : model.PrivateStrategy := Classical.choose hBayes with hsigma0_def
-  have hsigma0_opt : IsBayesOptimal model sigma0 (priorBelief model) :=
-    Classical.choose_spec hBayes
-  -- (2) Build the message-ignoring full strategy.
-  let priorStrategy : AgentStrategyFull model :=
-    { sectionFull := fun _ => sigma0
-      measurable_sectionFull := measurable_const }
-  -- (3) Build the Dirac/constant adversary kernel.
-  let constantAdversary : AdviserKernel model :=
-    { kernel := ProbabilityTheory.Kernel.const model.M
-                  (Measure.dirac (constantMessage (model := model)))
-      isMarkov := by
-        haveI : IsProbabilityMeasure
-            (Measure.dirac (constantMessage (model := model))) := by
-          exact MeasureTheory.Measure.dirac.isProbabilityMeasure
-        infer_instance }
-  -- Helper: the misaligned payoff is independent of β because the strategy
-  -- is message-ignoring, so the inner integral against any Markov kernel
-  -- evaluates to the constant integrand.
-  have hMis_const :
-      ∀ β : AdviserKernel model,
-        MisalignedPayoffFull model β priorStrategy =
-          ∫ s, beliefDot (model.inclM s)
-                (model.profileOfPrivate sigma0) ∂model.τM := by
-    intro β
-    haveI : ProbabilityTheory.IsMarkovKernel β.kernel := β.isMarkov
-    unfold MisalignedPayoffFull MisalignedPayoffM restrictFullToM profileMap
-    apply MeasureTheory.integral_congr_ae
-    refine Filter.Eventually.of_forall ?_
-    intro s
-    haveI : IsProbabilityMeasure (β.kernel s) :=
-      β.isMarkov.isProbabilityMeasure s
-    -- The inner integrand `m ↦ beliefDot (inclM s) (profileOfPrivate σ̂₀)`
-    -- is constant in `m`; integrating a constant against a probability
-    -- measure returns the constant.
-    simp [priorStrategy]
-  -- The mixture payoff is also β-independent.
-  have hMix_const :
-      ∀ β : AdviserKernel model,
-        MixturePayoffFull model β priorStrategy =
-          model.α * AlignedPayoffFull model priorStrategy +
-          (1 - model.α) *
-            ∫ s, beliefDot (model.inclM s)
-                  (model.profileOfPrivate sigma0) ∂model.τM := by
-    intro β
-    unfold MixturePayoffFull
-    rw [hMis_const β]
-  refine ⟨{
-    priorStrategy := priorStrategy
-    constantAdversary := constantAdversary
-    priorOptimal := ?_
-    posteriorAtConstantMessageIsPrior := ?_
-    adversaryOptimal := ?_ }⟩
-  · -- (priorOptimal) The constant section returns sigma0, which is
-    --   Bayes-optimal at the prior.
-    intro m
-    simpa [priorStrategy] using hsigma0_opt
-  · -- (posteriorAtConstantMessageIsPrior) At α=0 the mixture message law
-    --   reduces to the second marginal of τM ⊗ constantAdversary, which is
-    --   a Dirac at `constantMessage`.  The disintegration identity then
-    --   collapses the posterior to the prior; this is the
-    --   `Inventory.V9.alpha_zero_posterior_collapse` external fact.
-    intro pd
-    have hβdirac : ∀ s : model.M,
-        constantAdversary.kernel s =
-          MeasureTheory.Measure.dirac (constantMessage (model := model)) := by
-      intro s
-      simp [constantAdversary, ProbabilityTheory.Kernel.const_apply]
-    -- The priorBelief unfolds to the subtype with value `model.μ0`.
-    have hμ0 : (priorBelief model).val = model.μ0 := rfl
-    exact Inventory.V9.alpha_zero_posterior_collapse model _hα
-      (constantMessage (model := model)) constantAdversary hβdirac pd
-      (priorBelief model) hμ0
-  · -- (adversaryOptimal) `MixturePayoffFull β priorStrategy` is independent
-    --   of β (because `priorStrategy` is message-ignoring), so the range
-    --   of the function `β ↦ MixturePayoffFull β priorStrategy` is the
-    --   singleton `{MixturePayoffFull constantAdversary priorStrategy}`,
-    --   hence its `sInf` equals that constant.
-    unfold IsAdversarialFull RobustPayoffFull
-    -- Show the range is a singleton.
-    have hRange :
-        Set.range (fun β : AdviserKernel model =>
-          MixturePayoffFull model β priorStrategy) =
-        {MixturePayoffFull model constantAdversary priorStrategy} := by
-      ext x
-      refine ⟨?_, ?_⟩
-      · rintro ⟨β, hβ⟩
-        have hxβ : x = MixturePayoffFull model β priorStrategy := hβ.symm
-        have heq : MixturePayoffFull model β priorStrategy =
-            MixturePayoffFull model constantAdversary priorStrategy := by
-          rw [hMix_const β, hMix_const constantAdversary]
-        exact Set.mem_singleton_iff.mpr (by rw [hxβ, heq])
-      · rintro rfl
-        exact ⟨constantAdversary, rfl⟩
-    rw [hRange, csInf_singleton]
+  sorry
 
 /-- v9 α=0 endpoint: unconditional infinite-extension of Robust Trust
 Theorem 2 in the pure-adversarial regime. -/
