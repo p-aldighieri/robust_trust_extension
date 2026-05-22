@@ -5247,6 +5247,171 @@ def NormalConeW (w n : Profile model) : Prop :=
       v ∈ PayoffProfileSet model →
         (∑ ω : model.Ω, n ω * (v ω - w ω)) ≤ 0
 
+/-- Product profile space for a finite Pareto menu. -/
+abbrev ProductProfile (model : RobustTrustModel) (k : Nat) : Type :=
+  Fin k → Profile model
+
+/-- Product feasible set `W^k` used by the Clarke-Fermat step. -/
+def ProductPayoffProfileSet (model : RobustTrustModel) (k : Nat) :
+    Set (ProductProfile model k) :=
+  { x | ∀ i : Fin k, x i ∈ PayoffProfileSet model }
+
+/-- Integrated multiplier-weighted numerator from v9 §B.1. -/
+noncomputable def gOf {model : RobustTrustModel} {k : Nat}
+    (lamPlus lamMinus : model.M → Fin k → ℝ)
+    (alpha : ℝ) (tau : Measure model.M) (i : Fin k) : Profile model :=
+  fun ω =>
+    alpha * (∫ s, lamPlus s i * (model.inclM s).val ω ∂tau) +
+      (1 - alpha) * (∫ s, lamMinus s i * (model.inclM s).val ω ∂tau)
+
+/-- Integrated scalar marginal mass from v9 §B.1. -/
+noncomputable def qOf {model : RobustTrustModel} {k : Nat}
+    (lamPlus lamMinus : model.M → Fin k → ℝ)
+    (alpha : ℝ) (tau : Measure model.M) (i : Fin k) : ℝ :=
+  alpha * (∫ s, lamPlus s i ∂tau) +
+    (1 - alpha) * (∫ s, lamMinus s i ∂tau)
+
+theorem gOf_nonneg {model : RobustTrustModel} {k : Nat}
+    (lamPlus lamMinus : model.M → Fin k → ℝ)
+    (alpha : ℝ) (tau : Measure model.M)
+    (halpha0 : 0 ≤ alpha) (halpha1 : alpha ≤ 1)
+    (hPlus : ∀ s : model.M, ∀ i : Fin k, 0 ≤ lamPlus s i)
+    (hMinus : ∀ s : model.M, ∀ i : Fin k, 0 ≤ lamMinus s i) :
+    ∀ i : Fin k, ∀ ω : model.Ω,
+      0 ≤ gOf lamPlus lamMinus alpha tau i ω := by
+  intro i ω
+  unfold gOf
+  have hOneMinus : 0 ≤ 1 - alpha := sub_nonneg.mpr halpha1
+  have hPlusInt :
+      0 ≤ ∫ s : model.M, lamPlus s i * (model.inclM s).val ω ∂tau := by
+    refine integral_nonneg ?_
+    intro s
+    exact mul_nonneg (hPlus s i) ((model.inclM s).property.1 ω)
+  have hMinusInt :
+      0 ≤ ∫ s : model.M, lamMinus s i * (model.inclM s).val ω ∂tau := by
+    refine integral_nonneg ?_
+    intro s
+    exact mul_nonneg (hMinus s i) ((model.inclM s).property.1 ω)
+  exact add_nonneg (mul_nonneg halpha0 hPlusInt)
+    (mul_nonneg hOneMinus hMinusInt)
+
+theorem qOf_nonneg {model : RobustTrustModel} {k : Nat}
+    (lamPlus lamMinus : model.M → Fin k → ℝ)
+    (alpha : ℝ) (tau : Measure model.M)
+    (halpha0 : 0 ≤ alpha) (halpha1 : alpha ≤ 1)
+    (hPlus : ∀ s : model.M, ∀ i : Fin k, 0 ≤ lamPlus s i)
+    (hMinus : ∀ s : model.M, ∀ i : Fin k, 0 ≤ lamMinus s i) :
+    ∀ i : Fin k, 0 ≤ qOf lamPlus lamMinus alpha tau i := by
+  intro i
+  unfold qOf
+  have hOneMinus : 0 ≤ 1 - alpha := sub_nonneg.mpr halpha1
+  have hPlusInt : 0 ≤ ∫ s : model.M, lamPlus s i ∂tau := by
+    exact integral_nonneg (fun s => hPlus s i)
+  have hMinusInt : 0 ≤ ∫ s : model.M, lamMinus s i ∂tau := by
+    exact integral_nonneg (fun s => hMinus s i)
+  exact add_nonneg (mul_nonneg halpha0 hPlusInt)
+    (mul_nonneg hOneMinus hMinusInt)
+
+theorem mass_balance_gOf_qOf {model : RobustTrustModel} {k : Nat}
+    (lamPlus lamMinus : model.M → Fin k → ℝ)
+    (alpha : ℝ) (tau : Measure model.M)
+    (hPlusInt : ∀ i : Fin k, ∀ ω : model.Ω,
+      Integrable (fun s : model.M => lamPlus s i * (model.inclM s).val ω) tau)
+    (hMinusInt : ∀ i : Fin k, ∀ ω : model.Ω,
+      Integrable (fun s : model.M => lamMinus s i * (model.inclM s).val ω) tau) :
+    ∀ i : Fin k, (∑ ω : model.Ω, gOf lamPlus lamMinus alpha tau i ω) =
+      qOf lamPlus lamMinus alpha tau i := by
+  classical
+  intro i
+  have hplus_sum :
+      (∑ ω : model.Ω,
+          ∫ s : model.M, lamPlus s i * (model.inclM s).val ω ∂tau) =
+        ∫ s : model.M, lamPlus s i ∂tau := by
+    have hsum_int :
+        (∫ s : model.M,
+            ∑ ω : model.Ω, lamPlus s i * (model.inclM s).val ω ∂tau) =
+          ∑ ω : model.Ω,
+            ∫ s : model.M, lamPlus s i * (model.inclM s).val ω ∂tau := by
+      simpa using
+        (MeasureTheory.integral_finset_sum
+          (s := (Finset.univ : Finset model.Ω))
+          (f := fun ω s => lamPlus s i * (model.inclM s).val ω)
+          (fun ω _ => hPlusInt i ω))
+    rw [<- hsum_int]
+    apply integral_congr_ae
+    exact ae_of_all tau (by
+      intro s
+      simp_rw [<- Finset.mul_sum]
+      rw [(model.inclM s).property.2, mul_one])
+  have hminus_sum :
+      (∑ ω : model.Ω,
+          ∫ s : model.M, lamMinus s i * (model.inclM s).val ω ∂tau) =
+        ∫ s : model.M, lamMinus s i ∂tau := by
+    have hsum_int :
+        (∫ s : model.M,
+            ∑ ω : model.Ω, lamMinus s i * (model.inclM s).val ω ∂tau) =
+          ∑ ω : model.Ω,
+            ∫ s : model.M, lamMinus s i * (model.inclM s).val ω ∂tau := by
+      simpa using
+        (MeasureTheory.integral_finset_sum
+          (s := (Finset.univ : Finset model.Ω))
+          (f := fun ω s => lamMinus s i * (model.inclM s).val ω)
+          (fun ω _ => hMinusInt i ω))
+    rw [<- hsum_int]
+    apply integral_congr_ae
+    exact ae_of_all tau (by
+      intro s
+      simp_rw [<- Finset.mul_sum]
+      rw [(model.inclM s).property.2, mul_one])
+  unfold gOf qOf
+  rw [Finset.sum_add_distrib]
+  rw [<- Finset.mul_sum, <- Finset.mul_sum]
+  rw [hplus_sum, hminus_sum]
+
+/-- Product-level Clarke-Fermat data at the finite menu. The final
+per-label normal-cone inequality is deliberately not a field here; it is
+obtained by applying `Inventory.V9.clarke_fermat_normal_cone` and the
+product-to-component bridge below. -/
+structure ProductClarkeFermatPrimitive {model : RobustTrustModel} (k : Nat)
+    (w : ProductProfile model k) (g : Fin k → Profile model) where
+  objective : ProductProfile model k → ℝ
+  productPayoff_closed : IsClosed (ProductPayoffProfileSet model k)
+  objective_lipschitz :
+    ∃ r : ℝ, 0 < r ∧
+      ∃ K : NNReal, LipschitzOnWith K objective (Metric.closedBall w r)
+  localMaxOn :
+    _root_.Inventory.V9.ClarkeLocalMaxOn objective
+      (ProductPayoffProfileSet model k) w
+  subgradient : ProductProfile model k →L[ℝ] ℝ
+  subgradient_mem :
+    subgradient ∈ _root_.Inventory.V9.ClarkeSubdiff objective w
+  negative_subgradient_represents_g :
+    ∀ i : Fin k, ∀ v : Profile model,
+      (-subgradient) (Function.update w i v - w) =
+        ∑ ω : model.Ω, g i ω * (v ω - w i ω)
+
+/-- Product Clarke-normal-cone projection bridge.
+
+Source: Clarke 1990, *Optimization and Nonsmooth Analysis*, §6.2
+(calculus of normal cones under product/intersection constructions);
+see also Aubin--Frankowska, *Set-Valued Analysis*, Ch. 6 for the
+component projection rule. This is the single Inventory.V9 bridge used
+because Mathlib does not provide Clarke normal cones or their product
+calculus: `Inventory.V9.ClarkeNormalCone` is opaque in this appendix. -/
+axiom _root_.Inventory.V9.clarke_product_normal_cone_projection_bridge
+    {model : RobustTrustModel} {k : Nat}
+    (w : ProductProfile model k)
+    (g : Fin k → Profile model)
+    (η : ProductProfile model k →L[ℝ] ℝ)
+    (hCone :
+      η ∈ _root_.Inventory.V9.ClarkeNormalCone
+        (ProductPayoffProfileSet model k) w)
+    (hRepresent :
+      ∀ i : Fin k, ∀ v : Profile model,
+        η (Function.update w i v - w) =
+          ∑ ω : model.Ω, g i ω * (v ω - w i ω)) :
+    ∀ i : Fin k, NormalConeW model (w i) (g i)
+
 /-- Support function of a Bayes cone against a payoff profile. -/
 noncomputable def supportFunction
     (B : Set (Belief model.Ω)) (y : Profile model) : ℝ :=
@@ -5558,39 +5723,93 @@ structure ParetoMenuPrimitives {model : RobustTrustModel} (k : Nat) where
   lamMinus_nonneg : ∀ s : model.M, ∀ i : Fin k, 0 ≤ lamMinus s i
   lamMinus_sum_one : ∀ s : model.M, ∑ i : Fin k, lamMinus s i = 1
   lamMinus_measurable : Measurable (fun s : model.M => lamMinus s)
-  /-- Integrated multiplier-weighted gradient `g_i`. -/
-  g : Fin k → Profile model
-  g_bounded : ∃ C : ℝ, 0 ≤ C ∧ ∀ i : Fin k, ∀ ω : model.Ω, |g i ω| ≤ C
-  /-- Coordinatewise nonnegativity of `g i`. Provenance: combining the
-  Clarke–Fermat inner-product inequality with a one-sided basis
-  perturbation `v := paretoMenu i + ε · e_ω` (admissible under
-  Pareto-completion), the inequality `∑ ω', g i ω' * (v ω' - paretoMenu i ω') ≤ 0`
-  reduces to `ε · g i ω ≤ 0`, hence `g i ω ≤ 0` for positive perturbations
-  and `g i ω ≥ 0` for negative perturbations; under the Pareto-completion
-  hypothesis (perturbations of both signs stay feasible), this yields
-  `g i ω = 0` for inactive coordinates and `g i ω ≥ 0` overall after
-  reorientation by the simplex weights. Recorded as a primitive. -/
-  g_nonneg : ∀ i : Fin k, ∀ ω : model.Ω, 0 ≤ g i ω
-  /-- Integrated scalar message marginal mass `q_i`. -/
-  q : Fin k → ℝ
-  q_nonneg : ∀ i : Fin k, 0 ≤ q i
-  /-- v9 §B.1 mass-balance identity: `∑ ω, g i ω = q i`. This is the
-  defining relation of the v9 normalization `p_i := g_i / q_i`: by the
-  Clarke–Danskin construction with simplex weights `λ⁺(s), λ⁻(s) ∈ Δ(k)`
-  and message marginals `τ`, the integrated `g_i` and `q_i` automatically
-  satisfy `∑ ω, g_i ω = q_i` because each integrand `λ⁺_i(s) · s` (an
-  inner-product-weighted version of `s`) sums to `λ⁺_i(s)` over `ω`
-  (since `s ∈ Δ(Ω)` for messages identified with beliefs via `inclM`).
-  Recorded as a primitive. -/
-  mass_balance : ∀ i : Fin k, (∑ ω : model.Ω, g i ω) = q i
-  /-- Inner-product unpacking of the Clarke–Fermat conclusion:
-  `-ξ ∈ ClarkeNormalCone (PayoffProfileSet model) (paretoMenu i)`
-  ⟹ `∀ v ∈ PayoffProfileSet model, ∑ ω, g i ω * (v ω - paretoMenu i ω) ≤ 0`.
-  Provenance: Clarke 1990 §6.1 Thm 6.1.1 + projection to coordinates. -/
-  normal_cone_inequality :
+  /-- Coordinate integrability needed for the finite sum/integral exchange
+  in the mass-balance derivation. These are analytic side conditions, not
+  the mass-balance conclusion. -/
+  lamPlus_coord_integrable :
+    ∀ i : Fin k, ∀ ω : model.Ω,
+      Integrable (fun s : model.M =>
+        lamPlus s i * (model.inclM s).val ω) model.τM
+  lamMinus_coord_integrable :
+    ∀ i : Fin k, ∀ ω : model.Ω,
+      Integrable (fun s : model.M =>
+        lamMinus s i * (model.inclM s).val ω) model.τM
+  /-- Uniform bound on the definitional integrated numerator `gOf`. -/
+  g_bounded :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ i : Fin k, ∀ ω : model.Ω,
+        |gOf lamPlus lamMinus model.α model.τM i ω| ≤ C
+  /-- Product-space Clarke-Fermat data. The per-label inequality is derived
+  from this data via `clarke_fermat_normal_cone` plus the cited product
+  projection bridge. -/
+  clarkeFermatProduct :
+    ProductClarkeFermatPrimitive k paretoMenu
+      (gOf lamPlus lamMinus model.α model.τM)
+
+namespace ParetoMenuPrimitives
+
+noncomputable def g {k : Nat}
+    (prim : ParetoMenuPrimitives (model := model) k) :
+    Fin k → Profile model :=
+  gOf prim.lamPlus prim.lamMinus model.α model.τM
+
+noncomputable def q {k : Nat}
+    (prim : ParetoMenuPrimitives (model := model) k) : Fin k → ℝ :=
+  qOf prim.lamPlus prim.lamMinus model.α model.τM
+
+theorem g_nonneg {k : Nat}
+    (prim : ParetoMenuPrimitives (model := model) k) :
+    ∀ i : Fin k, ∀ ω : model.Ω, 0 ≤ prim.g i ω :=
+  gOf_nonneg prim.lamPlus prim.lamMinus model.α model.τM
+    model.α_nonneg model.α_le_one
+    prim.lamPlus_nonneg prim.lamMinus_nonneg
+
+theorem q_nonneg {k : Nat}
+    (prim : ParetoMenuPrimitives (model := model) k) :
+    ∀ i : Fin k, 0 ≤ prim.q i :=
+  qOf_nonneg prim.lamPlus prim.lamMinus model.α model.τM
+    model.α_nonneg model.α_le_one
+    prim.lamPlus_nonneg prim.lamMinus_nonneg
+
+theorem mass_balance {k : Nat}
+    (prim : ParetoMenuPrimitives (model := model) k) :
+    ∀ i : Fin k, (∑ ω : model.Ω, prim.g i ω) = prim.q i :=
+  mass_balance_gOf_qOf prim.lamPlus prim.lamMinus model.α model.τM
+    prim.lamPlus_coord_integrable prim.lamMinus_coord_integrable
+
+theorem normal_cone_inequality {k : Nat}
+    (prim : ParetoMenuPrimitives (model := model) k) :
     ∀ i : Fin k, ∀ v : Profile model,
       v ∈ PayoffProfileSet model →
-        (∑ ω : model.Ω, g i ω * (v ω - paretoMenu i ω)) ≤ 0
+        (∑ ω : model.Ω, prim.g i ω * (v ω - prim.paretoMenu i ω)) ≤ 0 := by
+  classical
+  have hCone :
+      -prim.clarkeFermatProduct.subgradient ∈
+        _root_.Inventory.V9.ClarkeNormalCone
+          (ProductPayoffProfileSet model k) prim.paretoMenu := by
+    exact
+      (_root_.Inventory.V9.clarke_fermat_normal_cone
+        prim.clarkeFermatProduct.objective
+        (ProductPayoffProfileSet model k)
+        prim.paretoMenu
+        prim.clarkeFermatProduct.productPayoff_closed
+        prim.clarkeFermatProduct.objective_lipschitz
+        prim.clarkeFermatProduct.localMaxOn)
+        prim.clarkeFermatProduct.subgradient
+        prim.clarkeFermatProduct.subgradient_mem
+  have hNormal :
+      ∀ i : Fin k, NormalConeW model (prim.paretoMenu i) (prim.g i) :=
+    _root_.Inventory.V9.clarke_product_normal_cone_projection_bridge
+      prim.paretoMenu prim.g (-prim.clarkeFermatProduct.subgradient)
+      hCone
+      (by
+        intro i v
+        simpa [g] using
+          prim.clarkeFermatProduct.negative_subgradient_represents_g i v)
+  intro i v hv
+  exact (hNormal i).2 v hv
+
+end ParetoMenuPrimitives
 
 /-- **Constructor `FiniteMenuData.fromParetoMenu`.**
 
@@ -5626,8 +5845,8 @@ noncomputable def fromParetoMenu {k : Nat}
       paretoCompleted := prim.paretoCompleted
       lamPlus := prim.lamPlus
       lamMinus := prim.lamMinus
-      g := prim.g
-      q := prim.q
+      g := ParetoMenuPrimitives.g prim
+      q := ParetoMenuPrimitives.q prim
       lamPlus_nonneg := prim.lamPlus_nonneg
       lamPlus_sum_one := prim.lamPlus_sum_one
       lamMinus_nonneg := prim.lamMinus_nonneg
@@ -5635,9 +5854,10 @@ noncomputable def fromParetoMenu {k : Nat}
       lamPlus_measurable := prim.lamPlus_measurable
       lamMinus_measurable := prim.lamMinus_measurable
       g_bounded := prim.g_bounded
-      q_nonneg := prim.q_nonneg
+      q_nonneg := ParetoMenuPrimitives.q_nonneg prim
       w_feasible := ?_
-      normal_cone_inequality := prim.normal_cone_inequality
+      normal_cone_inequality :=
+        ParetoMenuPrimitives.normal_cone_inequality prim
       normalized_nonneg := ?_
       normalized_sum_one := ?_ }
   · -- Each menu profile is in `PayoffProfileSet model` because
@@ -5649,14 +5869,18 @@ noncomputable def fromParetoMenu {k : Nat}
     -- unfold `WP` and `WeakParetoProfile`.
     exact h.1
   · -- Normalized nonneg: `g i ω / q i ≥ 0` when `q i > 0`.
-    -- Derived from `g_nonneg` and `q_nonneg`/`hqi`.
+    -- Derived from the definitional `gOf` nonnegativity theorem.
     intro i hqi ω
-    exact div_nonneg (prim.g_nonneg i ω) (le_of_lt hqi)
+    exact div_nonneg
+      (ParetoMenuPrimitives.g_nonneg prim i ω) (le_of_lt hqi)
   · -- Normalized sum-one: `∑ ω, g i ω / q i = 1` when `q i > 0`.
-    -- Derived from `mass_balance` (∑ g i ω = q i) and `hqi ≠ 0`.
+    -- Derived from the definitional mass-balance theorem and `hqi ≠ 0`.
     intro i hqi
-    have hqne : prim.q i ≠ 0 := ne_of_gt hqi
-    have hmb : (∑ ω : model.Ω, prim.g i ω) = prim.q i := prim.mass_balance i
+    have hqne : ParetoMenuPrimitives.q prim i ≠ 0 := ne_of_gt hqi
+    have hmb :
+        (∑ ω : model.Ω, ParetoMenuPrimitives.g prim i ω) =
+          ParetoMenuPrimitives.q prim i :=
+      ParetoMenuPrimitives.mass_balance prim i
     -- Goal: ∑ ω, (prim.g i ω) / (prim.q i) = 1
     rw [← Finset.sum_div, hmb, div_self hqne]
 
