@@ -1271,31 +1271,28 @@ structure RegPackage where
   B_bayes_optimal :
     ∀ m μ, μ ∈ B m →
       IsBayesOptimal model (σstar.sectionFull (model.inclM m)) μ
-  Psi : BoundedBorelProfile model → ℝ
-  /-- Hall-G2c data witness: Ψ ≤ 0 ⟹ calibrated kernel exists. Bundles
-  the Borel-extension argument (lift G1 from finite-dimensional
-  approximation via `Inventory.strassen_marginals` + measurable
-  selection + closed-graph `G` + continuous-support-function `B`). -/
-  hallG2cWitness :
-    (∀ y : BoundedBorelProfile model, Psi y ≤ 0) →
-      RegCalibratedKernelExists model pd G B
-  /-- Hall biconditional data witness: the v9 §B.5 ↔. Forward direction
-  (calibrated kernel ⟹ Ψ ≤ 0) uses the support-function inequality
-  applied to bounded Borel `y`; reverse direction uses `hallG2cWitness`.
-  Bundling the witness here keeps the certificate-verifier pattern. -/
-  hallBiconditionalWitness :
-    RegRobustRationalizableKernelExists model pd G B ↔
-      (∀ y : BoundedBorelProfile model, Psi y ≤ 0)
-  /-- Bridge data witness: a calibrated robustly rationalizable kernel
-  yields a Definition-2 witness against `σstar` (which by hypothesis
-  realises `wstar` and is Bayes-optimal on `B m`). Bundling here keeps
-  the σstar ↔ Definition2QAEPredicate alignment local. -/
-  bridgeWitness :
-    RegRobustRationalizableKernelExists model pd G B →
-      HasRobustRationalizableStrategy model pd
+
+/-- Concrete Hall dual functional from v9 §B.5.
+
+The first term prices the aligned message `m`.  The second term prices the
+rowwise-minimizer correspondence `G(s)` by taking the infimum over all
+continuations `m' ∈ G(s)`. -/
+noncomputable def regPsi
+    (reg : RegPackage model) (y : BoundedBorelProfile model) : ℝ :=
+  model.α *
+      (∫ m : model.M,
+        beliefDot (model.inclM m) (y.toFun m) -
+          supportFunction model (reg.B m) (y.toFun m) ∂model.τM) +
+    (1 - model.α) *
+      (∫ s : model.M,
+        sInf
+          (((fun m' : model.M =>
+              beliefDot (model.inclM s) (y.toFun m') -
+                supportFunction model (reg.B m') (y.toFun m')) ''
+            reg.G s)) ∂model.τM)
 
 def PsiNonpos (reg : RegPackage model) : Prop :=
-  ∀ y : BoundedBorelProfile model, reg.Psi y ≤ 0
+  ∀ y : BoundedBorelProfile model, regPsi model reg y ≤ 0
 
 def RegPackage.calibratedKernelExists
     (reg : RegPackage model) : Prop :=
@@ -1307,31 +1304,30 @@ def RegPackage.robustRationalizableKernelExists
 
 /-! ## §9.5 Hall biconditional concrete predicates (v9 §B.5)
 
-Following the T1 / Binary pattern: most Hall theorems correspond to a
-concrete `Is*` predicate over data-witness fields, so their discharge
-reduces to projection. The WTA numerical theorem is deliberately not in
-that pattern: it computes `Ψ(y) = (1−α)·(4/9) = 2/9 @ α = 1/2` from
-explicit ternary WTA fields below. -/
-
-/-- G1 concrete content: feasibility ↔ no separating dual price. We
-record this as a propositional biconditional witness; the actual
-content (a conic Farkas instance + invocation of
-`Inventory.farkas_lp_duality_conic`) is recorded as a data witness on
-`FiniteConeHallInstance`. -/
-def IsFiniteConeHallBiconditional
-    (flowFeasible psiNonpos : Prop) : Prop :=
-  flowFeasible ↔ psiNonpos
+The Hall block is no longer a certificate-verifier over conclusion-shaped
+fields.  `Ψ` is the concrete `regPsi` above, and the finite Hall instance
+below stores an actual conic Farkas instance. -/
 
 /-! ## §10 Finite conic Hall, WTA, polyhedral, primitive-class packages -/
 
 structure FiniteConeHallInstance where
-  flowFeasible : Prop
-  psiNonpos : Prop
-  /-- G1 data witness: the conic Farkas biconditional content. The
-  bridging from `Inventory.farkas_lp_duality_conic` (finite primal/dual
-  feasibility ↔ no separating dual price) to the propositional ↔ field
-  lives outside this structure. -/
-  hallG1Witness : IsFiniteConeHallBiconditional flowFeasible psiNonpos
+  I : Type
+  J : Type
+  [I_fintype : Fintype I]
+  [J_fintype : Fintype J]
+  conic : _root_.Inventory.V9.ConicFarkasInstance I J
+
+attribute [instance]
+  FiniteConeHallInstance.I_fintype
+  FiniteConeHallInstance.J_fintype
+
+def FiniteConeHallInstance.flowFeasible
+    (inst : FiniteConeHallInstance) : Prop :=
+  _root_.Inventory.V9.conicPrimalFeasible inst.conic
+
+def FiniteConeHallInstance.psiNonpos
+    (inst : FiniteConeHallInstance) : Prop :=
+  _root_.Inventory.V9.conicDualNonpositive inst.conic
 
 /-- Ternary WTA dual price `y_j = 1 - 2 e_j`. -/
 def WTADualPrice (j : WTAΩ) : WTAProfile :=
@@ -2293,12 +2289,14 @@ theorem «FBNF-F4-capstone»
 
 In the finite-dimensional approximation, primal feasibility ↔ no
 separating bounded Borel dual price. The substantive content
-(`Inventory.farkas_lp_duality_conic`) is bundled into
-`inst.hallG1Witness`; the theorem discharges by projection. -/
+(`Inventory.V9.farkas_lp_duality_conic`) is applied directly to the
+concrete conic Farkas instance stored in `inst`. -/
 theorem «Hall-G1-finite-cone-hall-farkas-LP»
     (inst : FiniteConeHallInstance) :
-    inst.flowFeasible ↔ inst.psiNonpos :=
-  inst.hallG1Witness
+    inst.flowFeasible ↔ inst.psiNonpos := by
+  change _root_.Inventory.V9.conicPrimalFeasible inst.conic ↔
+    _root_.Inventory.V9.conicDualNonpositive inst.conic
+  exact _root_.Inventory.V9.farkas_lp_duality_conic inst.conic
 
 /--
 **Hall-G2c (Borel extension of G1).**
@@ -2307,13 +2305,57 @@ Lift G1 from finite-dimensional approximation to general measurable `M`
 using Reg-1/Reg-2 (closed-graph rowwise minimizer correspondence `G` +
 continuous support function of Bayes cone `B`) and measurable
 selection. The kernel that realises the calibration is delivered by
-`Inventory.strassen_marginals`. Bundled into `reg.hallG2cWitness`. -/
+`Inventory.V9.strassen_marginals`. -/
 theorem «Hall-G2c-borel-extension»
     {model : RobustTrustModel}
     (reg : RegPackage model)
     (hPsi : PsiNonpos model reg) :
-    reg.calibratedKernelExists :=
-  reg.hallG2cWitness hPsi
+    reg.calibratedKernelExists := by
+  classical
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  let R : Set (model.M × model.M) := {p | p.2 ∈ reg.G p.1}
+  have hR_closed : IsClosed R := by
+    dsimp [R]
+    exact reg.G_closedGraph
+  have hR_meas : MeasurableSet R := hR_closed.measurableSet
+  have hReg2 :
+      ∀ y : Profile model,
+        Continuous fun m => supportFunction model (reg.B m) y :=
+    reg.B_support_continuous
+  have hDominance :
+      _root_.Inventory.V9.StrassenMarginalDominance
+        model.τM model.τM R := by
+    refine ⟨hR_meas, ?_, ?_, rfl, ?_⟩
+    · infer_instance
+    · infer_instance
+    · intro f g hf hg hf_int hg_int hfg
+      have hHallDual :
+          ∀ y : BoundedBorelProfile model, regPsi model reg y ≤ 0 := hPsi
+      have hClosedGraph : IsClosed R := hR_closed
+      have hSupportFunctionContinuous := hReg2
+      /-
+      Honest gap: this is the scalar Kantorovich-Strassen dual-to-Hall-dual
+      translation.  The available hypothesis is the vector Hall inequality
+      `hHallDual` for bounded Borel payoff profiles; Strassen needs the scalar
+      test-function inequality over the graph relation `R`.  Filling this
+      requires a Mathlib lemma packaging the standard Hahn-Banach / monotone
+      class extension from the paper's finite-dimensional Hall prices to
+      bounded Borel scalar tests.
+      -/
+      sorry
+  obtain ⟨π, hπ_coupling, hπ_support⟩ :=
+    _root_.Inventory.V9.strassen_marginals model.τM model.τM R hDominance
+  have hReg1 := reg.G_closedGraph
+  have hSupportFunctionContinuous := reg.B_support_continuous
+  /-
+  Honest gap: `strassen_marginals` supplies the supported coupling `π`.
+  The remaining formal bridge disintegrates `π` into an `AdviserKernel`,
+  proves `KernelSupportedOnRegG`, and identifies the Bayes-cone posterior
+  calibration with `pd.Pγα`.  Mathlib has the measure/kernel primitives used
+  elsewhere in v8, but this appendix does not yet contain the specialized
+  disintegration-and-selection lemma for the Hall graph relation.
+  -/
+  sorry
 
 /--
 **Hall biconditional (v9 §B.5).**
@@ -2324,26 +2366,82 @@ theorem «Hall-G2c-borel-extension»
   pointwise to bounded Borel `y : M → ℝ^|Ω|`. The integrand
   `y(m)·m − h_{B(m)}(y(m))` is ≤ 0 on the support of the calibrated
   kernel by definition of `supportFunction`.
-* Reverse (Ψ ≤ 0 ⟹ kernel): G2c (`hallG2cWitness`).
+* Reverse (Ψ ≤ 0 ⟹ kernel): G2c via `Inventory.V9.strassen_marginals`.
 
-Both directions bundled into `reg.hallBiconditionalWitness`. -/
+The reverse direction calls G2c; the forward direction starts from a real
+calibrated kernel and derives the pointwise Bayes support-function bound. -/
 theorem «Hall-biconditional»
     {model : RobustTrustModel}
     (reg : RegPackage model) :
-    reg.robustRationalizableKernelExists ↔ PsiNonpos model reg :=
-  reg.hallBiconditionalWitness
+    reg.robustRationalizableKernelExists ↔ PsiNonpos model reg := by
+  constructor
+  · intro hKernel y
+    rcases hKernel with ⟨κ, hSupported, hCalibrated⟩
+    have hBayesGamma :
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          IsBayesOptimal model
+            (reg.σstar.sectionFull (model.inclM m)) (reg.pd.Pγα κ m) := by
+      filter_upwards [hCalibrated] with m hm
+      exact reg.B_bayes_optimal m (reg.pd.Pγα κ m) hm
+    have hSupportBound :
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          beliefDot (reg.pd.Pγα κ m) (y.toFun m) ≤
+            supportFunction model (reg.B m) (y.toFun m) := by
+      filter_upwards [hCalibrated] with m hm
+      /-
+      Honest gap: this is the standard support-function inequality
+      `⟪μ,y⟫ ≤ h_{B(m)}(y)` from `μ ∈ B(m)`.  The missing local lemma is a
+      bounded-above proof for the image set in `supportFunction`, using the
+      finite simplex bound and `y.bounded_coord`, so that `le_csSup` applies.
+      -/
+      sorry
+    have hKernelSupport := hSupported
+    have hRowwise := reg.G_rowwise_minimizer
+    /-
+    Honest gap: integrate the support-function bound over the calibrated
+    coupling and use `KernelSupportedOnRegG` plus `hRowwise` to compare the
+    second Hall term with the rowwise infimum in `regPsi`.
+    -/
+    sorry
+  · intro hPsi
+    exact «Hall-G2c-borel-extension» (model := model) reg hPsi
 
 /-- Bridge from Hall's calibrated-kernel-exists labeling to strategy
 existence. Constructs the q-a.e. Bayes-optimal Definition-2 witness from
 the concrete kernel + `RegPackage.σstar` + posterior calibration. The
-substantive σstar ↔ `Definition2QAEPredicate` alignment is bundled into
-`reg.bridgeWitness`. -/
+substantive σstar ↔ `Definition2QAEPredicate` alignment is exposed here. -/
 theorem robustRationalizableKernelExists_to_strategy
     {model : RobustTrustModel}
     (reg : RegPackage model)
     (h : reg.robustRationalizableKernelExists) :
-    HasRobustRationalizableStrategy model reg.pd :=
-  reg.bridgeWitness h
+    HasRobustRationalizableStrategy model reg.pd := by
+  classical
+  rcases h with ⟨κ, hSupported, hCalibrated⟩
+  refine ⟨κ, reg.σstar, ?_⟩
+  have hBayesGamma :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        IsBayesOptimal model
+          (reg.σstar.sectionFull (model.inclM m)) (reg.pd.Pγα κ m) := by
+    filter_upwards [hCalibrated] with m hm
+    exact reg.B_bayes_optimal m (reg.pd.Pγα κ m) hm
+  have hBetaDisintegrates := reg.pd.sourceLawβ_disintegrates κ
+  have hGammaDisintegrates := reg.pd.sourceLawγα_disintegrates κ
+  have hBetaBarycenter := reg.pd.conditional_barycenter κ
+  have hGammaBarycenter := reg.pd.gamma_alpha_conditional_barycenter κ
+  have hRowwise := reg.G_rowwise_minimizer
+  have hRealizes := reg.σstar_realizes_wstar
+  have hSupport := hSupported
+  /-
+  Honest gap: finish `Definition2QAEPredicate` by proving:
+  (1) adversariality of `κ` for `reg.σstar` from `hSupport`, `hRowwise`, and
+      `hRealizes`;
+  (2) transfer of `hBayesGamma` from the `γ_α` second marginal to
+      `MixtureMessageLaw`, identifying `Pβ` with `Pγα` using
+      `sourceLawβ_disintegrates`, `sourceLawγα_disintegrates`, and the two
+      conditional-barycenter fields.  This is the same v8 disintegration
+      alignment pattern as `posterior_disintegration_menuHall_kernel_coincides`.
+  -/
+  sorry
 
 /--
 **Hall-WTA dual certificate (Ψ = 2/9).**
