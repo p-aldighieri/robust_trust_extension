@@ -1,1 +1,14 @@
 [poll 1 @ 0min] stop=true assistants=0 lastLen=0
+[poll 2 @ 2min] stop=true assistants=0 lastLen=0
+[poll 3 @ 3min] stop=true assistants=0 lastLen=0
+[poll 4 @ 5min] stop=true assistants=0 lastLen=0
+[poll 5 @ 6min] stop=true assistants=0 lastLen=0
+[poll 6 @ 8min] stop=true assistants=0 lastLen=0
+[poll 7 @ 9min] stop=true assistants=0 lastLen=0
+[poll 8 @ 11min] stop=false assistants=1 lastLen=12598
+[poll 9 @ 12min] stop=false assistants=1 lastLen=12598
+[poll 10 @ 14min] stop=false assistants=0 lastLen=0
+[poll 11 @ 15min] stop=false assistants=1 lastLen=12598
+[poll 12 @ 17min] stop=false assistants=1 lastLen=12598
+[poll 13 @ 18min] stop=false assistants=1 lastLen=12598
+DONE: wrote 12598 chars to C:/Users/dep89/OneDrive/Economia/RA Piotr/robust_trust_extension/03_runs/v9_lean_formalization/T1/T1_review_response.md
