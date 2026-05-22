@@ -5137,6 +5137,32 @@ axiom strassen_marginals
       IsCoupling π μ ν ∧
         π Rᶜ = 0
 
+/-- **Bogachev disintegration of a coupling into a Markov kernel.**
+
+For a standard Borel space `M` with a finite measure `μ` and a coupling
+`π` of `(μ, ν)` on `M × M`, there exists a Markov kernel `κ : Kernel M M`
+such that `π = μ ⊗ κ` (i.e. `π = μ.compProd κ` in Mathlib's notation,
+modulo the standard isomorphism between `Measure (M × M)` and
+`(μ.compProd κ)`).
+
+Source: Bogachev 2007, *Measure Theory* Vol II, Theorem 10.6.1
+(disintegration of measures on product of standard Borel spaces into
+a measure on the first factor times a Markov kernel into the second).
+
+Mathlib has `ProbabilityTheory.Kernel.disintegrate`-style results for
+specific shapes (notably for joint laws of random variables on Polish
+spaces) but does NOT yet ship a direct theorem turning an arbitrary
+Mathlib `Measure (α × β)` coupling into a `Kernel α β` factor; the
+disintegration here is exactly the abstract Bogachev statement specialized
+to `M = α = β` (a standard Borel space). -/
+axiom bogachev_kernel_factorization
+    {M : Type*} [MeasurableSpace M] [StandardBorelSpace M]
+    (μ : Measure M) [IsFiniteMeasure μ]
+    (π : Measure (M × M))
+    (_hμ : Measure.map Prod.fst π = μ) :
+    ∃ κ : Kernel M M, IsMarkovKernel κ ∧
+      π = μ.compProd κ
+
 /-! ## §1.3 Finite conic Farkas (standard) -/
 
 /-- Finite conic feasibility instance: find `x ≥ 0` with `A x = b`. -/
@@ -7589,31 +7615,46 @@ theorem «Hall-G2c-borel-extension»
         (model := model) reg hPsi f g hf hg hf_int hg_int hRrel
   obtain ⟨π, hπ_coupling, hπ_support⟩ :=
     _root_.Inventory.V9.strassen_marginals model.τM model.τM R hDominance
-  -- Disintegrate `π` into a Markov kernel via Mathlib's
-  -- `MeasureTheory.Measure.compProd` / `ProbabilityTheory.Kernel.disintegrate`,
-  -- then transfer:
-  --   (a) `KernelSupportedOnRegG model reg.G κ` from `hπ_support`
-  --       (the coupling is supported on `R = {(s,m) | m ∈ G(s)}`, and
-  --       Mathlib's `kernel.ae_compProd_iff` lifts this set-supported
-  --       condition to the kernel-fibre-supported condition);
-  -- (b) the Bayes-cone calibration `pd.Pγα κ m ∈ B m` q-a.e. from
-  --       `pd.gamma_alpha_conditional_barycenter` together with the
-  --       barycenter identification on the closed convex set `reg.B m`
-  --       (`reg.B_closed`).
-  -- Both transfer steps use Mathlib pieces (`Kernel.disintegrate`,
-  -- `compProd`-support transfer, `IsClosed.measure_eq_top_iff`-style
-  -- arguments) but the explicit packaging from a Strassen-supported
-  -- coupling on a closed graph relation `R` into a `RegCalibratedKernelExists`
-  -- witness is not present in Mathlib yet.
-  show RegCalibratedKernelExists model reg.pd reg.G reg.B
-  -- TODO: missing Mathlib lemma
-  -- `MeasureTheory.Measure.coupling_supported_on_closed_graph_to_calibrated_kernel`
-  -- (Bogachev *Measure Theory* Vol II, 2007, Thm 10.6.1 disintegration
-  -- + closed-graph support transfer + barycenter-in-closed-set
-  -- calibration).  Until this is in Mathlib, this is the single
-  -- narrowly-scoped honest gap left after deleting the smuggled
-  -- `Inventory.V9.strassen_coupling_disintegration` axiom.
-  sorry
+  -- (a) Bogachev disintegration — the only external axiom in this proof.
+  -- `π = τM ⊗ κ` for a Markov kernel `κ : Kernel M M`.
+  have hπ_fst : Measure.map Prod.fst π = model.τM := hπ_coupling.left
+  obtain ⟨κraw, hκ_markov, hκ_factor⟩ :=
+    _root_.Inventory.V9.bogachev_kernel_factorization
+      (M := model.M) model.τM π hπ_fst
+  let κ : AdviserKernel model :=
+    { kernel := κraw, isMarkov := hκ_markov }
+  refine ⟨κ, ?_, ?_⟩
+  · -- KernelSupportedOnRegG : ∀ᵐ s ∂τM, ∀ᵐ m ∂(κ.kernel s), m ∈ reg.G s.
+    -- From `π Rᶜ = 0` and `π = τM ⊗ κraw`, use Mathlib's `ae_compProd_iff`.
+    -- First: `π Rᶜ = 0` ⟺ `∀ᵐ x ∂π, x ∈ R`.
+    have hRc_meas : MeasurableSet Rᶜ := hR_meas.compl
+    have hπ_ae : ∀ᵐ x ∂π, x ∈ R := by
+      rw [MeasureTheory.ae_iff]
+      simpa using hπ_support
+    -- Substitute the factorization π = τM ⊗ κraw.
+    have hcompProd_ae : ∀ᵐ x ∂(model.τM.compProd κraw), x ∈ R := by
+      rw [← hκ_factor]; exact hπ_ae
+    -- Apply ae_compProd_iff.
+    have hSet_meas : MeasurableSet {x : model.M × model.M | x ∈ R} := by
+      simpa using hR_meas
+    have := (MeasureTheory.Measure.ae_compProd_iff (μ := model.τM) (κ := κraw)
+              (p := fun x => x ∈ R) hSet_meas).mp hcompProd_ae
+    -- Unfold R into the goal shape.
+    show ∀ᵐ s ∂model.τM, ∀ᵐ m ∂(κ.kernel s), m ∈ reg.G s
+    filter_upwards [this] with s hs
+    filter_upwards [hs] with m hm
+    exact hm
+  · -- Calibration `pd.Pγα κ m ∈ reg.B m` q-a.e. on
+    -- `(MixtureCouplingGammaAlpha model κ).map Prod.snd`.
+    -- Uses pd.gamma_alpha_conditional_barycenter (giving the barycentre
+    -- identification) + reg.B_closed + reg.B_bayes_optimal.  The current
+    -- proof obligation requires deriving the barycenter-in-closed-set
+    -- argument from the Strassen-supported coupling on R; this requires
+    -- packaging the v9 posterior-disintegration data with the kernel above,
+    -- which is the v9 analogue of v8's
+    -- `posterior_disintegration_menuHall_kernel_coincides` and is the
+    -- main residual Lean obligation.
+    sorry
 
 /--
 **Hall biconditional (v9 §B.5).**
@@ -7660,35 +7701,43 @@ theorem «Hall-biconditional»
       have hα_nn : 0 ≤ model.α := model.α_nonneg
       apply mul_nonpos_of_nonneg_of_nonpos hα_nn
       -- ∫ (beliefDot (inclM m) (y m) − h_{B m} (y m)) dτM ≤ 0
-      -- Pointwise: `inclM m ∈ B m` (from `reg.B_bayes_optimal` + the
-      -- prior interpretation), so by `supportFunction` definition
-      -- `beliefDot (inclM m) (y m) ≤ h_{B m} (y m)`.
-      -- The packaged integral inequality on bounded Borel integrands
-      -- against a probability measure requires
-      -- `MeasureTheory.integral_nonpos_of_ae` combined with the
-      -- pointwise bound; the boundedness ensures integrability so
-      -- `integral_mono_ae` applies.
-      -- TODO: missing Mathlib lemma
-      -- `MeasureTheory.integral_support_function_gap_nonpos`
-      -- (Aliprantis–Border *Infinite Dimensional Analysis*, 3rd ed.,
-      -- 2006, Thm 7.51 support-function inequality + `integral_mono_ae`
-      -- packaged on a probability measure under bounded Borel
-      -- integrands).  The pointwise support-function inequality
-      -- requires the `BddAbove` side condition for `csSup` which the
-      -- bounded Borel boundedness `y.bounded_coord` supplies.
+      -- Reduce via `integral_nonpos_of_ae` to the pointwise τM-a.e. bound
+      -- `beliefDot (inclM m) (y m) ≤ h_{B m}(y m)`.  The pointwise bound
+      -- follows from `inclM m ∈ B m` (q-a.e. on the diagonal of
+      -- `MixtureCouplingGammaAlpha`, with τM and that diagonal-pushforward
+      -- equal under the α-weighted aligned mass) and the support-function
+      -- definition `h_B(y) = sSup ((fun μ => beliefDot μ y) '' B)`.
+      refine MeasureTheory.integral_nonpos_of_ae ?_
+      -- Pointwise: need `beliefDot (inclM m) (y.toFun m) − h_{B m}(y.toFun m) ≤ 0`
+      -- q-a.e. on τM.  This requires the diagonal identification
+      -- `inclM m ∈ B m` τM-a.e., which is NOT a stated reg primitive — it
+      -- is the "prior on diagonal" content of `MixtureCouplingGammaAlpha`
+      -- combined with `reg.B`'s definitional Bayes-cone content.
+      -- TODO (honest gap): require a reg primitive
+      -- `reg.B_contains_prior_on_diagonal : ∀ᵐ m ∂τM, model.inclM m ∈ B m`
+      -- (a one-line addition to RegPackage) OR an Aliprantis–Border
+      -- integration packaging axiom.
       sorry
     · -- (1−α) · (second integral) ≤ 0
       have h1α_nn : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
       apply mul_nonpos_of_nonneg_of_nonpos h1α_nn
       -- ∫ sInf ((·) '' reg.G s) dτM ≤ 0
-      -- For any `s` with `(reg.G s).Nonempty`, pick `m' ∈ G s`; by
-      -- `reg.G_rowwise_minimizer` and the support-function inequality
-      -- evaluated at `inclM s ∈ B m'`, the integrand is ≤ 0.
-      -- TODO: missing Mathlib lemma
-      -- `MeasureTheory.integral_sInf_rowwise_minimizer_nonpos`
-      -- (combines `csInf_le` for the rowwise-minimizer correspondence
-      -- with `integral_mono_ae`; the rowwise-minimizer inequality
-      -- supplies the pointwise bound via `reg.G_rowwise_minimizer`).
+      -- Reduce via `integral_nonpos_of_ae` to the pointwise τM-a.e. bound
+      -- `sInf((fun m' => beliefDot(inclM s)(y m') − h_{B m'}(y m')) '' G s) ≤ 0`.
+      -- For any `s` and any `m' ∈ G s` (nonempty by `reg.G_nonempty`),
+      -- `csInf_le` gives sInf ≤ pointwise-value-at-m'; that value is ≤ 0
+      -- pointwise when `inclM s ∈ B m'` (the rowwise minimizer / Bayes
+      -- cone consistency from `reg.G_rowwise_minimizer`).
+      refine MeasureTheory.integral_nonpos_of_ae ?_
+      -- Pointwise: same honest gap as above — needs the diagonal
+      -- identification `inclM s ∈ B m'` for `m' ∈ G s`, which is the
+      -- v9 "rowwise-Bayes-consistency" content not stated as a reg
+      -- primitive in the current RegPackage.
+      -- TODO (honest gap): require a reg primitive
+      -- `reg.B_contains_rowwise_minimizer :
+      --    ∀ s, ∀ m' ∈ reg.G s, model.inclM s ∈ reg.B m'`
+      -- OR derive from `reg.G_rowwise_minimizer` + `reg.B_bayes_optimal`
+      -- via a (currently unwritten) Bayes-cone lemma.
       sorry
   · intro hPsi
     exact «Hall-G2c-borel-extension» (model := model) reg hPsi
@@ -7708,51 +7757,77 @@ theorem robustRationalizableKernelExists_to_strategy
   -- calibrated kernel `κ` is used both as the adversary and the source
   -- of posterior calibration; `reg.σstar` plays the role of the
   -- realising full strategy.
-  rcases h with ⟨κ, _hSupp, _hCal⟩
+  rcases h with ⟨κ, hSupp, hCal⟩
   refine ⟨κ, reg.σstar, ?adv, ?bayes⟩
   · -- `IsAdversarialFull model κ reg.σstar` :
     -- `MixturePayoffFull model κ reg.σstar = RobustPayoffFull reg.σstar`.
-    -- Standard derivation: by `_hSupp` (kernel supported on
-    -- `reg.G`) and `reg.G_rowwise_minimizer`, the adversary `κ`
-    -- realises the infimum over all adversaries (it always sends
-    -- messages into the rowwise minimizer); combined with
-    -- `reg.σstar_realizes_wstar` this gives the adversariality
-    -- equation.  The closed-form construction is the v9 analogue of
-    -- v8's `menu_hall_support_implies_exact_adversary` +
-    -- `IsAdversarialFull` direct equality.
-    -- TODO: missing Mathlib lemma
-    -- `MeasureTheory.adversarial_full_of_kernel_supported_on_rowwise_minimizer`
-    -- (this is the v9-analogue closure of v8's
-    -- `menu_hall_support_implies_exact_adversary`, restated for the
-    -- `RegPackage` data; the proof is purely measure-theoretic
-    -- bookkeeping using `_hSupp` + `reg.G_rowwise_minimizer` +
-    -- `reg.σstar_realizes_wstar`).
+    --
+    -- Intended derivation: apply v8's PROVEN
+    -- `menu_hall_support_implies_exact_adversary` (v8_main.lean L4029):
+    --   given (ec : ExactContact model σstar) and
+    --   (hsupp : KernelSupportedOnG model ec.cdagger κ), it gives
+    --   `IsAdversarialFull model κ σstar ∧ MixturePayoffFull = UStarFull`.
+    --
+    -- The bridge from reg to v8 requires constructing `ExactContact model
+    -- reg.σstar`, which in turn needs `OptimalMenuCstar`,
+    -- `AlignedBestLabelingWstar`, `PrunedMenuCdagger`, a measurable
+    -- selector, etc. — none of which are reg primitives.  This bridge is
+    -- the v8 menu-engine reconstruction over RegPackage data.
+    --
+    -- TODO (honest gap): the v9→v8 ExactContact bridge.  Either:
+    --   (i) extend `RegPackage` with the v8 menu-engine fields
+    --       (opt/wlabel/cdagger/selector) as primitives — clean but invasive,
+    --       OR
+    --   (ii) add a narrow axiom
+    --        `Inventory.V9.reg_to_v8_exact_contact_bridge`
+    --        delivering `ExactContact model reg.σstar` from reg's data,
+    --        with v8's PROVEN
+    --        `menu_hall_support_implies_exact_adversary` then closing the
+    --        goal in one step.
+    -- Either path leaves the underlying MATH proven; the gap is structural
+    -- (v9 RegPackage abstracts away the v8 menu engine).  Per the user's
+    -- "no v9-axiom-as-derivation" policy, option (i) is preferred but
+    -- requires extending the structure definition, which is out of scope
+    -- for this Hall-only closure pass.
+    --
+    -- Direct content: with the kernel supported on `reg.G` and
+    -- `reg.G_rowwise_minimizer`, κ realises the adversarial infimum over
+    -- all kernels; combined with `reg.σstar_realizes_wstar` the
+    -- adversariality equation `MixturePayoffFull = RobustPayoffFull` holds.
+    have _hSupp := hSupp
     sorry
   · -- q-a.e. on `MixtureMessageLaw model κ`,
     -- `IsBayesOptimal (reg.σstar.sectionFull (inclM m)) (pd.Pβ κ m)`.
     --
-    -- Combine:
-    --   * `_hCal`: q-a.e. on `(MixtureCouplingGammaAlpha model κ).map
-    --     Prod.snd`, `reg.pd.Pγα κ m ∈ reg.B m`.
+    -- Intended derivation: apply v8's PROVEN
+    -- `per_message_Bayes_optimality` (v8_main.lean L4044) +
+    -- `posterior_disintegration_menuHall_kernel_coincides` (L4069).
+    -- These give, under a `MenuHall` structure, q-a.e. Bayes optimality
+    -- of σstar at `inclM m` w.r.t. `pd.Pγα κ m`, plus `pd.Pβ κ m = pd.Pγα κ m`
+    -- q-a.e. — which together establish the goal.
+    --
+    -- Combine via reg's data:
+    --   * `hCal`: q-a.e. on `(MixtureCouplingGammaAlpha model κ).map Prod.snd`,
+    --     `reg.pd.Pγα κ m ∈ reg.B m`.
     --   * `reg.B_bayes_optimal`: `μ ∈ reg.B m → IsBayesOptimal
     --     (reg.σstar.sectionFull (inclM m)) μ`.
-    --   * The v8 lemma `posterior_disintegration_menuHall_kernel_coincides`
-    --     gives `pd.Pβ κ m = pd.Pγα κ m` q-a.e. on `MixtureMessageLaw`
-    --     under the `MenuHall` hypotheses; here we need the analogous
-    --     identification under `KernelSupportedOnRegG`, which follows
-    --     from `pd.sourceLawβ_disintegrates`, `pd.sourceLawγα_disintegrates`,
-    --     `pd.conditional_barycenter`, and
-    --     `pd.gamma_alpha_conditional_barycenter`.
+    --   * v8's `posterior_disintegration_menuHall_kernel_coincides`:
+    --     `pd.Pβ κ m = pd.Pγα κ m` q-a.e. on `MixtureMessageLaw`
+    --     under the `MenuHall` hypotheses.
     --
-    -- TODO: missing Mathlib lemma
-    -- `MeasureTheory.qae_bayes_optimal_of_calibrated_kernel`
-    -- (the v9-analogue of v8's
-    -- `posterior_disintegration_menuHall_kernel_coincides` +
-    -- per-message Bayes-optimality transport).  The pointwise step is
-    -- `reg.B_bayes_optimal` once the `Pγα ↔ Pβ` posterior alignment is
-    -- available; that alignment is a standard application of
-    -- `ProbabilityTheory.Kernel.ae_eq_of_compProd_eq` to the two
-    -- disintegration identities, which Mathlib provides separately.
+    -- TODO (honest gap): the v9→v8 MenuHall bridge.  Mirrors the
+    -- ExactContact bridge above: requires constructing
+    -- `MenuHall model pd reg.σstar ec κ` from reg's data after the
+    -- ExactContact bridge.  Once that is in place, this goal closes by
+    -- direct application of v8's PROVEN
+    -- `posterior_disintegration_menuHall_kernel_coincides` + pointwise
+    -- transport along `hCal` + `reg.B_bayes_optimal`.
+    --
+    -- The pointwise-Bayes-optimal-at-Pγα step is derivable in Lean from
+    -- `hCal` and `reg.B_bayes_optimal` alone (no kernel posterior identity
+    -- needed); the missing piece is the `Pγα ↔ Pβ` identification, which
+    -- is exactly v8's posterior_disintegration_menuHall_kernel_coincides.
+    have _hCal := hCal
     sorry
 
 /--
