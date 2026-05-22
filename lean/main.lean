@@ -6288,15 +6288,11 @@ def RegPackage.robustRationalizableKernelExists
 
 /-! ## §9.5 Hall biconditional concrete predicates (v9 §B.5)
 
-Following the T1 / Binary pattern: each Hall theorem corresponds to a
-concrete `Is*` predicate over data-witness fields, so the discharge
-reduces to projection. The substantive math
-(`Inventory.farkas_lp_duality_conic` for G1, `Inventory.strassen_marginals`
-for G2c, the support-function inequality for the forward biconditional,
-the σstar bridge to `Definition2QAEPredicate` for the kernel-to-strategy
-adaptor, and the explicit WTA computation
-`Ψ(y) = (1−α)·(4/9) = 2/9 @ α = 1/2`) lives in the corresponding
-witness fields that bundle the inventory invocations. -/
+Following the T1 / Binary pattern: most Hall theorems correspond to a
+concrete `Is*` predicate over data-witness fields, so their discharge
+reduces to projection. The WTA numerical theorem is deliberately not in
+that pattern: it computes `Ψ(y) = (1−α)·(4/9) = 2/9 @ α = 1/2` from
+explicit ternary WTA fields below. -/
 
 /-- G1 concrete content: feasibility ↔ no separating dual price. We
 record this as a propositional biconditional witness; the actual
@@ -6306,11 +6302,6 @@ content (a conic Farkas instance + invocation of
 def IsFiniteConeHallBiconditional
     (flowFeasible psiNonpos : Prop) : Prop :=
   flowFeasible ↔ psiNonpos
-
-/-- WTA dual certificate concrete content: the explicit ternary
-computation `Ψ(y) = 2/9` at the certificate witness. -/
-def IsWTACertificate (psiValue : ℝ) : Prop :=
-  psiValue = (2 : ℝ) / 9
 
 /-! ## §10 Finite conic Hall, WTA, polyhedral, primitive-class packages -/
 
@@ -6323,14 +6314,77 @@ structure FiniteConeHallInstance where
   lives outside this structure. -/
   hallG1Witness : IsFiniteConeHallBiconditional flowFeasible psiNonpos
 
+/-- Ternary WTA dual price `y_j = 1 - 2 e_j`. -/
+def WTADualPrice (j : WTAΩ) : WTAProfile :=
+  fun ω => if ω = j then (-1 : ℝ) else 1
+
+/-- Concrete WTA inputs for the ternary uniform computation.
+
+The structure records the inputs used by the WTA Hall calculation, not the
+conclusion `Ψ = 2/9`. In particular, there is no certificate witness field. -/
 structure WTAData where
-  psiValue : ℝ
+  cardOmega : Fintype.card WTAΩ = 3
+  prior : WTAΩ → ℝ
+  priorUniform : ∀ ω : WTAΩ, prior ω = (1 : ℝ) / 3
+  tauUniform : Prop
+  alpha : ℝ
+  alpha_value : alpha = (1 : ℝ) / 2
+  dualPrices : WTAΩ → WTAProfile
+  dualPrices_eq : dualPrices = WTADualPrice
+  bayesConeSupport : WTAΩ → ℝ
+  bayesConeSupport_eq : ∀ j : WTAΩ, bayesConeSupport j = (1 : ℝ) / 3
+  kMinusCoordinateMean : WTAΩ → ℝ
+  kMinusCoordinateMean_eq :
+    ∀ j : WTAΩ, kMinusCoordinateMean j = (1 : ℝ) / 9
+  alignedContribution : ℝ
+  alignedContribution_eq_zero : alignedContribution = 0
   certificatePositive : Prop
   reopeningThreshold : ℝ → Prop
-  /-- WTA data witness: `psiValue = 2/9` explicit ternary computation
-  (`y_j = 1 − 2e_j`, `h_{B_j}(y_j) = 1/3`, `E[s_j | s ∈ K_j^-] = 1/9`,
-  giving `Ψ(y) = (1−α)·(4/9) = 2/9` at `α = 1/2`). -/
-  wtaCertificateWitness : IsWTACertificate psiValue
+
+/-- Average WTA misaligned contribution:
+`y_j · E[s | s ∈ K_j^-] - h_{B_j}(y_j) = 1 - 2 * (1/9) - 1/3 = 4/9`. -/
+noncomputable def wtaMinusConeAverage (wta : WTAData) : ℝ :=
+  (∑ j : WTAΩ,
+      ((1 : ℝ) - 2 * wta.kMinusCoordinateMean j -
+        wta.bayesConeSupport j)) / 3
+
+/-- The WTA Hall dual objective at the explicit ternary input. -/
+noncomputable def psiOfWTA (wta : WTAData) : ℝ :=
+  wta.alpha * wta.alignedContribution +
+    (1 - wta.alpha) * wtaMinusConeAverage wta
+
+namespace WTAData
+
+/-- Dot-notation alias for the computed WTA value. This is a definition,
+not a stored conclusion field. -/
+noncomputable def psiValue (wta : WTAData) : ℝ :=
+  psiOfWTA wta
+
+end WTAData
+
+private lemma wta_minus_cone_average_eq_four_ninths (wta : WTAData) :
+    wtaMinusConeAverage wta = (4 : ℝ) / 9 := by
+  classical
+  unfold wtaMinusConeAverage
+  calc
+    (∑ j : WTAΩ,
+        ((1 : ℝ) - 2 * wta.kMinusCoordinateMean j -
+          wta.bayesConeSupport j)) / 3
+        = (∑ _j : WTAΩ, ((4 : ℝ) / 9)) / 3 := by
+          congr 1
+          apply Finset.sum_congr rfl
+          intro j _hj
+          rw [wta.kMinusCoordinateMean_eq j, wta.bayesConeSupport_eq j]
+          norm_num
+    _ = (4 : ℝ) / 9 := by
+      norm_num [WTAΩ]
+
+theorem wta_psi_value_eq_two_ninths (wta : WTAData) :
+    psiOfWTA wta = (2 : ℝ) / 9 := by
+  unfold psiOfWTA
+  rw [wta.alpha_value, wta.alignedContribution_eq_zero,
+    wta_minus_cone_average_eq_four_ninths wta]
+  norm_num
 
 structure PolyhedralLPInstance where
   finiteFacetHyp : Prop
@@ -7278,13 +7332,31 @@ theorem robustRationalizableKernelExists_to_strategy
 Ternary winner-take-all: `y_j = 1 − 2e_j`, `h_{B_j}(y_j) = 1/3`,
 `E[s_j | s ∈ K_j^-] = 1/9`, so
 `Ψ(y) = α · 0 + (1 − α) · (4/9)`. At the user-locked normalization
-`α = 1/2`, this is `Ψ(y) = 2/9`. Bundled into
-`wta.wtaCertificateWitness`. -/
+`α = 1/2`, this is `Ψ(y) = 2/9`. -/
 theorem «Hall-WTA-dual-certificate-psi-two-ninths»
     (wta : WTAData)
     (_hCert : wta.certificatePositive) :
-    wta.psiValue = (2 : ℝ) / 9 :=
-  wta.wtaCertificateWitness
+    wta.psiValue = (2 : ℝ) / 9 := by
+  change psiOfWTA wta = (2 : ℝ) / 9
+  unfold psiOfWTA wtaMinusConeAverage
+  have hAvg :
+      (∑ j : WTAΩ,
+          ((1 : ℝ) - 2 * wta.kMinusCoordinateMean j -
+            wta.bayesConeSupport j)) / 3 = (4 : ℝ) / 9 := by
+    calc
+      (∑ j : WTAΩ,
+          ((1 : ℝ) - 2 * wta.kMinusCoordinateMean j -
+            wta.bayesConeSupport j)) / 3
+          = (∑ _j : WTAΩ, ((4 : ℝ) / 9)) / 3 := by
+            congr 1
+            apply Finset.sum_congr rfl
+            intro j _hj
+            rw [wta.kMinusCoordinateMean_eq j, wta.bayesConeSupport_eq j]
+            norm_num
+      _ = (4 : ℝ) / 9 := by
+        norm_num [WTAΩ]
+  rw [wta.alpha_value, wta.alignedContribution_eq_zero, hAvg]
+  norm_num
 
 /-- WTA reopening threshold. User-locked normalization `D ≥ 2(1−α)/(9α)`
 per the corrected source memos (`v9_executive_summary.md`,
