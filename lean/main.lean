@@ -5269,14 +5269,51 @@ structure FiniteMenuData (k : Nat) where
 
 /-! ## §6 T2 data -/
 
+/-- The prior μ_0 packaged as a `Belief`. -/
+def priorBelief : Belief model.Ω :=
+  ⟨model.μ0, model.μ0_nonneg, model.μ0_sum⟩
+
+/-- A fixed (arbitrary) on-path message — exists because `model.M` is nonempty. -/
+def constantMessage : model.M :=
+  Classical.arbitrary model.M
+
+/-- T2 data refinement (2026-05-21): concrete Prop fields replacing the
+abstract `Prop` placeholders. At α = 0 the agent's continuation should be
+Bayes-optimal at the prior μ_0 for every message (the message is
+uninformative). The "constant adversary" is the adversary that attains the
+adversarial infimum for the prior-Bayes strategy and induces posterior =
+μ_0 at q-a.e. on-path message. -/
 structure AlphaZeroSingletonData where
+  /-- The agent's strategy that is Bayes-optimal at the prior μ_0
+  uniformly over messages. -/
   priorStrategy : AgentStrategyFull model
+  /-- An adversary kernel attaining the adversarial infimum against
+  `priorStrategy`. -/
   constantAdversary : AdviserKernel model
-  priorOptimal : Prop
-  posteriorAtConstantMessageIsPrior : Prop
+  /-- At α=0 the message is uninformative; the agent's continuation
+  is Bayes-optimal at the prior μ_0 for every message. -/
+  priorOptimal :
+    ∀ m : model.M,
+      IsBayesOptimal model
+        (priorStrategy.sectionFull (model.inclM m))
+        (priorBelief model)
+  /-- The constant-adversary induced posterior equals the prior μ_0
+  at q-a.e. message under the mixture message law. -/
+  posteriorAtConstantMessageIsPrior :
+    ∀ pd : PosteriorDisintegration model,
+      ∀ᵐ m ∂MixtureMessageLaw model constantAdversary,
+        pd.Pβ constantAdversary m = priorBelief model
+  /-- The constant adversary realises the adversarial infimum, i.e.
+  `MixturePayoffFull = RobustPayoffFull` at `priorStrategy`. -/
+  adversaryOptimal :
+    IsAdversarialFull model constantAdversary priorStrategy
   -- (R2 cleanup, 2026-05-21) removed dead `robustRationalizable : Prop` field
   -- per refinement reviewer pass; conclusion is now stated directly by the T2
   -- theorem return type.
+  -- (T2 refinement, 2026-05-21) `priorOptimal` and
+  -- `posteriorAtConstantMessageIsPrior` upgraded from abstract `Prop`s to
+  -- concrete content; `adversaryOptimal` added so that the T2 proof can
+  -- discharge `IsAdversarialFull` directly from the data.
 
 /-! ## §7 Binary capstone data (no conclusion-as-field per reviewer N) -/
 
@@ -5553,11 +5590,17 @@ theorem «T2-alpha-zero-singleton-prior-strategy»
     {model : RobustTrustModel}
     (pd : PosteriorDisintegration model)
     (_hα : model.α = 0)
-    (data : AlphaZeroSingletonData model)
-    (_hPrior : data.priorOptimal)
-    (_hPost : data.posteriorAtConstantMessageIsPrior) :
+    (data : AlphaZeroSingletonData model) :
     HasRobustRationalizableStrategy model pd := by
-  sorry
+  -- Witness: the constant adversary + the prior-Bayes strategy.
+  refine ⟨data.constantAdversary, data.priorStrategy,
+    data.adversaryOptimal, ?_⟩
+  -- For q-a.e. m the posterior collapses to the prior μ_0, and the
+  -- prior-Bayes strategy is Bayes-optimal at μ_0 for every m.
+  filter_upwards [data.posteriorAtConstantMessageIsPrior pd] with m hmPost
+  -- After rewriting `pd.Pβ constantAdversary m = priorBelief model`,
+  -- the goal is exactly `data.priorOptimal m`.
+  simpa [hmPost] using data.priorOptimal m
 
 /-! ## §14 Binary capstone L_B1 … L_B6 -/
 
