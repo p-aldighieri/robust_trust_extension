@@ -293,7 +293,9 @@ structure AlphaZeroSingletonData where
   constantAdversary : AdviserKernel model
   priorOptimal : Prop
   posteriorAtConstantMessageIsPrior : Prop
-  robustRationalizable : Prop
+  -- (R2 cleanup, 2026-05-21) removed dead `robustRationalizable : Prop` field
+  -- per refinement reviewer pass; conclusion is now stated directly by the T2
+  -- theorem return type.
 
 /-! ## §7 Binary capstone data (no conclusion-as-field per reviewer N) -/
 
