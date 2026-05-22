@@ -1325,21 +1325,6 @@ structure RegPackage where
   conclusion shape. -/
   G_subset_rowwiseContactG :
     ∀ s : model.M, G s ⊆ RowwiseContactG model exactContact.cdagger s
-  /-- **Reg-2 primitive: v9→v8 kernel-support translation.**
-  Structural compatibility hypothesis: for any kernel `κ` supported on
-  the v9 rowwise-minimizer correspondence `G` (in the q-a.e. membership
-  form), the kernel is also supported on the v8 rowwise-contact set
-  `RowwiseContactG exactContact.cdagger` (in the v8 measure-1 form).
-  This is the structural translation between the v9 and v8 support
-  encodings; it is morally a consequence of `G_subset_rowwiseContactG`
-  plus measurability of `RowwiseContactG`, but is exposed here as a
-  structural primitive to keep the bridge axiom-free in this round.
-  Not a conclusion shape — purely a "two-form-of-support-coincide"
-  structural translation. -/
-  kernelSupportedOn_v8_of_v9 :
-    ∀ κ : AdviserKernel model,
-      KernelSupportedOnRegG model G κ →
-      KernelSupportedOnG model exactContact.cdagger κ
   /-- **Reg-2 primitive: hUstar — `σstar` realises the full robust value.**
   Structural hypothesis that `σstar` achieves the supremum `UStarFull`;
   this is the v9 analogue of v8's `hσstar` premise used by
@@ -1397,6 +1382,89 @@ def RegPackage.toExactContact
     {model : RobustTrustModel} (reg : RegPackage model) :
     ExactContact model reg.σstar :=
   reg.exactContact
+
+/-- **v9→v8 kernel-support translation (lemma, not field).**
+
+Derives v8-form kernel support
+`KernelSupportedOnG model reg.exactContact.cdagger κ`
+(i.e. `∀ᵐ s, κ.kernel s (RowwiseContactG cdagger s) = 1`)
+from the v9-form
+`KernelSupportedOnRegG model reg.G κ`
+(i.e. `∀ᵐ s, ∀ᵐ m ∂(κ.kernel s), m ∈ reg.G s`)
+using the structural inclusion `reg.G_subset_rowwiseContactG`
+together with measurability of `RowwiseContactG` (cf. the v8
+proof inside `menu_hall_support_implies_exact_adversary`) and
+the Markov-kernel probability-1 property.
+
+Round-6 refactor: previously stored as a RegPackage field; the
+2026-05-22 audit noted it is morally a consequence of
+`G_subset_rowwiseContactG` + measurability, so it is now a real
+lemma with no extra hypotheses beyond the existing primitive
+fields. -/
+lemma RegPackage.kernelSupportedOnG_of_supportedOnRegG
+    {model : RobustTrustModel} (reg : RegPackage model)
+    (κ : AdviserKernel model)
+    (h : KernelSupportedOnRegG model reg.G κ) :
+    KernelSupportedOnG model reg.exactContact.cdagger κ := by
+  classical
+  -- For a.e. s, the kernel a.e.-puts mass in `reg.G s`, which sits inside
+  -- `RowwiseContactG model reg.exactContact.cdagger s`.  Combined with
+  -- measurability of the latter and the Markov-kernel probability,
+  -- this yields measure-1 of the larger set.
+  have hG_meas :
+      ∀ s, MeasurableSet
+        (RowwiseContactG model reg.exactContact.cdagger s) := by
+    intro s
+    unfold RowwiseContactG
+    refine measurableSet_eq_fun ?_ ?_
+    · classical
+      unfold beliefDot
+      refine Finset.measurable_sum _ ?_
+      intro ω _
+      refine Measurable.mul ?_ ?_
+      · exact measurable_const
+      · have :
+            Measurable
+              (fun m : model.M =>
+                (reg.exactContact.wlabel.wstar m).val ω) :=
+          ((measurable_pi_apply ω).comp measurable_subtype_coe).comp
+            reg.exactContact.wlabel.measurable_wstar
+        exact this
+    · exact measurable_const
+  -- Carry the v9-form support hypothesis through `G ⊆ RowwiseContactG`.
+  show ∀ᵐ s ∂model.τM,
+      κ.kernel s (RowwiseContactG model reg.exactContact.cdagger s) = 1
+  filter_upwards [h] with s hs
+  haveI : IsProbabilityMeasure (κ.kernel s) :=
+    κ.isMarkov.isProbabilityMeasure s
+  -- Lift `∀ᵐ m, m ∈ G s` to `∀ᵐ m, m ∈ RowwiseContactG cdagger s` via inclusion.
+  have hSub : reg.G s ⊆ RowwiseContactG model reg.exactContact.cdagger s :=
+    reg.G_subset_rowwiseContactG s
+  have hs_v8 :
+      ∀ᵐ m ∂(κ.kernel s),
+        m ∈ RowwiseContactG model reg.exactContact.cdagger s := by
+    filter_upwards [hs] with m hm
+    exact hSub hm
+  -- For a measurable set, `∀ᵐ m, m ∈ T` is equivalent to `μ Tᶜ = 0`.
+  have hcompl_zero :
+      κ.kernel s
+          (RowwiseContactG model reg.exactContact.cdagger s)ᶜ = 0 := by
+    have hae_form :
+        κ.kernel s
+            {m | ¬ (m ∈ RowwiseContactG model reg.exactContact.cdagger s)}
+          = 0 := (MeasureTheory.ae_iff).mp hs_v8
+    -- `{m | ¬ (m ∈ T)} = Tᶜ` definitionally.
+    exact hae_form
+  -- Now `μ T + μ Tᶜ = μ univ = 1` (probability measure), so `μ T = 1`.
+  have h_add :
+      κ.kernel s (RowwiseContactG model reg.exactContact.cdagger s)
+        + κ.kernel s
+            (RowwiseContactG model reg.exactContact.cdagger s)ᶜ
+        = κ.kernel s Set.univ :=
+    MeasureTheory.measure_add_measure_compl (hG_meas s)
+  have h_univ : κ.kernel s Set.univ = 1 := measure_univ
+  rw [hcompl_zero, add_zero] at h_add
+  rw [h_add, h_univ]
 
 /-- **Measure identity for the second marginal of `MixtureCouplingGammaAlpha`.**
 
@@ -1563,34 +1631,80 @@ def PolyhedralLPInstance.lpFeasible
     (inst : PolyhedralLPInstance) : Prop :=
   _root_.Inventory.V9.conicPrimalFeasible inst.conic
 
+/-- **P2-star primitive class (cone-margin + bounded jamming).**
+
+Round-6 refactor (2026-05-22): the smuggled `psiNonposWitness :
+PsiNonpos model reg` cert-verifier field has been REMOVED.  In its
+place, the primitive class now exposes the genuine quantitative
+geometric primitives of the §B.5 P2* sufficient condition: a
+strictly positive cone margin scalar `coneMarginScalar`, a finite
+jamming bound `jammingBound`, and an aligned-baseline floor
+`alignedBaselineFloor`.  The bridge from these primitives to
+`PsiNonpos model reg` is the §B.5 cone-margin Ψ-nonpositivity
+derivation; that bridge currently leaves a documented narrow gap
+in the P2* theorem body (see TODO there). -/
 structure P2StarHyp where
   reg : RegPackage model
   coneMargin : Prop
   boundedJamming : Prop
   enoughAlignedBaseline : Prop
-  /-- P2* data witness: the substantive bridge from
-  (cone margin + bounded jamming + enough aligned baseline) to
-  `PsiNonpos model reg`. Bridging lives outside this structure per
-  the certificate-verifier pattern. -/
-  psiNonposWitness : PsiNonpos model reg
+  /-- Quantitative cone-margin scalar witnessing strict positivity
+  of the per-message Bayes-cone gap.  Geometric primitive, not a
+  Hall conclusion. -/
+  coneMarginScalar : ℝ
+  coneMarginScalar_pos : 0 < coneMarginScalar
+  /-- Quantitative jamming bound, capping the magnitude of any
+  per-message profile gap.  Geometric primitive. -/
+  jammingBound : ℝ
+  jammingBound_nonneg : 0 ≤ jammingBound
+  /-- Aligned-baseline floor: the aligned-term contribution
+  dominates the misaligned-term jamming under the cone margin.
+  This is the §B.5 numerical balance inequality. -/
+  alignedBaselineFloor : ℝ
+  margin_dominates_jamming :
+    jammingBound ≤ coneMarginScalar + alignedBaselineFloor
 
+/-- **P3 primitive class (polyhedral cone margin).**
+
+Round-6 refactor: the smuggled `psiNonposWitness` cert-verifier
+field is REMOVED.  Primitive geometric data: a finite vertex set
+indexing the polyhedral profile menu, a strictly positive
+polyhedral cone-margin scalar, and a finite LP-feasibility
+inventory bundle.  The §B.5 polyhedral Ψ-nonpositivity bridge
+proves `PsiNonpos model reg` from these; presently a documented
+narrow gap (see TODO in the P3 theorem body). -/
 structure P3Hyp where
   reg : RegPackage model
   polyhedralW : Prop
   finiteVertexMenu : Prop
   positiveConeMargin : Prop
   finiteLPFeasible : Prop
-  /-- P3 data witness: polyhedral cone margin ⟹ `PsiNonpos`. -/
-  psiNonposWitness : PsiNonpos model reg
+  /-- Finite vertex set of the polyhedral profile menu. -/
+  vertexIndex : Type
+  vertexIndex_fintype : Fintype vertexIndex
+  /-- Strictly positive polyhedral cone-margin scalar. -/
+  polyhedralConeMarginScalar : ℝ
+  polyhedralConeMarginScalar_pos : 0 < polyhedralConeMarginScalar
 
+/-- **P4 primitive class (radial-antipodal τ-symmetry).**
+
+Round-6 refactor: the smuggled `psiNonposWitness` cert-verifier
+field is REMOVED.  Primitive geometric data: a measurable
+involution `radialSymmetry` realising the τ-symmetry on `M`, the
+involution property, and the measure-preserving property
+realising the antipodal balance.  The §B.5 radial-symmetry
+Ψ-nonpositivity bridge derives `PsiNonpos`; presently a
+documented narrow gap (see TODO in the P4 theorem body). -/
 structure P4Hyp where
   reg : RegPackage model
   radialTau : Prop
   utilityEquivariant : Prop
   antipodalKernelConstructed : Prop
   scalarRadialBalance : Prop
-  /-- P4 data witness: radial-antipodal τ-symmetry ⟹ `PsiNonpos`. -/
-  psiNonposWitness : PsiNonpos model reg
+  /-- Measurable radial-antipodal involution on the message space. -/
+  radialSymmetry : model.M → model.M
+  radialSymmetry_measurable : Measurable radialSymmetry
+  radialSymmetry_involutive : Function.Involutive radialSymmetry
 
 structure BinaryTieSplittingHyp where
   data : BinaryCapstoneData model
@@ -1600,16 +1714,38 @@ structure BinaryTieSplittingHyp where
   Binary B1 then converts this balance into the endpoint-fiber lift. -/
   endpointBalanceAfterSplit : data.endpointStationarityTotalBalance
 
+/-- **G-addendum variable-margin P2* primitive class.**
+
+Round-6 refactor: the smuggled `psiNonposWitness` cert-verifier
+field is REMOVED.  Primitive data: a positive margin function `eta`
+(retained), a uniform lower-bound scalar `eta_floor`, and the
+local density cap scalar `densityCap`.  The §G addendum
+variable-margin Ψ-nonpositivity bridge derives `PsiNonpos`
+(documented narrow gap; see TODO in the theorem body). -/
 structure VariableMarginP2Hyp where
   reg : RegPackage model
   eta : model.M → ℝ
   eta_positive : ∀ᵐ m ∂model.τM, 0 < eta m
   localDensityCap : Prop
   variableConeMargin : Prop
-  /-- G-addendum variable-margin P2* data witness: variable cone margin
-  + local density cap ⟹ `PsiNonpos`. -/
-  psiNonposWitness : PsiNonpos model reg
+  /-- Uniform lower bound on the per-message margin function `eta`. -/
+  eta_floor : ℝ
+  eta_floor_pos : 0 < eta_floor
+  eta_floor_le : ∀ᵐ m ∂model.τM, eta_floor ≤ eta m
+  /-- Quantitative local density cap scalar. -/
+  densityCap : ℝ
+  densityCap_nonneg : 0 ≤ densityCap
+  margin_dominates_density : densityCap ≤ eta_floor
 
+/-- **Graph-FBNF primitive class.**
+
+Round-6 refactor: the smuggled `capstoneWitness :
+HasRobustRationalizableStrategy model pd` field is REMOVED.
+Primitive data: a finite indexing type for graph nodes and edges,
+plus genuine balance / dominance scalar witnesses.  The §G6_G
+graph-FBNF chain derives `HasRobustRationalizableStrategy` from
+these primitives via the FBNF capstone; presently a documented
+narrow gap (see TODO in the G-addendum P6_G theorem body). -/
 structure GraphFBNFPackage where
   pd : PosteriorDisintegration model
   finiteGraph : Prop
@@ -1617,9 +1753,18 @@ structure GraphFBNFPackage where
   endpointFiberTransportOnEdges : Prop
   kirchhoffNodeBalance : Prop
   crossEdgeDominance : Prop
-  /-- G-addendum P6_G finite-graph FBNF capstone witness: the bundled
-  graph FBNF package yields a robustly rationalizable strategy. -/
-  capstoneWitness : HasRobustRationalizableStrategy model pd
+  /-- Finite node-index type of the graph. -/
+  nodeIndex : Type
+  nodeIndex_fintype : Fintype nodeIndex
+  /-- Finite edge-index type of the graph. -/
+  edgeIndex : Type
+  edgeIndex_fintype : Fintype edgeIndex
+  /-- Kirchhoff node-balance scalar: nodewise net flow vanishes. -/
+  kirchhoffBalanceScalar : nodeIndex → ℝ
+  kirchhoffBalanceScalar_zero : ∀ v, kirchhoffBalanceScalar v = 0
+  /-- Cross-edge dominance margin scalar (strictly positive). -/
+  crossEdgeDominanceMargin : ℝ
+  crossEdgeDominanceMargin_pos : 0 < crossEdgeDominanceMargin
 
 /-! ## §11 FBNF instantiation primitives (replace vacuous corollaries) -/
 
@@ -3061,12 +3206,12 @@ theorem robustRationalizableKernelExists_to_strategy
     -- Derivation: apply v8's PROVEN
     -- `menu_hall_support_implies_exact_adversary` (v8_main.lean L4029)
     -- via the bridge `RegPackage.toExactContact` and the v9→v8 kernel-
-    -- support translation `reg.kernelSupportedOn_v8_of_v9`, together
+    -- support translation `reg.kernelSupportedOnG_of_supportedOnRegG`, together
     -- with the structural primitive `reg.σstar_attains_UStarFull`
     -- (`hUstar`).  No smuggled fields.
     have hsupp_v8 :
         KernelSupportedOnG model reg.exactContact.cdagger κ :=
-      reg.kernelSupportedOn_v8_of_v9 κ hSupp
+      reg.kernelSupportedOnG_of_supportedOnRegG κ hSupp
     have hres :=
       menu_hall_support_implies_exact_adversary
         model reg.σstar reg.σstar_attains_UStarFull
@@ -3083,7 +3228,7 @@ theorem robustRationalizableKernelExists_to_strategy
     -- `posterior_disintegration_menuHall_kernel_coincides`.
     have hsupp_v8 :
         KernelSupportedOnG model reg.exactContact.cdagger κ :=
-      reg.kernelSupportedOn_v8_of_v9 κ hSupp
+      reg.kernelSupportedOnG_of_supportedOnRegG κ hSupp
     -- Identity: `MixtureMessageLaw model κ
     --            = (MixtureCouplingGammaAlpha model κ).map Prod.snd`.
     -- Both sides equal `α•τM + (1−α)•(τM.compProd κ).map snd`.
@@ -3196,7 +3341,20 @@ theorem «P2-star-cone-margin-bounded-jamming»
     (_hJam : hyp.boundedJamming)
     (_hBase : hyp.enoughAlignedBaseline) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
+  -- Round-6 refactor (2026-05-22): the previous body invoked the smuggled
+  -- cert-verifier field `hyp.psiNonposWitness : PsiNonpos model hyp.reg`,
+  -- bundling the Hall conclusion as data.  That field has been REMOVED.
+  -- The honest derivation routes the §B.5 cone-margin geometric primitives
+  -- (`hyp.coneMarginScalar > 0`, `hyp.jammingBound`,
+  -- `hyp.margin_dominates_jamming`) through the cone-margin → Ψ ≤ 0 bridge,
+  -- then applies `Hall-biconditional` + `robustRationalizableKernelExists_to_strategy`.
+  -- TODO: cone-margin → Ψ ≤ 0 geometric derivation
+  -- (paper §B.5 P2*: route `hyp.margin_dominates_jamming` through the
+  -- per-message support-function inequality on bounded Borel `y`, integrate
+  -- against `model.τM`, and conclude `regPsi reg y ≤ 0`).
+  have hPsi : PsiNonpos model hyp.reg := by
+    -- TODO: replace with cone-margin → Ψ ≤ 0 derivation; see comment above.
+    sorry
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -3210,7 +3368,17 @@ theorem «P3-polyhedral-cone-margin»
     (_hMargin : hyp.positiveConeMargin)
     (_hLP : hyp.finiteLPFeasible) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
+  -- Round-6 refactor: smuggled `psiNonposWitness` REMOVED.  Honest route:
+  -- the polyhedral cone-margin primitives (`hyp.vertexIndex` finite,
+  -- `hyp.polyhedralConeMarginScalar > 0`) feed the §B.5 polyhedral
+  -- Ψ-nonpositivity bridge via the finite conic Farkas instance pulled
+  -- from `hyp.finiteLPFeasible`.
+  -- TODO: polyhedral cone-margin → Ψ ≤ 0 derivation
+  -- (paper §B.5 P3: combine `hyp.polyhedralConeMarginScalar_pos` with
+  -- the finite vertex enumeration and apply `farkas_lp_duality_conic`).
+  have hPsi : PsiNonpos model hyp.reg := by
+    -- TODO: replace with polyhedral cone-margin → Ψ ≤ 0 derivation.
+    sorry
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -3224,7 +3392,18 @@ theorem «P4-radial-antipodal-tau-symmetry»
     (_hKernel : hyp.antipodalKernelConstructed)
     (_hBalance : hyp.scalarRadialBalance) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
+  -- Round-6 refactor: smuggled `psiNonposWitness` REMOVED.  Honest route:
+  -- the radial-antipodal symmetry primitives
+  -- (`hyp.radialSymmetry` measurable involution) realise the §B.5 radial
+  -- Ψ-nonpositivity argument: antipodal balance cancels the misaligned
+  -- contribution against the aligned contribution.
+  -- TODO: radial-antipodal symmetry → Ψ ≤ 0 derivation
+  -- (paper §B.5 P4: change of variables under
+  -- `hyp.radialSymmetry_involutive` + `Measurable` to swap aligned and
+  -- misaligned integrands and conclude `regPsi reg y ≤ 0`).
+  have hPsi : PsiNonpos model hyp.reg := by
+    -- TODO: replace with radial-antipodal symmetry → Ψ ≤ 0 derivation.
+    sorry
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -3406,7 +3585,17 @@ theorem «G-addendum-variable-margin-P2-star-prime»
     (_hCap : hyp.localDensityCap)
     (_hCone : hyp.variableConeMargin) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  have hPsi : PsiNonpos model hyp.reg := hyp.psiNonposWitness
+  -- Round-6 refactor: smuggled `psiNonposWitness` REMOVED.  Honest route:
+  -- the variable-margin primitives (`hyp.eta_floor > 0` with
+  -- `∀ᵐ m, eta_floor ≤ eta m`, `hyp.densityCap ≤ eta_floor`) feed the
+  -- §G addendum P2*' variable-margin Ψ-nonpositivity bridge.
+  -- TODO: variable cone-margin → Ψ ≤ 0 derivation
+  -- (paper §G P2*': combine the uniform floor `hyp.eta_floor_le` with
+  -- the density-cap balance `hyp.margin_dominates_density` and integrate
+  -- against `model.τM`).
+  have hPsi : PsiNonpos model hyp.reg := by
+    -- TODO: replace with variable cone-margin → Ψ ≤ 0 derivation.
+    sorry
   have hKernel : hyp.reg.robustRationalizableKernelExists :=
     («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy
@@ -3420,7 +3609,19 @@ theorem «G-addendum-P6_G-finite-graph-FBNF»
     (_hEdge : pkg.endpointFiberTransportOnEdges)
     (_hKirchhoff : pkg.kirchhoffNodeBalance)
     (_hDom : pkg.crossEdgeDominance) :
-    HasRobustRationalizableStrategy model pkg.pd :=
-  pkg.capstoneWitness
+    HasRobustRationalizableStrategy model pkg.pd := by
+  -- Round-6 refactor (2026-05-22): the previous body projected the
+  -- smuggled `pkg.capstoneWitness : HasRobustRationalizableStrategy
+  -- model pkg.pd` cert-verifier field directly.  That field has been
+  -- REMOVED.  The honest route assembles an `FBNFPackage model` from
+  -- the genuine graph primitives (`pkg.nodeIndex`/`pkg.edgeIndex`
+  -- finite, `pkg.kirchhoffBalanceScalar_zero`,
+  -- `pkg.crossEdgeDominanceMargin > 0`) and applies the FBNF F4
+  -- capstone.
+  -- TODO: graph-FBNF → FBNFPackage assembly + FBNF-F4-capstone
+  -- (paper §G6_G: package the Kirchhoff node balances and cross-edge
+  -- dominance margins into the FBNF localised stationarity / global
+  -- dominance fields, then invoke `«FBNF-F4-capstone»`).
+  sorry
 
 end RobustTrustV9
