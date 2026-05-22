@@ -5172,12 +5172,34 @@ For compact argmax/argmin existence, use Mathlib's
 /-! ## §1.5 Hausdorff–Alexandroff continuous surjection (Kechris 1995, Thm 4.18) -/
 
 /-- **Hausdorff–Alexandroff theorem.** Every nonempty compact metric
-space is a continuous image of the Cantor space. (Placeholder Prop until
-`CantorSpace` is fixed in Mathlib for v9 use sites.) -/
+space is a continuous image of the Cantor space (modeled as `ℕ → Bool`).
+Source: Kechris 1995, *Classical Descriptive Set Theory*, Theorem 4.18.
+
+This axiom was earlier flagged as a TRAPDOOR (bare Prop conclusion). The
+present concrete statement matches the source citation. The axiom is
+currently UNUSED by the discharged v9 theorems; it's retained for the
+Cantor-canvas / atomless-τ constructions that may surface in deeper
+consolidation (v8 §10 atomless Tier 1b → v9 Reg-2 derivation paths). -/
 axiom hausdorff_alexandroff_continuous_surjection
     (K : Type*) [TopologicalSpace K] [CompactSpace K] [T2Space K]
-    [SecondCountableTopology K] :
-    Prop
+    [SecondCountableTopology K] [Nonempty K] :
+    ∃ f : (ℕ → Bool) → K, Continuous f ∧ Function.Surjective f
+
+/-! ## §1.6 (Reverted 2026-05-22)
+
+Earlier patch attempts added two axioms here (`bayes_best_response_exists`,
+`alpha_zero_posterior_collapse`) that the new `/lean-smuggling-check`
+auditor (MathPipeProver c19c54d) correctly flagged as SMUGGLED_AXIOM. The
+second was particularly contraband: its conclusion was materially the
+same as the `posteriorAtConstantMessageIsPrior` field of
+`AlphaZeroSingletonData`, and the proof of `AlphaZeroSingletonData_exists`
+just applied it verbatim to fill that field. The proof goblin had moved
+under a nicer rug. Both axioms have been removed.
+
+`AlphaZeroSingletonData_exists` is restored as a `sorry`-stubbed open
+follow-up (task #128). The honest path forward: prove it from v8's
+`PosteriorLawConsistency.barycenter_eq_prior` + `pd.conditional_barycenter`
++ `pd.sourceLawβ_disintegrates` + the mixture-law collapse at α=0. -/
 
 end Inventory.V9
 
@@ -6128,20 +6150,52 @@ theorem AlphaZeroSingletonData.to_hasRobustRationalizableStrategy
   filter_upwards [data.posteriorAtConstantMessageIsPrior pd] with m hmPost
   simpa [hmPost] using data.priorOptimal m
 
-/-- **Missing α=0 existence lemma.** Given `α = 0`, construct the
-`AlphaZeroSingletonData` certificate. The construction requires:
-1. Existence of a private strategy Bayes-optimal at `priorBelief model` for
-   every message (use the standard Bayes selector / KRN with a constant
-   posterior, or the existence-of-Bayes-best-action lemma).
-2. A Dirac/constant adversarial kernel concentrated at `constantMessage`.
-3. The q-a.e. posterior collapse `pd.Pβ constantAdversary m = priorBelief model`
-   under the mixture message law (when `α = 0`, that law reduces to the
-   Dirac second-marginal, and the disintegration identities then collapse
-   the posterior).
-4. The "message-ignoring strategy makes every adversary optimal" identity,
-   which gives `IsAdversarialFull` for the constant adversary.
+/-- **α=0 existence lemma.** Given `α = 0`, construct the
+`AlphaZeroSingletonData` certificate explicitly.
 
-Each sub-step is its own per-lemma round. -/
+Construction (per v9_consolidated.md §B.2 / exposition_v9.tex §4):
+
+* **`priorStrategy`** — a *message-ignoring* full strategy whose section
+  returns the fixed private strategy `σ̂₀ := Classical.choice hBayes` that
+  attains Bayes-optimality at the prior `priorBelief model`. Measurability
+  is trivial because the section is constant.
+
+* **`constantAdversary`** — the Dirac kernel concentrated at
+  `constantMessage` for every source, packaged via
+  `ProbabilityTheory.Kernel.const`.
+
+* **`priorOptimal m`** — for every `m`, `priorStrategy.sectionFull
+  (model.inclM m) = σ̂₀`, which is Bayes-optimal at the prior by
+  construction.
+
+* **`posteriorAtConstantMessageIsPrior`** — at `α = 0` the
+  `MixtureMessageLaw` collapses to the second marginal of the kernel
+  pushforward, which for our Dirac kernel is `Measure.dirac constantMessage`.
+  The disintegration identities then force the posterior at the unique
+  on-path message to equal the prior.
+
+* **`adversaryOptimal`** — since `priorStrategy.sectionFull` is constant,
+  the misaligned payoff is independent of the adviser kernel (Markov
+  kernels integrate constants to themselves), so the range of
+  `MixturePayoffFull β priorStrategy` is a singleton and every β attains
+  the infimum.
+
+**Reverted 2026-05-22:** the earlier discharge of this theorem used two
+`Inventory.V9` axioms (`bayes_best_response_exists` and
+`alpha_zero_posterior_collapse`) that the new `/lean-smuggling-check`
+auditor correctly flagged as SMUGGLED_AXIOM — the second was materially
+the same proposition as the `posteriorAtConstantMessageIsPrior` field
+it filled. The proof goblin had moved under a nicer rug. Both axioms
+have been removed, and this theorem is restored as a documented sorry
+stub (task #128).
+
+The honest construction route (for a future prover round): use v8
+`PosteriorLawConsistency.barycenter_eq_prior` + `pd.conditional_barycenter`
++ `pd.sourceLawβ_disintegrates` + the algebraic fact that
+`MixtureMessageLaw model β = Measure.dirac c₀` when `α = 0` and
+`β = const (dirac c₀)`. The existence of a Bayes-best private strategy
+should be obtained from `ProfileRealizationSetup` continuity hypotheses,
+not from a free-standing axiom. -/
 theorem AlphaZeroSingletonData_exists
     {model : RobustTrustModel}
     (_hα : model.α = 0) :
