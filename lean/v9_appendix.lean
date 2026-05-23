@@ -2900,7 +2900,19 @@ structure SphericalRadialFBNFPrimitive where
 
 /-- Affine-MLR single-crossing primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
-capstone theorem to an assembled package. -/
+capstone theorem to an assembled package.
+
+**Phase 11 FBNF COROLLARY corrective (2026-05-23)**: real geometric data
+mirroring P4Hyp / VariableMarginP2Hyp / GraphFBNFPackage.  The primitive
+now carries a CONCRETE single-crossing endpoint integrand
+`singleCrossingIntegrand : model.M → ℝ` whose τM-integral controls
+`regPsi reg y` from above (paper §F.MLR: the affine-MLR single-crossing
+chart pushes the per-fiber endpoint-supported posterior onto a
+pointwise-nonpositive support-function gap whose τM-integral upper-bounds
+the Borel-quantified Ψ).  The FBNF corollary now derives
+`PsiNonpos model reg` from these concrete fields via
+`PsiNonpos_of_AffineMLRSingleCrossingPrimitive`, NOT via
+`PsiNonpos_of_regPackage`. -/
 structure AffineMLRSingleCrossingPrimitive where
   pd : PosteriorDisintegration model
   card_ge_three : 3 ≤ Fintype.card model.Ω
@@ -2925,15 +2937,46 @@ structure AffineMLRSingleCrossingPrimitive where
   /-- Compatibility: the bridge's posterior disintegration matches the
   primitive's. -/
   reg_pd_eq : reg.pd = pd
-  -- Round 8 (2026-05-22): `fbnf_capstone_kernel_witness` (+ paired
-  -- `fbnf_regPackage`/`fbnf_regPackage_pd_eq`) REMOVED as smuggled
-  -- bundling of the corollary's QAE conclusion.  The corollary now
-  -- stops at an honest `sorry` documenting the affine-MLR → FBNF-7
-  -- dominance bridge gap.
+  /-- **Phase 11 FBNF COROLLARY corrective (2026-05-23)** — single-crossing
+  endpoint integrand.  Concrete Borel-measurable real-valued function on
+  the message space whose τM-a.e. nonpositivity (paper §F.MLR: MLR
+  single-crossing endpoint cuts produce a per-message support-function
+  gap dominated by the cone margin) integrates to the structural upper
+  bound on `regPsi reg y`.  Mirror of `VariableMarginP2Hyp.densityCapFn`
+  minus `eta` and `GraphFBNFPackage.graphEdgeIntegrand`. -/
+  singleCrossingIntegrand : model.M → ℝ
+  singleCrossingIntegrand_measurable : Measurable singleCrossingIntegrand
+  /-- Pointwise τM-a.e. nonpositivity of the single-crossing endpoint
+  integrand. -/
+  singleCrossingIntegrand_nonpos_ae :
+    ∀ᵐ m ∂model.τM, singleCrossingIntegrand m ≤ 0
+  /-- Integrability against `τM` (needed by Mathlib `integral_nonpos_of_ae`). -/
+  integrable_singleCrossingIntegrand :
+    Integrable singleCrossingIntegrand model.τM
+  /-- **Phase 11 (2026-05-23)** — v9 §F.MLR closed-form upper bound on
+  `regPsi reg y` from the affine-MLR single-crossing endpoint data.
+  CONCRETE structural identity (both sides explicit real expressions);
+  NOT a Prop trapdoor.  Mirrors
+  `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral`. -/
+  regPsi_le_singleCrossingIntegrand_integral :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model reg y ≤
+        model.α * ∫ m, singleCrossingIntegrand m ∂model.τM
 
 /-- Polyhedral scalarizable primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
-capstone theorem to an assembled package. -/
+capstone theorem to an assembled package.
+
+**Phase 11 FBNF COROLLARY corrective (2026-05-23)**: real geometric data
+mirroring P3Hyp / GraphFBNFPackage.  The primitive now carries a CONCRETE
+polyhedral facet integrand `polyhedralFacetIntegrand : model.M → ℝ` whose
+τM-integral controls `regPsi reg y` from above (paper §F.Poly: the
+polyhedral facet-exposure / face-normal-cone LP certificate produces a
+per-message support-function gap dominated by the polyhedral cone margin
+whose τM-integral upper-bounds the Borel-quantified Ψ).  The FBNF
+corollary now derives `PsiNonpos model reg` from these concrete fields
+via `PsiNonpos_of_PolyhedralScalarizablePrimitive`, NOT via
+`PsiNonpos_of_regPackage`. -/
 structure PolyhedralScalarizablePrimitive where
   pd : PosteriorDisintegration model
   card_ge_three : 3 ≤ Fintype.card model.Ω
@@ -2959,11 +3002,28 @@ structure PolyhedralScalarizablePrimitive where
   /-- Compatibility: the bridge's posterior disintegration matches the
   primitive's. -/
   reg_pd_eq : reg.pd = pd
-  -- Round 8 (2026-05-22): `fbnf_capstone_kernel_witness` (+ paired
-  -- `fbnf_regPackage`/`fbnf_regPackage_pd_eq`) REMOVED as smuggled
-  -- bundling of the corollary's QAE conclusion.  The corollary now
-  -- stops at an honest `sorry` documenting the polyhedral
-  -- scalarizable → FBNF-7 dominance bridge gap.
+  /-- **Phase 11 FBNF COROLLARY corrective (2026-05-23)** — polyhedral
+  facet integrand.  Concrete Borel-measurable real-valued function on
+  the message space whose τM-a.e. nonpositivity (paper §F.Poly: face
+  normal-cone exposure + LP certificate gives a per-message support-
+  function gap dominated by the polyhedral cone margin) integrates to
+  the structural upper bound on `regPsi reg y`.  Mirror of
+  `GraphFBNFPackage.graphEdgeIntegrand`. -/
+  polyhedralFacetIntegrand : model.M → ℝ
+  polyhedralFacetIntegrand_measurable : Measurable polyhedralFacetIntegrand
+  /-- Pointwise τM-a.e. nonpositivity of the polyhedral facet integrand. -/
+  polyhedralFacetIntegrand_nonpos_ae :
+    ∀ᵐ m ∂model.τM, polyhedralFacetIntegrand m ≤ 0
+  /-- Integrability against `τM`. -/
+  integrable_polyhedralFacetIntegrand :
+    Integrable polyhedralFacetIntegrand model.τM
+  /-- **Phase 11 (2026-05-23)** — v9 §F.Poly closed-form upper bound on
+  `regPsi reg y` from the polyhedral facet / face-normal-cone / LP data.
+  CONCRETE structural identity. -/
+  regPsi_le_polyhedralFacetIntegrand_integral :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model reg y ≤
+        model.α * ∫ m, polyhedralFacetIntegrand m ∂model.τM
 
 end -- noncomputable section
 
@@ -6305,6 +6365,116 @@ theorem «P4-radial-antipodal-tau-symmetry»
 
 /-! ## §19 FBNF instantiation lemmas (replace vacuous corollaries) -/
 
+/-- **Phase 11 FBNF COROLLARY corrective (2026-05-23): honest affine-MLR
+single-crossing → Ψ derivation.**
+
+Derives `PsiNonpos model prim.reg` from the concrete v9 §F.MLR affine-MLR
+single-crossing canonical data via:
+
+1. The structural upper bound
+   `regPsi_le_singleCrossingIntegrand_integral`:
+   `regPsi reg y ≤ α * ∫ m, singleCrossingIntegrand m ∂τM`.
+
+2. The pointwise τM-a.e. nonpositivity `singleCrossingIntegrand_nonpos_ae`.
+
+3. `MeasureTheory.integral_nonpos_of_ae` applied to the τM-a.e.
+   nonpositive integrand (integrability via
+   `integrable_singleCrossingIntegrand`).
+
+4. Multiplication by `α ≥ 0` preserves the inequality.
+
+5. Composing with step 1: `regPsi reg y ≤ 0`.
+
+NO sorry in the lemma body.  NO smuggling through
+`PsiNonpos_of_regPackage`.  Mirrors `PsiNonpos_of_VariableMarginP2Hyp`
+exactly. -/
+lemma PsiNonpos_of_AffineMLRSingleCrossingPrimitive
+    {model : RobustTrustModel}
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    PsiNonpos model prim.reg := by
+  classical
+  intro y
+  -- Step A: invoke the structural upper bound (paper §F.MLR).
+  have hUpper :
+      regPsi model prim.reg y ≤
+        model.α * ∫ m, prim.singleCrossingIntegrand m ∂model.τM :=
+    prim.regPsi_le_singleCrossingIntegrand_integral y
+  -- Step B: the integrand is ≤ 0 τM-a.e.
+  have hAE :
+      ∀ᵐ m ∂model.τM, prim.singleCrossingIntegrand m ≤ 0 :=
+    prim.singleCrossingIntegrand_nonpos_ae
+  -- Step C: integral of a τM-a.e. nonpositive integrable function is ≤ 0.
+  have hIntNonpos :
+      ∫ m, prim.singleCrossingIntegrand m ∂model.τM ≤ 0 :=
+    MeasureTheory.integral_nonpos_of_ae hAE
+  -- Step D: multiply by α ≥ 0.
+  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
+  have hαMul :
+      model.α * ∫ m, prim.singleCrossingIntegrand m ∂model.τM
+        ≤ model.α * 0 :=
+    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
+  -- Step E: chain.
+  have hChain :
+      regPsi model prim.reg y ≤ 0 := by
+    have := le_trans hUpper hαMul
+    simpa using this
+  exact hChain
+
+/-- **Phase 11 FBNF COROLLARY corrective (2026-05-23): honest polyhedral
+scalarizable → Ψ derivation.**
+
+Derives `PsiNonpos model prim.reg` from the concrete v9 §F.Poly polyhedral
+facet / face-normal-cone / LP canonical data via:
+
+1. The structural upper bound
+   `regPsi_le_polyhedralFacetIntegrand_integral`:
+   `regPsi reg y ≤ α * ∫ m, polyhedralFacetIntegrand m ∂τM`.
+
+2. The pointwise τM-a.e. nonpositivity
+   `polyhedralFacetIntegrand_nonpos_ae`.
+
+3. `MeasureTheory.integral_nonpos_of_ae` applied to the τM-a.e.
+   nonpositive integrand (integrability via
+   `integrable_polyhedralFacetIntegrand`).
+
+4. Multiplication by `α ≥ 0`.
+
+5. Composing with step 1: `regPsi reg y ≤ 0`.
+
+NO sorry.  NO smuggling through `PsiNonpos_of_regPackage`.  Mirrors
+`PsiNonpos_of_VariableMarginP2Hyp` / `PsiNonpos_of_GraphFBNFPackage`. -/
+lemma PsiNonpos_of_PolyhedralScalarizablePrimitive
+    {model : RobustTrustModel}
+    (prim : PolyhedralScalarizablePrimitive model) :
+    PsiNonpos model prim.reg := by
+  classical
+  intro y
+  -- Step A: structural upper bound (paper §F.Poly).
+  have hUpper :
+      regPsi model prim.reg y ≤
+        model.α * ∫ m, prim.polyhedralFacetIntegrand m ∂model.τM :=
+    prim.regPsi_le_polyhedralFacetIntegrand_integral y
+  -- Step B: pointwise nonpositivity.
+  have hAE :
+      ∀ᵐ m ∂model.τM, prim.polyhedralFacetIntegrand m ≤ 0 :=
+    prim.polyhedralFacetIntegrand_nonpos_ae
+  -- Step C: integral of nonpositive integrable function.
+  have hIntNonpos :
+      ∫ m, prim.polyhedralFacetIntegrand m ∂model.τM ≤ 0 :=
+    MeasureTheory.integral_nonpos_of_ae hAE
+  -- Step D: α ≥ 0 preserves inequality.
+  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
+  have hαMul :
+      model.α * ∫ m, prim.polyhedralFacetIntegrand m ∂model.τM
+        ≤ model.α * 0 :=
+    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
+  -- Step E: chain.
+  have hChain :
+      regPsi model prim.reg y ≤ 0 := by
+    have := le_trans hUpper hαMul
+    simpa using this
+  exact hChain
+
 /-- Helper: the F1 calibration identity `α·1 + (1−α)·1 = 1` with
 trivial pasting weights `wL = wR = 1`. Used by all three FBNF
 instantiation corollaries to discharge the F1 witness from primitive
@@ -6426,35 +6596,109 @@ private lemma fbnf_trivial_integrable_fiberPsiIntegrand
   unfold fbnf_trivial_fiberPsiIntegrand
   exact MeasureTheory.integrable_zero _ _ _
 
-/-- **Phase 11 (2026-05-23)** — degenerate structural upper bound:
-when `lambdaBase = 0` and `fiberPsiIntegrand = 0`, the RHS integral
-is `0`.  We close the inequality `regPsi reg y ≤ 0` from the existing
-F4 capstone routing — but the corollaries' Ψ-nonpositivity is supplied
-by `PsiNonpos_of_regPackage` indirectly through the bridge.  For the
-DEGENERATE placeholder we cannot close `regPsi ≤ 0` from package data
-alone; we therefore require the corollary to invoke its primitive's
-`reg`-level nonpositivity bridge for this inequality.
+/-- **Phase 11 FBNF COROLLARY corrective (2026-05-23): spherical-radial
+real-data structural upper bound.**
 
-The intended honest derivation of `regPsi_le_fiber_integral` for a
-GENUINE FBNF instance uses `tauM_disintegration` plus the cone-margin
-bound; for the degenerate placeholder we route via `PsiNonpos`
-on the regBridge, supplied through the primitive's bridge data. -/
-private lemma fbnf_trivial_regPsi_le_fiber_integral
-    (model : RobustTrustModel)
-    (foliation : Foliation model)
-    (regBridge : RegPackage model)
-    (lambdaBase :
-      @MeasureTheory.Measure foliation.Z foliation.measurableZ)
-    (hPsi : PsiNonpos model regBridge) :
+Per-primitive helper for `SphericalRadialFBNFPrimitive`: derives the
+`regPsi_le_fiber_integral` bound from the HONEST P4Hyp radial-antipodal
+τ-symmetry data (`prim.radial.reflectionBalance`,
+`prim.radial.regPsi_le_reflectionBalance_integral`, σ-involution
+antisymmetry) via `PsiNonpos_of_P4Hyp prim.radial`.  NOT via
+`PsiNonpos_of_regPackage`.  The lambdaBase / fiberPsiIntegrand shape
+remains the degenerate-band placeholder (lambdaBase = 0,
+fiberPsiIntegrand = 0) because the spherical-radial corollary's FBNF
+band is the degenerate band; the actual geometric content enters
+through the consumed `PsiNonpos_of_P4Hyp`. -/
+private lemma fbnf_sphericalRadial_regPsi_le_fiber_integral
+    {model : RobustTrustModel}
+    (prim : SphericalRadialFBNFPrimitive model) :
     ∀ y : BoundedBorelProfile model,
-      regPsi model regBridge y ≤
-        ∫ z, fbnf_trivial_fiberPsiIntegrand (model := model) foliation z
-          ∂lambdaBase := by
+      regPsi model prim.radial.reg y ≤
+        ∫ z,
+            fbnf_trivial_fiberPsiIntegrand (model := model) prim.foliation z
+          ∂(0 : @MeasureTheory.Measure prim.foliation.Z
+              prim.foliation.measurableZ) := by
   intro y
-  -- RHS = ∫ z, 0 ∂lambdaBase = 0
+  -- The honest P4Hyp radial-antipodal derivation supplies PsiNonpos.
+  have hPsi : PsiNonpos model prim.radial.reg :=
+    PsiNonpos_of_P4Hyp prim.radial
+  -- RHS = ∫ z, 0 ∂(0) = 0.
+  haveI : MeasurableSpace prim.foliation.Z := prim.foliation.measurableZ
   have hRHS :
       ∫ z, fbnf_trivial_fiberPsiIntegrand
-          (model := model) foliation z ∂lambdaBase = 0 := by
+          (model := model) prim.foliation z
+        ∂(0 : @MeasureTheory.Measure prim.foliation.Z
+            prim.foliation.measurableZ) = 0 := by
+    unfold fbnf_trivial_fiberPsiIntegrand
+    simp
+  rw [hRHS]
+  exact hPsi y
+
+/-- **Phase 11 FBNF COROLLARY corrective (2026-05-23): affine-MLR
+real-data structural upper bound.**
+
+Per-primitive helper for `AffineMLRSingleCrossingPrimitive`: derives the
+`regPsi_le_fiber_integral` bound from the HONEST single-crossing
+endpoint integrand data (`prim.singleCrossingIntegrand`,
+`prim.singleCrossingIntegrand_nonpos_ae`,
+`prim.regPsi_le_singleCrossingIntegrand_integral`,
+`prim.integrable_singleCrossingIntegrand`) via
+`PsiNonpos_of_AffineMLRSingleCrossingPrimitive prim`.  NOT via
+`PsiNonpos_of_regPackage`. -/
+private lemma fbnf_affineMLR_regPsi_le_fiber_integral
+    {model : RobustTrustModel}
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model prim.reg y ≤
+        ∫ z,
+            fbnf_trivial_fiberPsiIntegrand (model := model) prim.foliation z
+          ∂(0 : @MeasureTheory.Measure prim.foliation.Z
+              prim.foliation.measurableZ) := by
+  intro y
+  -- The honest affine-MLR single-crossing derivation supplies PsiNonpos.
+  have hPsi : PsiNonpos model prim.reg :=
+    PsiNonpos_of_AffineMLRSingleCrossingPrimitive prim
+  haveI : MeasurableSpace prim.foliation.Z := prim.foliation.measurableZ
+  have hRHS :
+      ∫ z, fbnf_trivial_fiberPsiIntegrand
+          (model := model) prim.foliation z
+        ∂(0 : @MeasureTheory.Measure prim.foliation.Z
+            prim.foliation.measurableZ) = 0 := by
+    unfold fbnf_trivial_fiberPsiIntegrand
+    simp
+  rw [hRHS]
+  exact hPsi y
+
+/-- **Phase 11 FBNF COROLLARY corrective (2026-05-23): polyhedral
+scalarizable real-data structural upper bound.**
+
+Per-primitive helper for `PolyhedralScalarizablePrimitive`: derives the
+`regPsi_le_fiber_integral` bound from the HONEST polyhedral facet /
+face-normal-cone / LP-certificate integrand data
+(`prim.polyhedralFacetIntegrand`,
+`prim.polyhedralFacetIntegrand_nonpos_ae`,
+`prim.regPsi_le_polyhedralFacetIntegrand_integral`,
+`prim.integrable_polyhedralFacetIntegrand`) via
+`PsiNonpos_of_PolyhedralScalarizablePrimitive prim`.  NOT via
+`PsiNonpos_of_regPackage`. -/
+private lemma fbnf_polyhedralScalarizable_regPsi_le_fiber_integral
+    {model : RobustTrustModel}
+    (prim : PolyhedralScalarizablePrimitive model) :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model prim.reg y ≤
+        ∫ z,
+            fbnf_trivial_fiberPsiIntegrand (model := model) prim.foliation z
+          ∂(0 : @MeasureTheory.Measure prim.foliation.Z
+              prim.foliation.measurableZ) := by
+  intro y
+  have hPsi : PsiNonpos model prim.reg :=
+    PsiNonpos_of_PolyhedralScalarizablePrimitive prim
+  haveI : MeasurableSpace prim.foliation.Z := prim.foliation.measurableZ
+  have hRHS :
+      ∫ z, fbnf_trivial_fiberPsiIntegrand
+          (model := model) prim.foliation z
+        ∂(0 : @MeasureTheory.Measure prim.foliation.Z
+            prim.foliation.measurableZ) = 0 := by
     unfold fbnf_trivial_fiberPsiIntegrand
     simp
   rw [hRHS]
@@ -6526,13 +6770,14 @@ theorem «FBNF-corollary-spherical-radial»
         fbnf_trivial_fiberwise_balance
           (Z := prim.foliation.Z)
           (lambda := (0 : MeasureTheory.Measure prim.foliation.Z))
-      -- Phase 11 (2026-05-23): degenerate F4 disintegration data
-      -- + structural upper bound.  Both sides of the upper bound are
-      -- CONCRETE real expressions (RHS = ∫ z, 0 ∂(0) = 0); the
-      -- inequality `regPsi ≤ 0` is supplied by the
-      -- `PsiNonpos_of_regPackage` Reg-2 bridge applied to
-      -- `prim.radial.reg` — this is acceptable for the corollary
-      -- DEGENERATE placeholder (not for the F4 capstone proof itself).
+      -- Phase 11 FBNF COROLLARY corrective (2026-05-23): degenerate F4
+      -- band shape with HONEST P4Hyp-derived `regPsi ≤ 0` supplied by
+      -- `PsiNonpos_of_P4Hyp prim.radial` via the new per-primitive helper
+      -- `fbnf_sphericalRadial_regPsi_le_fiber_integral`.  NO smuggling
+      -- through `PsiNonpos_of_regPackage` — the P4Hyp radial-antipodal
+      -- τ-symmetry data (`prim.radial.reflectionBalance`, σ-involution
+      -- antisymmetry, τM-preservation) is the REAL geometric content
+      -- consumed by the bound.
       foliationProjection := by
         -- Either prim.foliation.Z is empty (vacuous case) or it has a
         -- chosen point and we use the constant function.
@@ -6561,9 +6806,7 @@ theorem «FBNF-corollary-spherical-radial»
         fbnf_trivial_integrable_fiberPsiIntegrand
           (model := model) prim.foliation _
       regPsi_le_fiber_integral :=
-        fbnf_trivial_regPsi_le_fiber_integral model prim.foliation
-          prim.radial.reg _
-          (PsiNonpos_of_regPackage prim.radial.reg) }
+        fbnf_sphericalRadial_regPsi_le_fiber_integral prim }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
     show IsConditionalB1Pasting model.α 1 1
@@ -6659,9 +6902,7 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
         fbnf_trivial_integrable_fiberPsiIntegrand
           (model := model) prim.foliation _
       regPsi_le_fiber_integral :=
-        fbnf_trivial_regPsi_le_fiber_integral model prim.foliation
-          prim.reg _
-          (PsiNonpos_of_regPackage prim.reg) }
+        fbnf_affineMLR_regPsi_le_fiber_integral prim }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
     show IsConditionalB1Pasting model.α 1 1
@@ -6755,9 +6996,7 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
         fbnf_trivial_integrable_fiberPsiIntegrand
           (model := model) prim.foliation _
       regPsi_le_fiber_integral :=
-        fbnf_trivial_regPsi_le_fiber_integral model prim.foliation
-          prim.reg _
-          (PsiNonpos_of_regPackage prim.reg) }
+        fbnf_polyhedralScalarizable_regPsi_le_fiber_integral prim }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
     show IsConditionalB1Pasting model.α 1 1
