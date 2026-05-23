@@ -8102,7 +8102,6 @@ lemma _root_.Inventory.V9.kantorovich_rubinstein_scalar_bridge
     (∫ s, f s ∂model.τM) ≤ (∫ m, g m ∂model.τM) := by
   classical
   haveI : IsProbabilityMeasure model.τM := model.τM_prob
-  haveI : Fintype model.Ω := model.Ω_fintype
   haveI : DecidableEq model.Ω := Classical.decEq _
   let R : Set (model.M × model.M) := {p | p.2 ∈ reg.G p.1}
   have hR_closed : IsClosed R := reg.G_closedGraph
@@ -8188,7 +8187,7 @@ lemma _root_.Inventory.V9.kantorovich_rubinstein_scalar_bridge
                       σ m' (y m')) ''
                   { m' | (s, m') ∈ R })) ∂model.τM)
           = regPsi model reg yBBP := by
-      unfold regPsi
+      unfold regPsi beliefDot
       -- The first term matches: `beliefDot (model.inclM m) (y m) = ∑ v, incl m v * y m v`
       -- by definitional equality (both unfold to `∑ v, (model.inclM m).val v * y m v`).
       -- The second term matches: `σ m' (y m') = supportFunction model (reg.B m') (y m')`
