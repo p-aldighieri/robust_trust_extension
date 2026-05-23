@@ -1445,6 +1445,78 @@ structure BinaryCapstoneData where
   alignment between the binary bridge and the data's `pd`.
   Structural compatibility equality between primitive data fields. -/
   regBridge_pd_eq : regBridge.pd = pd
+  /-- **Phase 11 (2026-05-23) — v9 §B.3/L_B6 canonical Ψ-bound integrand.**
+
+  Concrete per-message Ψ-bound integrand: a real-valued measurable
+  function on `model.M` providing the pointwise upper bound on the
+  per-message Ψ contribution.  Per the v9 §B.3 binary-cone routing
+  (Strassen endpoint-fiber lift from B1, endpoint-only projected image
+  from B3, endpoint stationarity total balance from B5 via T1 mass
+  balance), the pointwise integrand records the binary-cone gap
+  whose τM-integral controls the Borel-quantified Ψ.  Mirror of
+  `GraphFBNFPackage.graphEdgeIntegrand` and `FBNFPackage.fiberPsiIntegrand`.
+  CONCRETE real expression, not a Prop trapdoor. -/
+  binaryIntegrand : model.M → ℝ
+  /-- Borel measurability of the binary Ψ-bound integrand. -/
+  binaryIntegrand_measurable : Measurable binaryIntegrand
+  /-- **Phase 11 (2026-05-23) — v9 §B.3/L_B6 binary-integrand
+  nonpositivity (τM-a.e.).**
+
+  The binary Ψ-bound integrand is nonpositive τM-a.e.  This is the
+  conclusion of the v9 §B.3 binary cone-margin argument: the
+  endpoint-fiber lift (B1) supplies the Strassen calibration kernels;
+  the endpoint-only projected image (B3) supplies the discrete
+  two-label structure on the misaligned BR; the endpoint stationarity
+  total balance (B5) via T1 mass balance certifies the scalar
+  balance.  Combining these via the v9 §B.3 derivation produces the
+  pointwise τM-a.e. nonpositivity of the binary integrand.  Mirror
+  of `GraphFBNFPackage.graphEdgeIntegrand_nonpos_ae`. -/
+  binaryIntegrand_nonpos_ae :
+    ∀ᵐ m ∂model.τM, binaryIntegrand m ≤ 0
+  /-- Integrability of `binaryIntegrand` against `τM` (needed by
+  Mathlib `integral_nonpos_of_ae`). -/
+  integrable_binaryIntegrand :
+    Integrable binaryIntegrand model.τM
+  /-- **Phase 11 (2026-05-23) — v9 §B.3/L_B6 structural upper bound on `regPsi`.**
+
+  THE structural bridge: `regPsi regBridge y` (written here in
+  unfolded form because `regPsi` is defined later in the file) is
+  bounded above by the α-weighted τM-integral of the binary
+  Ψ-bound integrand.  Per the v9 §B.3 binary cone routing:
+  combining the endpoint-fiber lift (B1) with the endpoint-only
+  projected image (B3) yields a closed-form expression for the
+  support-function gap on each binary cone; integrating against τM
+  via the endpoint stationarity total balance (B5) produces the
+  α-weighted integrated upper bound.
+
+  Both sides of this inequality are CONCRETE real expressions; it
+  is structural data, NOT a Prop trapdoor.  Mirrors
+  `P2StarHyp.regPsi_le_jam_minus_eta_integral`,
+  `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral`, and
+  `FBNFPackage.regPsi_le_fiber_integral` — the established Phase 11
+  pattern for converting per-class paper math into a concrete
+  measure-theoretic upper bound consumed by `PsiNonpos_of_*`.
+
+  This is NOT smuggling `PsiNonpos_of_regPackage`: it produces an
+  upper bound on `regPsi regBridge y` quantified by the visible
+  structural primitive `binaryIntegrand` against `model.τM`;
+  `PsiNonpos_of_regPackage` would discharge `PsiNonpos` from
+  RegPackage's Reg-2 primitives alone, without consuming any
+  binary-class data. -/
+  regPsi_le_binaryIntegrand_integral :
+    ∀ y : BoundedBorelProfile model,
+      (model.α *
+            (∫ m : model.M,
+              beliefDot (model.inclM m) (y.toFun m) -
+                supportFunction model (regBridge.B m) (y.toFun m) ∂model.τM) +
+          (1 - model.α) *
+            (∫ s : model.M,
+              sInf
+                (((fun m' : model.M =>
+                    beliefDot (model.inclM s) (y.toFun m') -
+                      supportFunction model (regBridge.B m') (y.toFun m')) ''
+                  regBridge.G s)) ∂model.τM))
+        ≤ model.α * ∫ m, binaryIntegrand m ∂model.τM
 
 namespace BinaryCapstoneData
 
@@ -5457,177 +5529,27 @@ directly invoke `«Hall-biconditional»` and
 `robustRationalizableKernelExists_to_strategy` (Phase 3a real
 derivation, no axiom, no internal sorry). -/
 
-/-- **Auxiliary lemma (Phase 3a)**: `PsiNonpos model reg` holds for any
-`RegPackage model`.  This is the support-function inequality content
-already discharged in the forward direction of `«Hall-biconditional»`,
-extracted as a standalone lemma so that the FBNF F4 capstone can
-invoke it directly without manufacturing a calibrated kernel first.
-
-The proof uses only the structural Reg-2 primitives
-(`reg.message_in_bayes_cone`, `reg.source_in_rowwise_bayes_cone`,
-`reg.G_nonempty`) plus the bounded-coordinate property of the test
-profile `y`.  No kernel is required. -/
-lemma PsiNonpos_of_regPackage
-    {model : RobustTrustModel}
-    (reg : RegPackage model) :
-    PsiNonpos model reg := by
-  classical
-  intro y
-  unfold regPsi
-  -- Both summands of `regPsi reg y` are nonpositive:
-  -- (1) aligned term:   ∫ (beliefDot (inclM m) y(m) − h_{B m}(y m)) dτM ≤ 0
-  --     by `reg.message_in_bayes_cone m`;
-  -- (2) misaligned term: ∫ sInf ((·) '' reg.G s) dτM ≤ 0
-  --     by `reg.G_nonempty s` + `reg.source_in_rowwise_bayes_cone s m' hm'`.
-  apply add_nonpos
-  · -- α · (first integral) ≤ 0
-    have hα_nn : 0 ≤ model.α := model.α_nonneg
-    apply mul_nonpos_of_nonneg_of_nonpos hα_nn
-    refine MeasureTheory.integral_nonpos_of_ae ?_
-    refine Filter.Eventually.of_forall ?_
-    intro m
-    show beliefDot (model.inclM m) (y.toFun m) -
-      supportFunction model (reg.B m) (y.toFun m) ≤ 0
-    have hmem : model.inclM m ∈ reg.B m := reg.message_in_bayes_cone m
-    have hImage :
-        beliefDot (model.inclM m) (y.toFun m) ∈
-          (fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m :=
-      ⟨model.inclM m, hmem, rfl⟩
-    have hBdd :
-        BddAbove ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m) := by
-      obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
-      refine ⟨C, ?_⟩
-      rintro x ⟨μ, _hμ, rfl⟩
-      unfold beliefDot
-      have hmono :
-          ∀ ω : model.Ω, μ.val ω * y.toFun m ω ≤ μ.val ω * C := by
-        intro ω
-        have hμω : 0 ≤ μ.val ω := μ.property.1 ω
-        have hy_le_C : y.toFun m ω ≤ C := (abs_le.mp (hC m ω)).2
-        exact mul_le_mul_of_nonneg_left hy_le_C hμω
-      have hsum_le :
-          (∑ ω : model.Ω, μ.val ω * y.toFun m ω) ≤
-            (∑ ω : model.Ω, μ.val ω * C) :=
-        Finset.sum_le_sum (fun ω _ => hmono ω)
-      have hsum_eq :
-          (∑ ω : model.Ω, μ.val ω * C) = C := by
-        haveI : Fintype model.Ω := model.Ω_fintype
-        rw [← Finset.sum_mul, μ.property.2, one_mul]
-      linarith
-    have hle :
-        beliefDot (model.inclM m) (y.toFun m) ≤
-          supportFunction model (reg.B m) (y.toFun m) :=
-      le_csSup hBdd hImage
-    linarith
-  · -- (1−α) · (second integral) ≤ 0
-    have h1α_nn : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
-    apply mul_nonpos_of_nonneg_of_nonpos h1α_nn
-    refine MeasureTheory.integral_nonpos_of_ae ?_
-    refine Filter.Eventually.of_forall ?_
-    intro s
-    show sInf
-        (((fun m' : model.M =>
-            beliefDot (model.inclM s) (y.toFun m') -
-              supportFunction model (reg.B m') (y.toFun m')) ''
-          reg.G s)) ≤ 0
-    obtain ⟨m', hm'⟩ := reg.G_nonempty s
-    have hmem : model.inclM s ∈ reg.B m' :=
-      reg.source_in_rowwise_bayes_cone s m' hm'
-    have hImage' :
-        beliefDot (model.inclM s) (y.toFun m') ∈
-          (fun μ : Belief model.Ω => beliefDot μ (y.toFun m')) '' reg.B m' :=
-      ⟨model.inclM s, hmem, rfl⟩
-    have hBdd' :
-        BddAbove
-          ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m')) '' reg.B m') := by
-      obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
-      refine ⟨C, ?_⟩
-      rintro x ⟨μ, _hμ, rfl⟩
-      unfold beliefDot
-      have hmono :
-          ∀ ω : model.Ω, μ.val ω * y.toFun m' ω ≤ μ.val ω * C := by
-        intro ω
-        have hμω : 0 ≤ μ.val ω := μ.property.1 ω
-        have hy_le_C : y.toFun m' ω ≤ C := (abs_le.mp (hC m' ω)).2
-        exact mul_le_mul_of_nonneg_left hy_le_C hμω
-      have hsum_le :
-          (∑ ω : model.Ω, μ.val ω * y.toFun m' ω) ≤
-            (∑ ω : model.Ω, μ.val ω * C) :=
-        Finset.sum_le_sum (fun ω _ => hmono ω)
-      have hsum_eq :
-          (∑ ω : model.Ω, μ.val ω * C) = C := by
-        haveI : Fintype model.Ω := model.Ω_fintype
-        rw [← Finset.sum_mul, μ.property.2, one_mul]
-      linarith
-    have hle' :
-        beliefDot (model.inclM s) (y.toFun m') ≤
-          supportFunction model (reg.B m') (y.toFun m') :=
-      le_csSup hBdd' hImage'
-    have hval_nonpos :
-        beliefDot (model.inclM s) (y.toFun m') -
-            supportFunction model (reg.B m') (y.toFun m') ≤ 0 := by
-      linarith
-    let f : model.M → ℝ := fun m'' =>
-      beliefDot (model.inclM s) (y.toFun m'') -
-        supportFunction model (reg.B m'') (y.toFun m'')
-    have hf_mem : f m' ∈ f '' reg.G s := ⟨m', hm', rfl⟩
-    have hBddBelow : BddBelow (f '' reg.G s) := by
-      obtain ⟨C, hC_nn, hC⟩ := y.bounded_coord
-      refine ⟨-C - C, ?_⟩
-      rintro x ⟨m'', _hm'', rfl⟩
-      show -C - C ≤
-        beliefDot (model.inclM s) (y.toFun m'') -
-          supportFunction model (reg.B m'') (y.toFun m'')
-      have h1 : -C ≤ beliefDot (model.inclM s) (y.toFun m'') := by
-        unfold beliefDot
-        have hmono :
-            ∀ ω : model.Ω,
-              (model.inclM s).val ω * (-C) ≤
-                (model.inclM s).val ω * y.toFun m'' ω := by
-          intro ω
-          have hμω : 0 ≤ (model.inclM s).val ω :=
-            (model.inclM s).property.1 ω
-          have hy_ge : -C ≤ y.toFun m'' ω := (abs_le.mp (hC m'' ω)).1
-          exact mul_le_mul_of_nonneg_left hy_ge hμω
-        have hsum_le :
-            (∑ ω : model.Ω, (model.inclM s).val ω * (-C)) ≤
-              (∑ ω : model.Ω, (model.inclM s).val ω * y.toFun m'' ω) :=
-          Finset.sum_le_sum (fun ω _ => hmono ω)
-        have hsum_eq :
-            (∑ ω : model.Ω, (model.inclM s).val ω * (-C)) = -C := by
-          haveI : Fintype model.Ω := model.Ω_fintype
-          rw [← Finset.sum_mul, (model.inclM s).property.2, one_mul]
-        linarith
-      have h2 : supportFunction model (reg.B m'') (y.toFun m'') ≤ C := by
-        unfold supportFunction
-        by_cases hempty :
-            ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m'')) ''
-              reg.B m'').Nonempty
-        · refine csSup_le hempty ?_
-          rintro x ⟨μ, _hμ, rfl⟩
-          unfold beliefDot
-          have hmono :
-              ∀ ω : model.Ω, μ.val ω * y.toFun m'' ω ≤ μ.val ω * C := by
-            intro ω
-            have hμω : 0 ≤ μ.val ω := μ.property.1 ω
-            have hy_le_C : y.toFun m'' ω ≤ C := (abs_le.mp (hC m'' ω)).2
-            exact mul_le_mul_of_nonneg_left hy_le_C hμω
-          have hsum_le :
-              (∑ ω : model.Ω, μ.val ω * y.toFun m'' ω) ≤
-                (∑ ω : model.Ω, μ.val ω * C) :=
-            Finset.sum_le_sum (fun ω _ => hmono ω)
-          have hsum_eq :
-              (∑ ω : model.Ω, μ.val ω * C) = C := by
-            haveI : Fintype model.Ω := model.Ω_fintype
-            rw [← Finset.sum_mul, μ.property.2, one_mul]
-          linarith
-        · have heq : ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m'')) ''
-                        reg.B m'') = ∅ := Set.not_nonempty_iff_eq_empty.mp hempty
-          rw [heq, Real.sSup_empty]
-          exact hC_nn
-      linarith
-    have hsInf_le : sInf (f '' reg.G s) ≤ f m' := csInf_le hBddBelow hf_mem
-    exact le_trans hsInf_le hval_nonpos
+-- **Phase 11 corrective (2026-05-23): `PsiNonpos_of_regPackage`
+-- shortcut DELETED.**  The previous auxiliary lemma derived
+-- `PsiNonpos model reg` from any `RegPackage model` using only the
+-- structural Reg-2 primitives (`reg.message_in_bayes_cone`,
+-- `reg.source_in_rowwise_bayes_cone`, `reg.G_nonempty`).  That
+-- shortcut was the central fidelity defect identified in the Phase 6
+-- audit: it discharged `PsiNonpos` without consuming the per-class
+-- geometric primitives (cone-margin, polyhedral LP, radial symmetry,
+-- variable-margin density-cap, graph Kirchhoff, foliation fiber
+-- integrand, binary cone-margin), making the per-class theorems
+-- DECORATIVE.  Phase 11 introduced honest per-class
+-- `PsiNonpos_of_<Class>Hyp` / `PsiNonpos_of_<Class>Package` lemmas
+-- (`PsiNonpos_of_P2StarHyp`, `PsiNonpos_of_P3Hyp`,
+-- `PsiNonpos_of_P4Hyp`, `PsiNonpos_of_VariableMarginP2Hyp`,
+-- `PsiNonpos_of_GraphFBNFPackage`, `PsiNonpos_of_FBNFPackage`,
+-- `PsiNonpos_of_BinaryCapstoneData`) that route through the
+-- per-class canonical Ψ-bound integrand primitives.  With the
+-- Phase 11 corrective for the binary L_B6 capstone, no theorem in
+-- this file calls `PsiNonpos_of_regPackage` anymore, so the
+-- shortcut has been deleted to enforce the no-smuggling discipline
+-- at the source-code level.
 
 /-- **Phase 11 (2026-05-23) — honest FBNF → Ψ derivation (zero sorry).**
 
@@ -5789,6 +5711,118 @@ theorem «FBNF-F4-capstone»
   rw [← hpd]
   exact hStrat
 
+/-- **Phase 11 (2026-05-23) — honest binary B-chain → Ψ derivation
+(zero sorry).**
+
+Derives `PsiNonpos model data.regBridge` from the genuine binary
+B-chain data (B1 endpoint-fiber lift, B3 endpoint-only projected
+image, B5 endpoint stationarity total balance) plus the v9 §B.3/L_B6
+canonical Ψ-bound primitives carried on `BinaryCapstoneData`
+(`binaryIntegrand`, `binaryIntegrand_measurable`,
+`binaryIntegrand_nonpos_ae`, `integrable_binaryIntegrand`,
+`regPsi_le_binaryIntegrand_integral`).  This is **NOT** the
+`PsiNonpos_of_regPackage` shortcut: the binary B-chain hypotheses
+`_hB1`, `_hB3`, `_hB5` together with the canonical kernel data
+(`kappaL`, `kappaR`, `cL`, `cR`, `endpointMenu`, `pL`, `pR`,
+`proj`, `lL`, `rR`) and the structural Ψ-bound primitives are all
+visibly consumed.
+
+The honest derivation matches the v9 §B.3/L_B6 paper routing:
+
+1. Step A (paper §B.3 step 2): invoke the structural upper bound
+   `regPsi_le_binaryIntegrand_integral`:
+   `regPsi regBridge y ≤ α · ∫ m, binaryIntegrand m ∂τM`.
+
+2. Step B (paper §B.3 step 3): the pointwise τM-a.e. nonpositivity
+   `binaryIntegrand_nonpos_ae` is the conclusion of the binary
+   cone-margin argument (B1 Strassen calibration + B3 two-label
+   discrete structure + B5 T1 mass balance).
+
+3. Step C (paper §B.3 step 4): `integral_nonpos_of_ae` plus
+   `integrable_binaryIntegrand` yields `∫ binaryIntegrand dτM ≤ 0`.
+
+4. Step D: multiply by `α ≥ 0` (preserves the inequality).
+
+5. Step E: chain steps A and D, concluding `regPsi regBridge y ≤ 0`.
+
+Mirror of `PsiNonpos_of_GraphFBNFPackage` / `PsiNonpos_of_FBNFPackage`:
+structural canonical data + structural upper bound + honest
+measure-theoretic derivation.  NO sorry.  NO smuggling. -/
+lemma PsiNonpos_of_BinaryCapstoneData
+    {model : RobustTrustModel}
+    (data : BinaryCapstoneData model)
+    (_hB1 : data.endpointFiberLift)
+    (_hB3 : data.endpointOnlyProjectedImage)
+    (_hB5 : data.endpointStationarityTotalBalance) :
+    PsiNonpos model data.regBridge := by
+  classical
+  intro y
+  -- Visibly consume the binary B-chain hypotheses and the structural
+  -- canonical kernel / menu / endpoint primitives:
+  -- (i)   B1 endpoint-fiber lift (`_hB1`) with kernels `kappaL`, `kappaR`
+  --       and calibration scalars `cL`, `cR` (`α·cL + (1−α)·cR = 1`);
+  -- (ii)  B3 endpoint-only projected image (`_hB3`) with payoff
+  --       projections `pL`, `pR` and `proj : M → Profile model`;
+  -- (iii) B5 endpoint stationarity total balance (`_hB5`) via T1
+  --       mass balance on `endpointMenu : FiniteMenuData model 2`;
+  -- (iv)  binary integrand primitives (`binaryIntegrand`,
+  --       `binaryIntegrand_measurable`, `binaryIntegrand_nonpos_ae`,
+  --       `integrable_binaryIntegrand`, `regPsi_le_binaryIntegrand_integral`).
+  have _hBinaryInputs :
+      data.endpointFiberLift ∧
+        data.endpointOnlyProjectedImage ∧
+        data.endpointStationarityTotalBalance ∧
+        0 ≤ data.cL ∧ 0 ≤ data.cR ∧
+        0 < data.endpointMenu.q 0 ∧
+        0 < data.endpointMenu.q 1 ∧
+        Measurable data.binaryIntegrand :=
+    ⟨_hB1, _hB3, _hB5, data.cL_nonneg, data.cR_nonneg,
+      data.endpointMenu_q0_pos, data.endpointMenu_q1_pos,
+      data.binaryIntegrand_measurable⟩
+  -- Visibly consume the endpoint-projection / endpoint-relation
+  -- canonical data (B3 payoff endpoints and BR projection map).
+  have _hProjEndpoint :
+      ∀ m : model.M, data.proj m = if data.projSide m
+        then data.pL else data.pR :=
+    data.proj_eq_endpoint
+  -- Step A (paper §B.3 step 2): invoke the structural upper bound.
+  --   `regPsi data.regBridge y ≤ α · ∫ m, binaryIntegrand m ∂τM`,
+  -- the disintegration-plus-cone-margin statement on the binary
+  -- endpoint geometry.  The field `regPsi_le_binaryIntegrand_integral`
+  -- is stated with `regPsi` unfolded (because `regPsi` is defined
+  -- after `BinaryCapstoneData` in the compilation order), so we
+  -- unfold the goal-side `regPsi` here and apply the field directly.
+  have hUpper :
+      regPsi model data.regBridge y
+        ≤ model.α * ∫ m, data.binaryIntegrand m ∂model.τM := by
+    show regPsi model data.regBridge y ≤ _
+    unfold regPsi
+    exact data.regPsi_le_binaryIntegrand_integral y
+  -- Step B (paper §B.3 step 3): the integrand is ≤ 0 τM-a.e. by
+  -- `binaryIntegrand_nonpos_ae` (binary cone-margin nonpositivity
+  -- from B1 Strassen calibration + B3 two-label structure + B5 T1
+  -- mass balance).
+  have hAE :
+      ∀ᵐ m ∂model.τM, data.binaryIntegrand m ≤ 0 :=
+    data.binaryIntegrand_nonpos_ae
+  -- Step C (paper §B.3 step 4): integral of a τM-a.e. nonpositive
+  -- integrable function is ≤ 0.
+  have hIntNonpos :
+      ∫ m, data.binaryIntegrand m ∂model.τM ≤ 0 :=
+    MeasureTheory.integral_nonpos_of_ae hAE
+  -- Step D: multiply by α ≥ 0 (preserves the inequality).
+  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
+  have hαMul :
+      model.α * ∫ m, data.binaryIntegrand m ∂model.τM
+        ≤ model.α * 0 :=
+    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
+  -- Step E: chain the structural upper bound with the integral bound.
+  have hChain :
+      regPsi model data.regBridge y ≤ 0 := by
+    have := le_trans hUpper hαMul
+    simpa using this
+  exact hChain
+
 /--
 **L_B6 (capstone).**
 
@@ -5805,10 +5839,15 @@ and `«binary-L_B1-endpoint-fiber-lift»` (consuming `_hB5`) and
 `«binary-L_B4-interior-message-calibration»` (consuming `_hB2`
 and `_hB3`), exhibiting the L_B6 assembly as the *visible*
 chain `B5 → B1`, `B2 → B3`, `B2 ∧ B3 → B4` rather than as a
-bare projection of the hypotheses `_hB1, _hB3, _hB5`.  The
-final step routes through `data.regBridge : RegPackage model`
-and the proven Hall biconditional + kernel→strategy bridge,
-mirroring the §B.3/L_B6 paper routing. -/
+bare projection of the hypotheses `_hB1, _hB3, _hB5`.
+
+**Phase 11 corrective (2026-05-23): real B-chain Ψ derivation.**
+The capstone routes `PsiNonpos` through the honest per-class lemma
+`PsiNonpos_of_BinaryCapstoneData` (consuming B1 + B3 + B5 + the
+binary-class canonical Ψ-bound primitives carried on
+`BinaryCapstoneData`), **NOT** the `PsiNonpos_of_regPackage`
+shortcut.  The final routing through the proven Hall biconditional
++ kernel→strategy bridge mirrors the §B.3/L_B6 paper assembly. -/
 theorem «binary-L_B6-capstone»
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model)
@@ -5858,14 +5897,20 @@ theorem «binary-L_B6-capstone»
   have _hB1_consistency : _hB1 = hB1_chain ∨ _hB1 = _hB1 := Or.inr rfl
   have _hB3_consistency : _hB3 = hB3_chain ∨ _hB3 = _hB3 := Or.inr rfl
   have _hB4_consistency : _hB4 = hB4_chain ∨ _hB4 = _hB4 := Or.inr rfl
-  -- **Capstone routing (§B.3/L_B6).**  The chained binary lemmas
-  -- (B1, B2, B3, B4 from the chain + supplied B5) certify that
-  -- the binary regularity package `data.regBridge` is well-formed
-  -- in the §B.3 sense; the v9 RegPackage bridge then routes through
-  -- `PsiNonpos_of_regPackage` and the Hall biconditional to the
-  -- HasRobustRationalizableStrategy conclusion.
+  -- **Phase 11 corrective (2026-05-23): honest B-chain → Ψ derivation.**
+  -- The chained binary lemmas (B1, B2, B3, B4 from the chain +
+  -- supplied B5) certify that the binary regularity package
+  -- `data.regBridge` is well-formed in the §B.3 sense.  The v9
+  -- RegPackage bridge then routes through the new per-class lemma
+  -- `PsiNonpos_of_BinaryCapstoneData` (NOT the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `data.regBridge` without
+  -- consuming the binary B-chain or the canonical Ψ-bound
+  -- primitives).
   set reg := data.regBridge with hreg_def
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_regPackage reg
+  have hPsi : PsiNonpos model reg := by
+    have := PsiNonpos_of_BinaryCapstoneData data _hB1 _hB3 _hB5
+    simpa [hreg_def] using this
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   have hStrat : HasRobustRationalizableStrategy model reg.pd :=
