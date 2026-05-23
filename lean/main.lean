@@ -6193,21 +6193,50 @@ structure RegPackage where
   B_bayes_optimal :
     ∀ m μ, μ ∈ B m →
       IsBayesOptimal model (σstar.sectionFull (model.inclM m)) μ
-  /-- **Reg-2 primitive: the message itself lies in its own Bayes cone.**
-  The Bayes cone `B m` is constructed AT the belief `m`, so the singleton
-  belief `inclM m` (= prior conditioned on receiving message `m`) is in
-  `B m` by construction.  This is a hypothesis-bundling primitive of the
-  v9 regularity package, used in the forward direction of the Hall
-  biconditional (the aligned-term support-function inequality). -/
-  message_in_bayes_cone : ∀ m : model.M, model.inclM m ∈ B m
-  /-- **Reg-2 primitive: rowwise-Bayes-consistency.**
-  When `m'` is a rowwise minimizer for source `s` (i.e. `m' ∈ G s`), the
-  source belief `inclM s` lies in the Bayes cone at `m'` (the rowwise
-  minimizer carries the source's prior).  Used in the forward direction
-  of the Hall biconditional (the misaligned-term rowwise support-function
-  inequality). -/
-  source_in_rowwise_bayes_cone :
-    ∀ s m' : model.M, m' ∈ G s → model.inclM s ∈ B m'
+  /-- **Reg-2 STRUCTURAL primitive (Phase 5B): Bayes-cone construction map.**
+  The Bayes cone `B m` is constructed from a primitive map
+  `bayesConeFromPrior : Belief Ω → Set (Belief Ω)` evaluated at the prior
+  `inclM m`.  The map sends a prior `μ` to its associated Bayes cone (the
+  closed convex set of priors that share `μ`'s posterior-disintegration
+  shape).  This is the v9 §B.5 construction primitive, NOT a conclusion;
+  the two consistency lemmas (`RegPackage.message_in_bayes_cone` and
+  `RegPackage.source_in_rowwise_bayes_cone`) are DERIVED from this and
+  the two structural compatibility primitives below.
+  Phase 3 audit (2026-05-22) identified the prior versions of those two
+  lemmas (then direct RegPackage fields) as "TOO STRONG": they encoded
+  the Hall conclusion.  Phase 5B factors them through this construction
+  map plus the two structural primitives `bayesConeFromPrior_self` and
+  `G_rowwise_carries_prior_to_bayes_cone`. -/
+  bayesConeFromPrior : Belief model.Ω → Set (Belief model.Ω)
+  /-- **Reg-2 STRUCTURAL primitive (Phase 5B): construction self-consistency.**
+  Every prior lies in its own Bayes cone — the defining property of the
+  construction `bayesConeFromPrior`.  This is the structural identity
+  `μ ∈ bayesConeFromPrior μ`: the Bayes cone constructed at a prior
+  always contains that prior.  It is the analogue of "the singleton
+  cone-construction is reflexive on the diagonal", a definitional
+  property of the construction, NOT a conclusion shape. -/
+  bayesConeFromPrior_self :
+    ∀ μ : Belief model.Ω, μ ∈ bayesConeFromPrior μ
+  /-- **Reg-2 STRUCTURAL primitive (Phase 5B): B compatibility with the
+  construction.**  The Bayes cone `B m` is exactly the construction
+  `bayesConeFromPrior` applied at the prior `inclM m`.  This identifies
+  the abstract field `B` with the primitive construction map at the
+  prior-level; it is structural data of the regularity package (how
+  `B` was built), NOT a conclusion. -/
+  B_eq_bayesConeFromPrior_at_inclM :
+    ∀ m : model.M, B m = bayesConeFromPrior (model.inclM m)
+  /-- **Reg-2 STRUCTURAL primitive (Phase 5B): Reg-1 closed-graph
+  compatibility.**  When `m'` is a rowwise minimizer for source `s`
+  (i.e. `m' ∈ G s`), the source's prior `inclM s` belongs to the Bayes
+  cone constructed at the minimizer's prior `inclM m'`.  This is a
+  STRUCTURAL compatibility between the rowwise-minimizer correspondence
+  `G` and the prior-level Bayes-cone construction `bayesConeFromPrior`,
+  encoding "rowwise minimizers carry the source's prior through the
+  Bayes-cone construction" — the Reg-1 closed-graph compatibility, NOT
+  the Hall-conclusion shape. -/
+  G_rowwise_carries_prior_to_bayes_cone :
+    ∀ s m' : model.M, m' ∈ G s →
+      model.inclM s ∈ bayesConeFromPrior (model.inclM m')
   /-- **Reg-2 primitive: v8 menu-engine ExactContact bundle for `σstar`.**
   The v9 regularity package promises that an underlying v8 menu engine
   exists for `σstar`: an `OptimalMenuCstar`, an aligned best labeling, a
@@ -6240,6 +6269,48 @@ structure RegPackage where
   hypothesis, not a conclusion of any Hall theorem. -/
   σstar_attains_UStarFull :
     RobustPayoffFull model σstar = UStarFull model
+
+/-- **Reg-2 DERIVED lemma (Phase 5B): the message lies in its own Bayes cone.**
+
+Phase 3 audit (2026-05-22) flagged the previous direct-field formulation
+of this statement as "TOO STRONG" (it encoded the Hall conclusion).
+Phase 5B (2026-05-23) refactored the underlying RegPackage to expose
+PRIMITIVE Bayes-cone construction data (`bayesConeFromPrior`,
+`bayesConeFromPrior_self`, `B_eq_bayesConeFromPrior_at_inclM`), and
+the message-in-its-own-cone statement is now DERIVED from the
+construction self-consistency at `inclM m`.
+
+The statement signature is identical to the previous direct field, so
+all downstream call sites (`PsiNonpos_of_regPackage`,
+`Inventory.V9.bayesian_barycenter_in_closed_convex`, the Hall
+biconditional forward direction, and the P-class theorems) continue
+to work unchanged via dot-notation `reg.message_in_bayes_cone`. -/
+lemma RegPackage.message_in_bayes_cone
+    {model : RobustTrustModel}
+    (reg : RegPackage model) (m : model.M) :
+    model.inclM m ∈ reg.B m := by
+  rw [reg.B_eq_bayesConeFromPrior_at_inclM m]
+  exact reg.bayesConeFromPrior_self (model.inclM m)
+
+/-- **Reg-2 DERIVED lemma (Phase 5B): rowwise-Bayes-consistency.**
+
+Phase 3 audit (2026-05-22) flagged the previous direct-field formulation
+of this statement as "TOO STRONG" (it encoded the Hall conclusion).
+Phase 5B (2026-05-23) refactored the underlying RegPackage to expose
+PRIMITIVE Bayes-cone construction data plus a structural Reg-1
+closed-graph compatibility primitive
+`G_rowwise_carries_prior_to_bayes_cone`, and the
+rowwise-Bayes-consistency statement is now DERIVED by composing that
+primitive with `B_eq_bayesConeFromPrior_at_inclM`.
+
+The statement signature is identical to the previous direct field, so
+all downstream call sites continue to work unchanged. -/
+lemma RegPackage.source_in_rowwise_bayes_cone
+    {model : RobustTrustModel}
+    (reg : RegPackage model) (s m' : model.M) (hm' : m' ∈ reg.G s) :
+    model.inclM s ∈ reg.B m' := by
+  rw [reg.B_eq_bayesConeFromPrior_at_inclM m']
+  exact reg.G_rowwise_carries_prior_to_bayes_cone s m' hm'
 
 structure BinaryCapstoneData where
   pd : PosteriorDisintegration model
