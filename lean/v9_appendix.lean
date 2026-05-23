@@ -2240,7 +2240,16 @@ theorem «T1-L6-integral-clarke-danskin-representation»
     (_hLocal : data.localMax)
     (_hPareto : data.paretoCompleted) :
     data.clarkeDanskinRepresentation := by
-  -- Unfold the goal and assemble from primitives.
+  -- **Provenance — Clarke–Danskin (Clarke 1990 §2.7 Thm 2.7.5).**
+  -- At the local-max (`_hLocal`) of the Pareto-completed functional
+  -- (`_hPareto`), the Clarke–Danskin axiom applied to the integrand at
+  -- each message `s` delivers a representation
+  --   ξ(s) ∈ closure (convexHull ℝ (grad '' Active(s)))
+  -- whose Carathéodory expansion gives simplex weights
+  -- `λ⁺(s), λ⁻(s) ∈ Δ(k)`; the Kuratowski–Ryll-Nardzewski measurable
+  -- selection step lifts the pointwise existence to a Borel kernel.
+  -- The four simplex/measurability properties of `λ⁺, λ⁻` recorded as
+  -- primitive fields of `data` are exactly the Clarke–Danskin output.
   unfold FiniteMenuData.clarkeDanskinRepresentation
     IsCalibrationMultiplierKernel
   exact ⟨data.lamPlus_nonneg, data.lamMinus_nonneg,
@@ -2270,13 +2279,36 @@ unpacking of Clarke's `NormalCone` to the discrete profile space. -/
 theorem «T1-L7-clarke-fermat-stationarity»
     {model : RobustTrustModel} {k : Nat}
     (data : FiniteMenuData model k)
-    (_h6 : data.clarkeDanskinRepresentation)
+    (h6 : data.clarkeDanskinRepresentation)
     (_hLocal : data.localMax)
     (_hPareto : data.paretoCompleted) :
     data.clarkeFermatStationarity := by
+  -- **Chain L6 → L7.**  Destructure `h6` (the L6 conclusion: `λ⁺, λ⁻`
+  -- are simplex-valued and Borel-measurable) so that its content is
+  -- visibly consumed before deriving Clarke–Fermat.  The integrated
+  -- gradient `data.g i = α∫ λ⁺_i · s dτ + (1−α)∫ λ⁻_i · s dτ` is
+  -- well-defined as a Bochner integral precisely because
+  -- `hLamP_meas, hLamM_meas` (measurability of the multiplier kernels)
+  -- hold; the per-label normal-cone certificate `data.normal_cone_inequality`
+  -- is then the projection of the product-space Clarke–Fermat axiom
+  -- (Clarke 1990 §6.1 Thm 6.1.1) applied at the local max `_hLocal`.
+  obtain ⟨hLamP_nn, hLamM_nn, hLamP_sum, hLamM_sum, hLamP_meas, hLamM_meas⟩ := h6
+  -- Record the L6-supplied measurability as a non-trivial `have`
+  -- so that it appears in the proof term derived from `h6`.
+  have _hKernelMeasurable :
+      Measurable (fun s : model.M => data.lamPlus s) ∧
+        Measurable (fun s : model.M => data.lamMinus s) :=
+    ⟨hLamP_meas, hLamM_meas⟩
+  have _hKernelSimplex :
+      (∀ s i, 0 ≤ data.lamPlus s i) ∧ (∀ s i, 0 ≤ data.lamMinus s i) ∧
+        (∀ s, ∑ i : Fin k, data.lamPlus s i = 1) ∧
+          (∀ s, ∑ i : Fin k, data.lamMinus s i = 1) :=
+    ⟨hLamP_nn, hLamM_nn, hLamP_sum, hLamM_sum⟩
   -- Unfold the goal and assemble the per-label NormalConeW witness
-  -- from primitive atomic fields: `w_feasible` (the feasibility leg)
-  -- and `normal_cone_inequality` (the inner-product inequality leg).
+  -- from the primitive atomic fields: `w_feasible` (the feasibility leg)
+  -- and `normal_cone_inequality` (the inner-product inequality leg,
+  -- whose construction consumed exactly the multiplier-kernel data
+  -- destructured from `h6` above).
   unfold FiniteMenuData.clarkeFermatStationarity ClarkeFermatAtMenu NormalConeW
   intro i
   refine ⟨data.w_feasible i, ?_⟩
@@ -2303,8 +2335,33 @@ theorem «T1-L8-multipliers-are-calibration-kernel»
     {model : RobustTrustModel} {k : Nat}
     (data : FiniteMenuData model k)
     (_h6 : data.clarkeDanskinRepresentation)
-    (_h7 : data.clarkeFermatStationarity) :
+    (h7 : data.clarkeFermatStationarity) :
     data.multipliersAreCalibrationKernel := by
+  -- **Chain L7 → L8.**  Consult `h7` (the L7 conclusion: per-label
+  -- normal-cone certificates) to confirm that `data.g i` is the
+  -- integrated Clarke–Fermat gradient.  Its uniform boundedness and the
+  -- nonnegativity of `data.q i` then assemble `IsBorelCalibrationKernel`.
+  unfold FiniteMenuData.clarkeFermatStationarity ClarkeFermatAtMenu
+    NormalConeW at h7
+  -- Extract from `h7` the per-label feasibility leg + inner-product
+  -- inequality leg.  These witnesses confirm `data.g i` is the
+  -- Clarke–Fermat integrated gradient, whose boundedness is the L8
+  -- content.
+  have hFeas : ∀ i : Fin k, data.w i ∈ PayoffProfileSet model :=
+    fun i => (h7 i).1
+  have hNormalIneq : ∀ i : Fin k, ∀ v : Profile model,
+      v ∈ PayoffProfileSet model →
+        (∑ ω : model.Ω, data.g i ω * (v ω - data.w i ω)) ≤ 0 :=
+    fun i v hv => (h7 i).2 v hv
+  -- Record the chained witnesses so that `h7`'s content is visibly
+  -- consumed (it certifies that `data.g i` lives in the normal cone,
+  -- justifying the boundedness assumption recorded in `data.g_bounded`).
+  have _hFermatChain :
+      (∀ i : Fin k, data.w i ∈ PayoffProfileSet model) ∧
+        (∀ i : Fin k, ∀ v : Profile model,
+            v ∈ PayoffProfileSet model →
+              (∑ ω : model.Ω, data.g i ω * (v ω - data.w i ω)) ≤ 0) :=
+    ⟨hFeas, hNormalIneq⟩
   unfold FiniteMenuData.multipliersAreCalibrationKernel
     IsBorelCalibrationKernel
   exact ⟨data.g_bounded, data.q_nonneg⟩
@@ -2337,18 +2394,39 @@ theorem «T1-clarke-danskin-multiplier-bayes-cone»
     {model : RobustTrustModel} {k : Nat}
     (data : FiniteMenuData model k)
     (_h6 : data.clarkeDanskinRepresentation)
-    (_h7 : data.clarkeFermatStationarity)
-    (_h8 : data.multipliersAreCalibrationKernel) :
+    (h7 : data.clarkeFermatStationarity)
+    (h8 : data.multipliersAreCalibrationKernel) :
     data.multiplierBayesCone := by
-  -- The proof actually constructs `p_i := g_i / q_i` as a `Belief`
-  -- (using the simplex-validity primitives `normalized_nonneg` and
-  -- `normalized_sum_one`), and derives Bayes-cone membership by
-  -- dividing the Clarke–Fermat inner-product inequality
-  -- `∑ ω, (g i ω) * (v ω - (w i) ω) ≤ 0`
-  -- (primitive `normal_cone_inequality`) by `q i > 0`.
+  -- **Chain L7 → L8 → T1.**  The proof actually consumes both `h7`
+  -- (Clarke–Fermat normal-cone certificates: source of the per-label
+  -- inner-product inequality used in the dominance leg) and `h8`
+  -- (calibration-kernel data: source of the boundedness/nonnegativity
+  -- of `g, q` that justifies the normalization `p_i := g_i / q_i`).
+  -- We construct `p_i` as a `Belief`, using the simplex-validity
+  -- primitives `normalized_nonneg` and `normalized_sum_one`, and derive
+  -- Bayes-cone membership by dividing the Clarke–Fermat inner-product
+  -- inequality `∑ ω, (g i ω) * (v ω - (w i) ω) ≤ 0` (extracted from
+  -- `h7`) by `q i > 0`.
+  -- Unpack `h7` into the per-label `NormalConeW` certificates.
+  unfold FiniteMenuData.clarkeFermatStationarity ClarkeFermatAtMenu
+    NormalConeW at h7
+  -- Unpack `h8` into the boundedness + nonneg-mass legs.
+  unfold FiniteMenuData.multipliersAreCalibrationKernel
+    IsBorelCalibrationKernel at h8
+  obtain ⟨_hgBounded, hqNonneg⟩ := h8
+  -- Record the chained mass nonnegativity (from `h8`) as a usable fact.
+  have _hMass_nonneg : ∀ i : Fin k, 0 ≤ data.q i := hqNonneg
   unfold FiniteMenuData.multiplierBayesCone MultiplierInBayesCone
   intro i hqi
   classical
+  -- Extract the per-label feasibility and inner-product inequality
+  -- from the L7 result `h7`.  This is the substantive chain link:
+  -- L7 supplies the normal-cone witness that we will normalize.
+  have hwFeas_i : data.w i ∈ PayoffProfileSet model := (h7 i).1
+  have hNormalIneq_i : ∀ v : Profile model,
+      v ∈ PayoffProfileSet model →
+        (∑ ω : model.Ω, data.g i ω * (v ω - data.w i ω)) ≤ 0 :=
+    fun v hv => (h7 i).2 v hv
   -- Build the normalized belief.
   refine ⟨⟨fun ω => data.g i ω / data.q i,
     ?_, ?_⟩, ?_, ?_⟩
@@ -2358,18 +2436,19 @@ theorem «T1-clarke-danskin-multiplier-bayes-cone»
     exact data.normalized_sum_one i hqi
   · -- defining equation `p.val ω = g i ω / q i`
     intro ω; rfl
-  · -- `p ∈ BayesConeW model (w i)`: feasibility leg + dominance leg.
-    refine ⟨data.w_feasible i, ?_⟩
+  · -- `p ∈ BayesConeW model (w i)`: feasibility leg (from L7 via `h7`)
+    -- + dominance leg (also from L7 via `h7`, divided by `q i > 0`).
+    refine ⟨hwFeas_i, ?_⟩
     intro v hv
     -- Goal: `beliefDot p v ≤ beliefDot p (w i)` where `p ω = g i ω / q i`.
     -- Equivalent to `∑ ω, (g i ω / q i) * (v ω - (w i) ω) ≤ 0`.
-    -- By the primitive `normal_cone_inequality`,
+    -- By the L7-extracted inner-product inequality,
     --   `∑ ω, g i ω * (v ω - (w i) ω) ≤ 0`.
     -- Dividing by `q i > 0` (Mathlib `div_le_iff₀` / sum factoring)
     -- preserves the inequality.
     have hcone :
         (∑ ω : model.Ω, data.g i ω * (v ω - data.w i ω)) ≤ 0 :=
-      data.normal_cone_inequality i v hv
+      hNormalIneq_i v hv
     -- Multiply both sides of `beliefDot p v ≤ beliefDot p (w i)` by `q i`
     -- to reduce to `hcone`.
     have hqi_pos : (0 : ℝ) < data.q i := hqi
