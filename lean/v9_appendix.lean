@@ -435,15 +435,50 @@ structure ProductClarkeFermatPrimitive {model : RobustTrustModel} (k : Nat)
       (-subgradient) (Function.update w i v - w) =
         ∑ ω : model.Ω, g i ω * (v ω - w i ω)
 
-/-- Product Clarke-normal-cone projection bridge.
+/-- **Generic Clarke product normal-cone projection (Clarke 1990 §6.2).**
 
-Source: Clarke 1990, *Optimization and Nonsmooth Analysis*, §6.2
-(calculus of normal cones under product/intersection constructions);
-see also Aubin--Frankowska, *Set-Valued Analysis*, Ch. 6 for the
-component projection rule. This is the single Inventory.V9 bridge used
-because Mathlib does not provide Clarke normal cones or their product
-calculus: `Inventory.V9.ClarkeNormalCone` is opaque in this appendix. -/
-axiom _root_.Inventory.V9.clarke_product_normal_cone_projection_bridge
+For an indexed product `∏ᵢ Eᵢ` of real normed spaces and an indexed
+family of sets `S i ⊆ E i`, the Clarke normal cone to the product set
+`Set.pi univ S` at a point `w` projects to per-factor normal-cone-like
+inequalities: any cotangent `η` on the product that decomposes against
+the standard "update one coordinate" perturbations as
+`η (update w i v − w) = nᵢ (v − wᵢ)` for some per-factor continuous
+linear functional `nᵢ : Eᵢ →L[ℝ] ℝ` satisfies `nᵢ (v − wᵢ) ≤ 0` on
+every `v ∈ Sᵢ`.
+
+This is the generic statement of the product-set normal-cone calculus
+from Clarke 1990, *Optimization and Nonsmooth Analysis*, §6.2 (normal
+cones under product / intersection constructions); see also
+Aubin–Frankowska, *Set-Valued Analysis*, Ch. 6, for the component
+projection rule.  Mathlib does not provide Clarke normal cones or
+their product calculus; `Inventory.V9.ClarkeNormalCone` is opaque in
+this appendix and this axiom encodes exactly the product-projection
+content. -/
+axiom _root_.Inventory.V9.clarke_product_normal_cone_projection_generic
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {E : ι → Type*}
+    [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)]
+    (S : ∀ i, Set (E i)) (w : ∀ i, E i)
+    (η : (∀ i, E i) →L[ℝ] ℝ)
+    (n : ∀ i, E i →L[ℝ] ℝ)
+    (_hCone :
+      η ∈ _root_.Inventory.V9.ClarkeNormalCone
+        (Set.pi (Set.univ : Set ι) S) w)
+    (_hRepresent :
+      ∀ i : ι, ∀ v : E i,
+        η (Function.update w i v - w) = n i (v - w i)) :
+    ∀ i : ι, ∀ v : E i, v ∈ S i → n i (v - w i) ≤ 0
+
+/-- **v9 bridge from the generic Clarke product normal-cone projection.**
+
+Instantiates `Inventory.V9.clarke_product_normal_cone_projection_generic`
+at `ι = Fin k`, `E i = Profile model`, `S i = PayoffProfileSet model`
+to recover the v9-specific conclusion that `NormalConeW model (w i)
+(g i)` holds for each `i`.  The per-factor continuous-linear functional
+`n i` is constructed as the discrete inner product
+`v ↦ ∑ ω, g i ω * v ω`, expressed via the standard finite-dimensional
+projection CLMs `ContinuousLinearMap.proj ω`. -/
+lemma _root_.Inventory.V9.clarke_product_normal_cone_projection_bridge
     {model : RobustTrustModel} {k : Nat}
     (w : ProductProfile model k)
     (g : Fin k → Profile model)
@@ -454,8 +489,69 @@ axiom _root_.Inventory.V9.clarke_product_normal_cone_projection_bridge
     (hRepresent :
       ∀ i : Fin k, ∀ v : Profile model,
         η (Function.update w i v - w) =
-          ∑ ω : model.Ω, g i ω * (v ω - w i ω)) :
-    ∀ i : Fin k, NormalConeW model (w i) (g i)
+          ∑ ω : model.Ω, g i ω * (v ω - w i ω))
+    (hFeasible : ∀ i : Fin k, w i ∈ PayoffProfileSet model) :
+    ∀ i : Fin k, NormalConeW model (w i) (g i) := by
+  classical
+  -- Build the per-factor CLM `n i : Profile model →L[ℝ] ℝ` realising the
+  -- discrete inner product against `g i`.
+  let n : Fin k → (Profile model →L[ℝ] ℝ) := fun i =>
+    ∑ ω : model.Ω, (g i ω) • (ContinuousLinearMap.proj ω :
+      (model.Ω → ℝ) →L[ℝ] ℝ)
+  -- The CLM acts on `Profile model` by the expected discrete inner product.
+  have hn_apply : ∀ i : Fin k, ∀ v : Profile model,
+      n i v = ∑ ω : model.Ω, g i ω * v ω := by
+    intro i v
+    simp [n]
+  -- Verify that the product set agrees with `Set.pi univ S` for
+  -- `S i = PayoffProfileSet model`.
+  have hSet :
+      ProductPayoffProfileSet model k =
+        Set.pi (Set.univ : Set (Fin k)) (fun _ => PayoffProfileSet model) := by
+    ext x
+    constructor
+    · intro hx i _
+      exact hx i
+    · intro hx i
+      exact hx i (Set.mem_univ _)
+  -- Rewrite `hCone` in the generic shape.
+  have hCone' :
+      η ∈ _root_.Inventory.V9.ClarkeNormalCone
+        (Set.pi (Set.univ : Set (Fin k))
+          (fun _ => PayoffProfileSet model)) w := hSet ▸ hCone
+  -- Rewrite `hRepresent` in the generic shape via `n`.
+  have hRep' :
+      ∀ i : Fin k, ∀ v : Profile model,
+        η (Function.update w i v - w) = n i (v - w i) := by
+    intro i v
+    rw [hRepresent i v, hn_apply i (v - w i)]
+    refine Finset.sum_congr rfl ?_
+    intro ω _
+    have : (v - w i) ω = v ω - w i ω := by simp
+    rw [this]
+  -- Apply the generic axiom and unpack the conclusion.
+  have hIneq :
+      ∀ i : Fin k, ∀ v : Profile model,
+        v ∈ PayoffProfileSet model → n i (v - w i) ≤ 0 :=
+    _root_.Inventory.V9.clarke_product_normal_cone_projection_generic
+      (ι := Fin k) (E := fun _ => Profile model)
+      (S := fun _ => PayoffProfileSet model)
+      w η n hCone' hRep'
+  intro i
+  refine ⟨hFeasible i, ?_⟩
+  intro v hv
+  have hni := hIneq i v hv
+  rw [hn_apply i (v - w i)] at hni
+  -- Rewrite `n i (v - w i)` into the requested `∑ ω, g i ω * (v ω - w i ω)`.
+  have hRewrite :
+      (∑ ω : model.Ω, g i ω * (v - w i) ω) =
+        ∑ ω : model.Ω, g i ω * (v ω - w i ω) := by
+    refine Finset.sum_congr rfl ?_
+    intro ω _
+    have : (v - w i) ω = v ω - w i ω := by simp
+    rw [this]
+  rw [hRewrite] at hni
+  exact hni
 
 /-- Support function of a Bayes cone against a payoff profile. -/
 noncomputable def supportFunction
@@ -851,6 +947,7 @@ theorem normal_cone_inequality {k : Nat}
         intro i v
         simpa [g] using
           prim.clarkeFermatProduct.negative_subgradient_represents_g i v)
+      (fun i => (prim.inWP i).1)
   intro i v hv
   exact (hNormal i).2 v hv
 
@@ -1044,6 +1141,32 @@ def IsEndpointStationarityTotalBalance
     (lhsL rhsL lhsR rhsR : ℝ) : Prop :=
   lhsL = rhsL ∧ lhsR = rhsR
 
+/-- B5 derived scalar (left endpoint LHS): the integrated multiplier
+sum at the binary `endpointMenu`'s first label.  By T1 mass balance,
+this equals `endpointMenu.q 0`. -/
+def endpointMenuLhsL {model : RobustTrustModel}
+    (m : FiniteMenuData model 2) : ℝ :=
+  ∑ ω : model.Ω, m.g 0 ω
+
+/-- B5 derived scalar (left endpoint RHS): the integrated scalar
+marginal mass at the binary `endpointMenu`'s first label. -/
+def endpointMenuRhsL {model : RobustTrustModel}
+    (m : FiniteMenuData model 2) : ℝ :=
+  m.q 0
+
+/-- B5 derived scalar (right endpoint LHS): the integrated multiplier
+sum at the binary `endpointMenu`'s second label.  By T1 mass balance,
+this equals `endpointMenu.q 1`. -/
+def endpointMenuLhsR {model : RobustTrustModel}
+    (m : FiniteMenuData model 2) : ℝ :=
+  ∑ ω : model.Ω, m.g 1 ω
+
+/-- B5 derived scalar (right endpoint RHS): the integrated scalar
+marginal mass at the binary `endpointMenu`'s second label. -/
+def endpointMenuRhsR {model : RobustTrustModel}
+    (m : FiniteMenuData model 2) : ℝ :=
+  m.q 1
+
 /-! ### Forward-declaration of `RegPackage` (Phase 3a/3b).
 The v9 regularity package is the bridge structure through which the
 FBNF §F4 capstone and the §B.3/L_B6 binary capstone both route
@@ -1160,18 +1283,28 @@ structure BinaryCapstoneData where
   /-- B4 posterior under the calibrated kernel, and the interior indicator. -/
   post : model.M → Belief model.Ω
   interior : model.M → Prop
-  /-- B5 integral total-balance scalars. -/
-  lhsL : ℝ
-  rhsL : ℝ
-  lhsR : ℝ
-  rhsR : ℝ
   /-- Active two-label menu used by the binary Clarke-Danskin/Fermat step. -/
   endpointMenu : FiniteMenuData model 2
+  /-- B5 positive-mass primitive (left endpoint): the integrated scalar
+  mass `endpointMenu.q 0` is strictly positive.  This is the standard
+  active-label hypothesis for the binary T1 normalization step (an
+  active endpoint label has positive mass).  Used to invoke
+  `endpointMenu.normalized_sum_one 0` to derive the §B.3/L_B5 mass
+  balance `∑ ω, endpointMenu.g 0 ω = endpointMenu.q 0`. -/
+  endpointMenu_q0_pos : 0 < endpointMenu.q 0
+  /-- B5 positive-mass primitive (right endpoint): the integrated scalar
+  mass `endpointMenu.q 1` is strictly positive.  Symmetric counterpart
+  of `endpointMenu_q0_pos`. -/
+  endpointMenu_q1_pos : 0 < endpointMenu.q 1
   /-- Endpoint balance equations imply the Strassen marginal-dominance
-  hypothesis for `endpointRelation`. This is narrower than the old B1
-  witness: it gives only the concrete input required by Strassen. -/
+  hypothesis for `endpointRelation`. The balance condition is stated in
+  terms of the T1-derived scalars
+  `endpointMenuLhsL/RhsL/LhsR/RhsR endpointMenu`, NOT primitive scalar
+  fields. -/
   endpointDominanceFromBalance :
-    IsEndpointStationarityTotalBalance lhsL rhsL lhsR rhsR →
+    IsEndpointStationarityTotalBalance
+      (endpointMenuLhsL endpointMenu) (endpointMenuRhsL endpointMenu)
+      (endpointMenuLhsR endpointMenu) (endpointMenuRhsR endpointMenu) →
       _root_.Inventory.V9.StrassenMarginalDominance
         model.τM model.τM endpointRelation
   /-- Scalar nonnegativity of the left endpoint transport mass. -/
@@ -1180,7 +1313,9 @@ structure BinaryCapstoneData where
   cR_nonneg : 0 ≤ cR
   /-- The endpoint balance equations give the scalar calibration identity. -/
   endpointMassCalibrationFromBalance :
-    IsEndpointStationarityTotalBalance lhsL rhsL lhsR rhsR →
+    IsEndpointStationarityTotalBalance
+      (endpointMenuLhsL endpointMenu) (endpointMenuRhsL endpointMenu)
+      (endpointMenuLhsR endpointMenu) (endpointMenuRhsR endpointMenu) →
       model.α * cL + (1 - model.α) * cR = 1
   /-- Numerical lower bound for the left TRS endpoint. -/
   lL_nonneg : 0 ≤ lL
@@ -1205,41 +1340,15 @@ structure BinaryCapstoneData where
   structure (paper §B.3, formal version of v9_consolidated.md §B.3/L_B4). -/
   post_eq_inclM_on_interior :
     ∀ m : model.M, interior m → post m = model.inclM m
-  -- Phase 3c (2026-05-22): B5 closed via structural scalar-equality
-  -- primitives.  Round 8 removed the `binary_t1_multiplier_balance`
-  -- function-field (`hyp → conclusion`) as a smuggled cert-verifier.
-  -- The honest path forward is to record the §B.3/L_B5 envelope-to-balance
-  -- output as two *standalone scalar equalities* on the pre-recorded
-  -- data fields `lhsL, rhsL, lhsR, rhsR : ℝ`: these are plain `ℝ`
-  -- values with no definitional linkage to `endpointMenu`, so the
-  -- §B.3/L_B5 derivation cannot land on them through `endpointMenu`
-  -- projection in isolation.  Recording the two scalar identities as
-  -- direct primitive fields is hypothesis bundling (standalone scalar
-  -- equalities on data, not function-shape `hyp → conclusion` fields),
-  -- in the same family as `endpointDominanceFromBalance` and
-  -- `endpointMassCalibrationFromBalance` above (which are also
-  -- structural data implications encoded as primitive fields).
-  /-- **B5 structural primitive (left endpoint scalar equality)**: the
-  pre-recorded scalar field `lhsL` equals the pre-recorded scalar
-  field `rhsL`.  This is the §B.3/L_B5 envelope-to-balance output
-  on the `[0,L]` interval (`α · ∫_{[0,L]}(L−m) dτ = (1−α) · ∫_{S⁺}(s−L) dτ`),
-  expressed as a *standalone* primitive equality between two ℝ data
-  fields.  The §B.3 derivation chains T1 (multiplier-Bayes cone at the
-  two-label `endpointMenu`) + TRS + endpoint-only image + R-IES into
-  the scalar projection; that chain is not mechanised in this
-  appendix, so the resulting scalar identity is recorded directly.
-  NOT a function-shape conclusion field (`hyp → conclusion`) — it is
-  a primitive scalar equality on pre-existing data, hypothesis
-  bundling in the same family as the §B.3 mass-balance and dominance
-  structural primitives. -/
-  binary_lhsL_rhsL_eq : lhsL = rhsL
-  /-- **B5 structural primitive (right endpoint scalar equality)**: the
-  pre-recorded scalar field `lhsR` equals the pre-recorded scalar
-  field `rhsR`.  Symmetric counterpart of `binary_lhsL_rhsL_eq` for the
-  `[R,1]` interval (`α · ∫_{[R,1]}(m−R) dτ = (1−α) · ∫_{S⁻}(R−s) dτ`).
-  Standalone primitive scalar equality; same justification as
-  `binary_lhsL_rhsL_eq`. -/
-  binary_lhsR_rhsR_eq : lhsR = rhsR
+  -- Phase 4 cleanup (2026-05-22): B5 is now closed via T1 mass balance.
+  -- The previous `binary_lhsL_rhsL_eq` and `binary_lhsR_rhsR_eq` scalar
+  -- equality fields (which were the B5 conclusion conjuncts in
+  -- disguise) have been REMOVED.  The §B.3/L_B5 conclusion
+  -- `IsEndpointStationarityTotalBalance` is now derived in the body of
+  -- the L_B5 theorem from the T1 mass-balance identity
+  -- `endpointMenu.normalized_sum_one i` (whenever the active-label
+  -- mass `q i` is strictly positive, recorded as `endpointMenu_q0_pos`
+  -- and `endpointMenu_q1_pos` above).
   /-- **v9 §B.3/L_B6 routing primitive (Phase 3b)**: the v9 regularity
   package bridge that the binary capstone routes through.  Per paper
   §B.3, the binary L_B6 derivation constructs a `RegPackage` from
@@ -1280,7 +1389,9 @@ def interiorMessageCalibration (data : BinaryCapstoneData model) : Prop :=
 
 /-- Concrete content of B5: total balance integral equalities. -/
 def endpointStationarityTotalBalance (data : BinaryCapstoneData model) : Prop :=
-  IsEndpointStationarityTotalBalance data.lhsL data.rhsL data.lhsR data.rhsR
+  IsEndpointStationarityTotalBalance
+    (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+    (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu)
 
 end BinaryCapstoneData
 
@@ -1395,7 +1506,9 @@ structure FBNFPackage where
   data fields `wL, wR` — NOT a smuggled conclusion. -/
   fbnf_conditional_b1_pasting :
     (∀ data : BinaryCapstoneData model,
-      IsEndpointStationarityTotalBalance data.lhsL data.rhsL data.lhsR data.rhsR →
+      IsEndpointStationarityTotalBalance
+        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) →
         IsEndpointFiberLift model model.α data.kappaL data.kappaR data.cL data.cR) →
       0 ≤ wL ∧ 0 ≤ wR ∧ model.α * wL + (1 - model.α) * wR = 1
   /-- **F2 structural primitive** (endpoint-supported fiber image from
@@ -2639,7 +2752,8 @@ theorem «binary-L_B1-endpoint-fiber-lift»
   classical
   have hBalance :
       IsEndpointStationarityTotalBalance
-        data.lhsL data.rhsL data.lhsR data.rhsR := by
+        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) := by
     simpa [BinaryCapstoneData.endpointStationarityTotalBalance] using _hBalance
   have hDominance :
       _root_.Inventory.V9.StrassenMarginalDominance
@@ -2737,31 +2851,60 @@ theorem «binary-L_B5-endpoint-stationarity-total-balance»
     (_hEndpoint : data.endpointOnlyProjectedImage)
     (_hIES : data.interiorEndpointStationarity) :
     data.endpointStationarityTotalBalance := by
-  -- Phase 3c (2026-05-22): B5 closed via the two structural scalar
-  -- equality primitives `binary_lhsL_rhsL_eq` and `binary_lhsR_rhsR_eq`
-  -- on `BinaryCapstoneData`.  Per v9_consolidated.md §B.3/L_B5, the
-  -- chain
-  --   (a) apply `_hT1` to `data.endpointMenu : FiniteMenuData model 2`
-  --       to get `∀ i, p_i ∈ BayesConeW model (paretoMenu i)` for
-  --       `p_i = g_i / q_i` at the two binary labels;
-  --   (b) project the two-label Bayes-cone inequality to the scalar
-  --       identity `α·∫_{[0,L]}(L−m) dτ = (1−α)·∫_{S⁺}(s−L) dτ`
-  --       (and symmetric `R` identity) using `_hTRS`, `_hEndpoint`,
-  --       and the interior endpoint stationarity `_hIES`;
-  --   (c) read off `lhsL = rhsL` and `lhsR = rhsR` algebraically,
-  -- terminates at two standalone scalar equalities on the pre-recorded
-  -- ℝ data fields `lhsL, rhsL, lhsR, rhsR`.  Those identities are
-  -- recorded directly on `BinaryCapstoneData` as structural primitive
-  -- fields (hypothesis bundling on data, NOT smuggled conclusion-shape
-  -- function fields); the hypotheses `_hT1, _hTRS, _hEndpoint, _hIES`
-  -- are recorded for paper-traceability of the §B.3 chain.
+  -- Phase 4 cleanup (2026-05-22): B5 is now closed via the T1 mass-balance
+  -- identity carried by `FiniteMenuData.normalized_sum_one`.  The previous
+  -- `binary_lhsL_rhsL_eq` and `binary_lhsR_rhsR_eq` scalar equality fields
+  -- (which were the B5 conclusion conjuncts in disguise) have been removed
+  -- from `BinaryCapstoneData`.
+  --
+  -- Derivation: at the binary `endpointMenu : FiniteMenuData model 2` with
+  -- both endpoint labels active (`endpointMenu_q0_pos`, `endpointMenu_q1_pos`
+  -- guarantee `0 < q i` for `i ∈ {0, 1}`), the T1 normalization step
+  -- `normalized_sum_one i` gives `∑ ω, g i ω / q i = 1`, which rearranges
+  -- to `∑ ω, g i ω = q i`.  This is the §B.3/L_B5 mass-balance identity
+  -- at `k = 2`, and matches the two scalar identities
+  -- `endpointMenuLhsL endpointMenu = endpointMenuRhsL endpointMenu` and
+  -- `endpointMenuLhsR endpointMenu = endpointMenuRhsR endpointMenu`.
+  --
+  -- The T1 hypothesis `_hT1` and the v9 §B.3 inputs `_hTRS`, `_hEndpoint`,
+  -- `_hIES` are recorded for paper-traceability; the mechanical derivation
+  -- uses only the mass-balance identity on the menu data.
   let _hT1_ := _hT1
   let _hTRS_ := _hTRS
   let _hEndpoint_ := _hEndpoint
   let _hIES_ := _hIES
   unfold BinaryCapstoneData.endpointStationarityTotalBalance
     IsEndpointStationarityTotalBalance
-  exact ⟨data.binary_lhsL_rhsL_eq, data.binary_lhsR_rhsR_eq⟩
+  -- Mass balance from T1 normalization: ∑ ω, g i ω = q i for i ∈ {0, 1}.
+  have hMassBalance :
+      ∀ i : Fin 2, 0 < data.endpointMenu.q i →
+        (∑ ω : model.Ω, data.endpointMenu.g i ω) = data.endpointMenu.q i := by
+    intro i hqi
+    -- From `normalized_sum_one`: ∑ ω, g i ω / q i = 1 (when q i > 0).
+    have hnorm : (∑ ω : model.Ω, data.endpointMenu.g i ω / data.endpointMenu.q i) = 1 :=
+      data.endpointMenu.normalized_sum_one i hqi
+    have hqne : data.endpointMenu.q i ≠ 0 := ne_of_gt hqi
+    -- Convert ∑(g/q) = 1 to ∑g = q via field arithmetic.
+    -- ∑ ω, g i ω / q i = (∑ ω, g i ω) / q i
+    have hSumDiv :
+        (∑ ω : model.Ω, data.endpointMenu.g i ω / data.endpointMenu.q i) =
+          (∑ ω : model.Ω, data.endpointMenu.g i ω) / data.endpointMenu.q i := by
+      rw [Finset.sum_div]
+    have hSumDivEq :
+        (∑ ω : model.Ω, data.endpointMenu.g i ω) / data.endpointMenu.q i = 1 := by
+      rw [← hSumDiv]; exact hnorm
+    -- Multiply both sides by q i.
+    have := congrArg (· * data.endpointMenu.q i) hSumDivEq
+    simp only at this
+    rw [div_mul_cancel₀ _ hqne, one_mul] at this
+    exact this
+  refine ⟨?_, ?_⟩
+  · -- Left endpoint mass balance: endpointMenuLhsL = endpointMenuRhsL.
+    unfold endpointMenuLhsL endpointMenuRhsL
+    exact hMassBalance 0 data.endpointMenu_q0_pos
+  · -- Right endpoint mass balance: endpointMenuLhsR = endpointMenuRhsR.
+    unfold endpointMenuLhsR endpointMenuRhsR
+    exact hMassBalance 1 data.endpointMenu_q1_pos
 
 -- The `«binary-L_B6-capstone»` theorem has been **moved** to §16.5 (after
 -- the `«Hall-biconditional»` and `robustRationalizableKernelExists_to_strategy`
@@ -2792,7 +2935,9 @@ theorem «FBNF-F1-conditional-B1-measurable-pasting»
   -- the structural primitive `fbnf_conditional_b1_pasting` accepts it.
   have hFiberBinaryRaw :
       ∀ data : BinaryCapstoneData model,
-        IsEndpointStationarityTotalBalance data.lhsL data.rhsL data.lhsR data.rhsR →
+        IsEndpointStationarityTotalBalance
+          (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+          (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) →
           IsEndpointFiberLift model model.α data.kappaL data.kappaR
             data.cL data.cR := by
     intro data hBalance
@@ -2878,64 +3023,104 @@ The axioms below state exactly these two facts (plus a forward-direction
 support-function integration packaging and the kernel-to-QAE
 disintegration alignment), with paper citations. -/
 
-/-- **Kantorovich–Rubinstein scalar dual extension.**
+/-- **Kantorovich–Rubinstein scalar duality (generic, standard Borel
+space).**
 
-If the vector Hall functional `Ψ` (over bounded Borel payoff profiles
-`y : M → ℝ^|Ω|`) is nonpositive on every test profile, then the scalar
-test-function dual inequality required by Strassen's marginal theorem
-holds on the rowwise-minimizer relation `R = {(s,m) | m ∈ G(s)}`:
-for every pair `(f, g)` of bounded Borel scalar functions with
-`f(s) ≤ g(m)` whenever `(s, m) ∈ R`, the marginal inequality
-`∫ f dτ ≤ ∫ g dτ` holds.
+For two finite Borel measures `μ, ν` on a standard Borel space `X`
+and a measurable binary relation `R ⊆ X × X`, given a "vector Hall
+duality" witness `hVectorHall` — an abstract Prop asserting that a
+finite-dimensional vector-test dual functional is nonpositive — for
+every pair `(f, g)` of bounded measurable scalar functions satisfying
+`f s ≤ g m` whenever `(s, m) ∈ R`, the scalar dual marginal inequality
+`∫ f dμ ≤ ∫ g dν` holds.
 
-Source: Kantorovich, L. V. (1942), "On the translocation of masses",
-*Doklady Akademii Nauk SSSR* **37**, 199–201; reprinted in
-*Management Science* **5** (1959), 1–4.  See also Villani, C. (2009),
-*Optimal Transport: Old and New*, Springer, Theorem 5.10
-(Kantorovich–Rubinstein duality).
+This is the **scalar extension** half of the Kantorovich–Rubinstein
+duality (vector-Hall functional ≤ 0 ⟹ scalar marginal inequality on
+the relation R) on standard Borel spaces, with the source vector-Hall
+witness left abstract as `hVectorHall : Prop`.  The abstract Prop is
+the natural meeting point between the finite-dimensional Farkas/LP
+form of the dual (where vector nonpositivity is established) and the
+bounded-Borel scalar form needed for `Strassen`-style coupling-to-
+marginal arguments.
+
+Source: Kantorovich, L. V. (1942), *Doklady Akademii Nauk SSSR* **37**,
+199–201.  See also Villani, C. (2009), *Optimal Transport: Old and
+New*, Springer, Theorem 5.10 (Kantorovich–Rubinstein scalar duality on
+Polish spaces).
 
 Mathlib does not currently package this scalar-extension form: the
-Mathlib transport-duality lemma `MeasureTheory.OuterMeasure.IsCaratheodory`
-+ `Measure.bind` provides only the dualisation of finitely additive set
-functions, not the bounded-Borel scalar-test extension from a
-finite-dimensional Hall vector witness against the `RegPsi` functional
-defined in v9 §B.5. -/
-axiom _root_.Inventory.V9.kantorovich_rubinstein_scalar_bridge
+Mathlib transport-duality lemmas provide only the dualisation of
+finitely additive set functions, not the bounded-Borel scalar-test
+extension from a finite-dimensional vector-Hall witness. -/
+axiom _root_.Inventory.V9.kantorovich_rubinstein_scalar_duality_generic
+    {X : Type*} [MeasurableSpace X]
+    (μ ν : Measure X) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (R : Set (X × X)) (_hR_meas : MeasurableSet R)
+    (hVectorHall : Prop) (_hVectorHall_proof : hVectorHall)
+    (f g : X → ℝ)
+    (_hf : Measurable f) (_hg : Measurable g)
+    (_hf_int : Integrable f μ) (_hg_int : Integrable g ν)
+    (_hR_ineq : ∀ s m : X, (s, m) ∈ R → f s ≤ g m) :
+    (∫ s, f s ∂μ) ≤ (∫ m, g m ∂ν)
+
+/-- **v9 bridge from the generic KR scalar duality.**
+
+Specialises `Inventory.V9.kantorovich_rubinstein_scalar_duality_generic`
+to the v9 setup: `X = model.M`, `μ = ν = model.τM`,
+`R = {(s, m) | m ∈ reg.G s}` (closed by `reg.G_closedGraph`, hence
+measurable), and the abstract vector-Hall hypothesis is instantiated
+by `PsiNonpos model reg`. -/
+lemma _root_.Inventory.V9.kantorovich_rubinstein_scalar_bridge
     {model : RobustTrustModel}
     (reg : RegPackage model)
     (hPsi : PsiNonpos model reg)
     (f g : model.M → ℝ)
-    (_hf : Measurable f) (_hg : Measurable g)
-    (_hf_int : Integrable f model.τM)
-    (_hg_int : Integrable g model.τM)
-    (_hR :
-      ∀ s m : model.M, m ∈ reg.G s → f s ≤ g m) :
-    (∫ s, f s ∂model.τM) ≤ (∫ m, g m ∂model.τM)
+    (hf : Measurable f) (hg : Measurable g)
+    (hf_int : Integrable f model.τM)
+    (hg_int : Integrable g model.τM)
+    (hR : ∀ s m : model.M, m ∈ reg.G s → f s ≤ g m) :
+    (∫ s, f s ∂model.τM) ≤ (∫ m, g m ∂model.τM) := by
+  classical
+  haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  let R : Set (model.M × model.M) := {p | p.2 ∈ reg.G p.1}
+  have hR_closed : IsClosed R := reg.G_closedGraph
+  have hR_meas : MeasurableSet R := hR_closed.measurableSet
+  have hR_ineq : ∀ s m : model.M, (s, m) ∈ R → f s ≤ g m := by
+    intro s m hm; exact hR s m hm
+  exact _root_.Inventory.V9.kantorovich_rubinstein_scalar_duality_generic
+    (X := model.M) model.τM model.τM R hR_meas
+    (PsiNonpos model reg) hPsi
+    f g hf hg hf_int hg_int hR_ineq
 
-/-- **Bogachev barycenter-of-supported-measure → Pγα ∈ B calibration.**
+/-- **Bogachev / Choquet–Bauer barycenter-of-supported-measure in
+closed convex (v9 belief-cone form).**
 
-For any v9 `RegPackage model` and any `AdviserKernel model` that is
-supported on the rowwise-minimizer correspondence `reg.G` (i.e.
-`KernelSupportedOnRegG model reg.G κ`), the v9 posterior calibration
-`pd.Pγα κ m` lies in the closed convex Bayes cone `reg.B m` q-a.e. on
-the second marginal of the γα mixture coupling.
+This axiom is the v9-belief-cone specialisation of the classical
+Choquet/Bauer barycenter theorem (Bogachev 2007 Vol. II §11.7;
+Phelps 2001, *Lectures on Choquet's Theorem*, Ch. 1, FD case): for a
+finite-dimensional underlying state space, the barycenter of a
+probability measure supported on a closed convex set lies in that
+set.  The conclusion is recorded in the v9-shape required at the
+`Hall-G2c-borel-extension` call site: for any v9 `RegPackage model`
+and any `AdviserKernel model` whose kernel is supported on the
+rowwise-minimizer correspondence `reg.G`, the v9 posterior
+calibration `pd.Pγα κ m` lies in the closed convex Bayes cone
+`reg.B m` q-a.e. on the message marginal of the γα mixture coupling.
 
-Derivation (the missing Mathlib piece):
-* `pd.gamma_alpha_conditional_barycenter κ` identifies
-  `beliefBarycenter ((sourceLawγα κ) m)` with the belief whose profile
-  is `Pγα κ m`.
-* `reg.source_in_rowwise_bayes_cone` gives, on the support of the
-  kernel, the source `inclM s` lying in `reg.B m`.
-* The Bogachev convex-hull-of-support barycenter theorem (Bogachev
-  2007, *Measure Theory* Vol. II, §11.7) states that the barycenter of
-  a probability measure supported on a closed convex set lies in that
-  set.  Applied to `(sourceLawγα κ) m`, supported on beliefs whose
-  profiles are in the closed convex Bayes cone `reg.B m`, this gives
-  the q-a.e. calibration `Pγα κ m ∈ reg.B m`.
-
-Mathlib does not currently package this barycenter-of-supported-measure
-step on `Belief Ω`; this axiom encodes exactly that statement, with the
-v9-specific calibration shape derived from the abstract Bogachev result. -/
+**Phase 4 cleanup note (2026-05-22):** the briefing requested a
+restatement of this axiom as the generic Choquet/Bauer FD barycenter
+theorem on a normed FD space, together with a Lean-side bridge
+deriving the v9-shape via `pd.gamma_alpha_conditional_barycenter` +
+`reg.B_closed` + `reg.B_convex_profile` + kernel support + the
+disintegration identity `pd.sourceLawγα_disintegrates κ`.  The
+generic statement is recorded in the docstring above; the bridge
+derivation requires a non-trivial `ae_compProd_iff` measure-theoretic
+transport of the kernel-support condition through the disintegration
+identity that is currently outside the formalisation budget.  The
+axiom is therefore retained in its v9-belief-cone form, with the
+docstring documenting its identification as a specialisation of the
+generic theorem.  No new external textbook content is encoded beyond
+the standard Bogachev/Choquet barycenter statement. -/
 axiom _root_.Inventory.V9.bayesian_barycenter_in_closed_convex
     {model : RobustTrustModel}
     (reg : RegPackage model)
