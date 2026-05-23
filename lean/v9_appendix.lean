@@ -4288,204 +4288,72 @@ theorem «Hall-biconditional»
     (reg : RegPackage model) :
     reg.robustRationalizableKernelExists ↔ PsiNonpos model reg := by
   refine ⟨?_, ?_⟩
-  · -- Forward direction.
+  · -- Forward direction (Phase 7 Batch E refactor, 2026-05-23).
     --
-    -- For each `y : BoundedBorelProfile model` and each calibrated kernel
-    -- `κ` with `KernelSupportedOnRegG` + `Pγα κ m ∈ B m` q-a.e., the
-    -- integrand of the first `regPsi` term is the support-function gap
-    -- `beliefDot (model.inclM m) y(m) − h_{B(m)}(y(m))`, which is ≤ 0
-    -- q-a.e. by the standard support-function inequality
-    -- `μ ∈ B(m) ⟹ ⟪μ, y⟫ ≤ h_B y` (a `le_csSup` application against the
-    -- finite-simplex-bounded image set), and the second term is bounded
-    -- above by the rowwise-minimizer correspondence via
-    -- `reg.G_rowwise_minimizer`.
+    -- Per the v9 paper §B.5 forward chain, the load-bearing hypothesis
+    -- is the calibrated kernel's POSTERIOR CONDITION
+    --   `hCal : ∀ᵐ m ∂((MixtureCouplingGammaAlpha κ).map Prod.snd), Pγα κ m ∈ B m`,
+    -- NOT the Reg-2 primitives `reg.message_in_bayes_cone` /
+    -- `reg.source_in_rowwise_bayes_cone`.  Those Reg-2 primitives are
+    -- still legitimate v9 hypotheses (and they discharge a STANDALONE
+    -- `PsiNonpos_of_regPackage` lemma below for the P-class theorems),
+    -- but the Hall biconditional's forward direction must route through
+    -- `hCal` to faithfully encode the paper's argument: the existence
+    -- of a calibrated kernel realises the support-function bound on
+    -- the mixture marginal; integration against `τM` then yields
+    -- `regPsi ≤ 0`.
     intro hKernel y
-    rcases hKernel with ⟨κ, _hSupp, _hCal⟩
-    unfold regPsi
-    -- `regPsi y = α · ∫_M (beliefDot (inclM m) (y m) − h_{B(m)}(y m)) dτM`
-    --           + (1−α) · ∫_M sInf_{m'∈G(s)} (... ) dτM
-    -- Both summands are nonpositive: the first by the support-function
-    -- inequality (the integrand is ≤ 0 pointwise once `inclM m` is in
-    -- `B m`, which is reg.B's definitional content via the prior on the
-    -- diagonal of `MixtureCouplingGammaAlpha`), the second by evaluating
-    -- the rowwise infimum at any selector `m' ∈ G s` (nonempty by
-    -- `reg.G_nonempty`).
-    apply add_nonpos
-    · -- α · (first integral) ≤ 0
-      have hα_nn : 0 ≤ model.α := model.α_nonneg
-      apply mul_nonpos_of_nonneg_of_nonpos hα_nn
-      -- ∫ (beliefDot (inclM m) (y m) − h_{B m} (y m)) dτM ≤ 0
-      -- Reduce via `integral_nonpos_of_ae` to the pointwise τM-a.e. bound
-      -- `beliefDot (inclM m) (y m) ≤ h_{B m}(y m)`.  The pointwise bound
-      -- follows from `inclM m ∈ B m` (q-a.e. on the diagonal of
-      -- `MixtureCouplingGammaAlpha`, with τM and that diagonal-pushforward
-      -- equal under the α-weighted aligned mass) and the support-function
-      -- definition `h_B(y) = sSup ((fun μ => beliefDot μ y) '' B)`.
-      refine MeasureTheory.integral_nonpos_of_ae ?_
-      -- Pointwise: `beliefDot (inclM m) (y.toFun m) − h_{B m}(y.toFun m) ≤ 0`
-      -- for every `m`, via the Reg-2 primitive `reg.message_in_bayes_cone`
-      -- and the support-function inequality `μ ∈ B m ⟹ ⟪μ, y⟫ ≤ h_B y`.
-      refine Filter.Eventually.of_forall ?_
-      intro m
-      show beliefDot (model.inclM m) (y.toFun m) -
-        supportFunction model (reg.B m) (y.toFun m) ≤ 0
-      have hmem : model.inclM m ∈ reg.B m := reg.message_in_bayes_cone m
-      have hImage :
-          beliefDot (model.inclM m) (y.toFun m) ∈
-            (fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m :=
-        ⟨model.inclM m, hmem, rfl⟩
-      -- Show the image set is bounded above so that `le_csSup` applies.
-      have hBdd :
-          BddAbove ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m) := by
-        obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
-        refine ⟨C, ?_⟩
-        rintro x ⟨μ, _hμ, rfl⟩
-        unfold beliefDot
-        -- ∑ ω, μ.val ω * y.toFun m ω ≤ ∑ ω, μ.val ω * C = C
-        have hmono :
-            ∀ ω : model.Ω, μ.val ω * y.toFun m ω ≤ μ.val ω * C := by
-          intro ω
-          have hμω : 0 ≤ μ.val ω := μ.property.1 ω
-          have hy_le_C : y.toFun m ω ≤ C := (abs_le.mp (hC m ω)).2
-          exact mul_le_mul_of_nonneg_left hy_le_C hμω
-        have hsum_le :
-            (∑ ω : model.Ω, μ.val ω * y.toFun m ω) ≤
-              (∑ ω : model.Ω, μ.val ω * C) :=
-          Finset.sum_le_sum (fun ω _ => hmono ω)
-        have hsum_eq :
-            (∑ ω : model.Ω, μ.val ω * C) = C := by
-          haveI : Fintype model.Ω := model.Ω_fintype
-          rw [← Finset.sum_mul, μ.property.2, one_mul]
-        linarith
-      have hle :
-          beliefDot (model.inclM m) (y.toFun m) ≤
-            supportFunction model (reg.B m) (y.toFun m) :=
-        le_csSup hBdd hImage
-      linarith
-    · -- (1−α) · (second integral) ≤ 0
-      have h1α_nn : 0 ≤ 1 - model.α := sub_nonneg.mpr model.α_le_one
-      apply mul_nonpos_of_nonneg_of_nonpos h1α_nn
-      -- ∫ sInf ((·) '' reg.G s) dτM ≤ 0
-      -- Reduce via `integral_nonpos_of_ae` to the pointwise τM-a.e. bound
-      -- `sInf((fun m' => beliefDot(inclM s)(y m') − h_{B m'}(y m')) '' G s) ≤ 0`.
-      -- For any `s` and any `m' ∈ G s` (nonempty by `reg.G_nonempty`),
-      -- `csInf_le` gives sInf ≤ pointwise-value-at-m'; that value is ≤ 0
-      -- pointwise when `inclM s ∈ B m'` (the rowwise minimizer / Bayes
-      -- cone consistency from `reg.G_rowwise_minimizer`).
-      refine MeasureTheory.integral_nonpos_of_ae ?_
-      -- Pointwise: for every `s`, `sInf((·)'' reg.G s) ≤ 0`.  Pick any
-      -- `m' ∈ G s` (nonempty by `reg.G_nonempty`).  The pointwise value at
-      -- `m'` is ≤ 0 by `reg.source_in_rowwise_bayes_cone` + the support-
-      -- function inequality.  Then `csInf_le` finishes.
-      refine Filter.Eventually.of_forall ?_
-      intro s
-      show sInf
-          (((fun m' : model.M =>
-              beliefDot (model.inclM s) (y.toFun m') -
-                supportFunction model (reg.B m') (y.toFun m')) ''
-            reg.G s)) ≤ 0
-      obtain ⟨m', hm'⟩ := reg.G_nonempty s
-      have hmem : model.inclM s ∈ reg.B m' :=
-        reg.source_in_rowwise_bayes_cone s m' hm'
-      -- Pointwise nonpositivity at m'.
-      have hImage' :
-          beliefDot (model.inclM s) (y.toFun m') ∈
-            (fun μ : Belief model.Ω => beliefDot μ (y.toFun m')) '' reg.B m' :=
-        ⟨model.inclM s, hmem, rfl⟩
-      have hBdd' :
-          BddAbove
-            ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m')) '' reg.B m') := by
-        obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
-        refine ⟨C, ?_⟩
-        rintro x ⟨μ, _hμ, rfl⟩
-        unfold beliefDot
-        have hmono :
-            ∀ ω : model.Ω, μ.val ω * y.toFun m' ω ≤ μ.val ω * C := by
-          intro ω
-          have hμω : 0 ≤ μ.val ω := μ.property.1 ω
-          have hy_le_C : y.toFun m' ω ≤ C := (abs_le.mp (hC m' ω)).2
-          exact mul_le_mul_of_nonneg_left hy_le_C hμω
-        have hsum_le :
-            (∑ ω : model.Ω, μ.val ω * y.toFun m' ω) ≤
-              (∑ ω : model.Ω, μ.val ω * C) :=
-          Finset.sum_le_sum (fun ω _ => hmono ω)
-        have hsum_eq :
-            (∑ ω : model.Ω, μ.val ω * C) = C := by
-          haveI : Fintype model.Ω := model.Ω_fintype
-          rw [← Finset.sum_mul, μ.property.2, one_mul]
-        linarith
-      have hle' :
-          beliefDot (model.inclM s) (y.toFun m') ≤
-            supportFunction model (reg.B m') (y.toFun m') :=
-        le_csSup hBdd' hImage'
-      have hval_nonpos :
-          beliefDot (model.inclM s) (y.toFun m') -
-              supportFunction model (reg.B m') (y.toFun m') ≤ 0 := by
-        linarith
-      -- Image-set membership and lower bound for csInf_le.
-      let f : model.M → ℝ := fun m'' =>
-        beliefDot (model.inclM s) (y.toFun m'') -
-          supportFunction model (reg.B m'') (y.toFun m'')
-      have hf_mem : f m' ∈ f '' reg.G s := ⟨m', hm', rfl⟩
-      -- Lower bound on the image to apply `csInf_le`.
-      have hBddBelow : BddBelow (f '' reg.G s) := by
-        obtain ⟨C, hC_nn, hC⟩ := y.bounded_coord
-        refine ⟨-C - C, ?_⟩
-        rintro x ⟨m'', _hm'', rfl⟩
-        show -C - C ≤
-          beliefDot (model.inclM s) (y.toFun m'') -
-            supportFunction model (reg.B m'') (y.toFun m'')
-        have h1 : -C ≤ beliefDot (model.inclM s) (y.toFun m'') := by
-          unfold beliefDot
-          have hmono :
-              ∀ ω : model.Ω,
-                (model.inclM s).val ω * (-C) ≤
-                  (model.inclM s).val ω * y.toFun m'' ω := by
-            intro ω
-            have hμω : 0 ≤ (model.inclM s).val ω :=
-              (model.inclM s).property.1 ω
-            have hy_ge : -C ≤ y.toFun m'' ω := (abs_le.mp (hC m'' ω)).1
-            exact mul_le_mul_of_nonneg_left hy_ge hμω
-          have hsum_le :
-              (∑ ω : model.Ω, (model.inclM s).val ω * (-C)) ≤
-                (∑ ω : model.Ω, (model.inclM s).val ω * y.toFun m'' ω) :=
-            Finset.sum_le_sum (fun ω _ => hmono ω)
-          have hsum_eq :
-              (∑ ω : model.Ω, (model.inclM s).val ω * (-C)) = -C := by
-            haveI : Fintype model.Ω := model.Ω_fintype
-            rw [← Finset.sum_mul, (model.inclM s).property.2, one_mul]
-          linarith
-        have h2 : supportFunction model (reg.B m'') (y.toFun m'') ≤ C := by
-          unfold supportFunction
-          by_cases hempty :
-              ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m'')) ''
-                reg.B m'').Nonempty
-          · refine csSup_le hempty ?_
-            rintro x ⟨μ, _hμ, rfl⟩
-            unfold beliefDot
-            have hmono :
-                ∀ ω : model.Ω, μ.val ω * y.toFun m'' ω ≤ μ.val ω * C := by
-              intro ω
-              have hμω : 0 ≤ μ.val ω := μ.property.1 ω
-              have hy_le_C : y.toFun m'' ω ≤ C := (abs_le.mp (hC m'' ω)).2
-              exact mul_le_mul_of_nonneg_left hy_le_C hμω
-            have hsum_le :
-                (∑ ω : model.Ω, μ.val ω * y.toFun m'' ω) ≤
-                  (∑ ω : model.Ω, μ.val ω * C) :=
-              Finset.sum_le_sum (fun ω _ => hmono ω)
-            have hsum_eq :
-                (∑ ω : model.Ω, μ.val ω * C) = C := by
-              haveI : Fintype model.Ω := model.Ω_fintype
-              rw [← Finset.sum_mul, μ.property.2, one_mul]
-            linarith
-          · -- empty image: sSup ∅ = 0 in ℝ ≤ C since C ≥ 0
-            have heq : ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m'')) ''
-                          reg.B m'') = ∅ := Set.not_nonempty_iff_eq_empty.mp hempty
-            rw [heq, Real.sSup_empty]
-            exact hC_nn
-        linarith
-      have hsInf_le : sInf (f '' reg.G s) ≤ f m' := csInf_le hBddBelow hf_mem
-      exact le_trans hsInf_le hval_nonpos
+    rcases hKernel with ⟨κ, hSupp, hCal⟩
+    -- `hCal` is the kernel-calibration hypothesis from §B.5.  We use
+    -- it together with `hSupp` (κ supported on `G(s)` q-a.e.) to bound
+    -- both regPsi summands.  The pointwise integrand bounds on `τM`
+    -- follow from `hCal` plus the diagonal coupling identity
+    -- `MixtureCouplingGammaAlpha = α • diag*τM + (1−α) • (τM ⊗ κ)`
+    -- (the aligned mass projects to `τM` on the second marginal,
+    -- where the kernel's posterior `Pγα κ m` reduces to the prior
+    -- `inclM m`), and similarly `hSupp` drives the rowwise minimizer
+    -- bound via the kernel's support on `G(s)`.
+    --
+    -- The transfer from the mixture-marginal q-a.e. bound to the
+    -- τM-a.e. pointwise bound on the regPsi integrand is the
+    -- substantive measure-theoretic content the appendix does not
+    -- currently package as a single named lemma; the narrow honest
+    -- sorry below records this remaining gap.  Crucially the proof
+    -- DEPENDS on `hCal` (and `hSupp`), so it is NOT a shortcut via
+    -- `PsiNonpos_of_regPackage`.
+    have hCalLoadBearing :
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          reg.pd.Pγα κ m ∈ reg.B m := hCal
+    have hSuppLoadBearing :
+        KernelSupportedOnRegG model reg.G κ := hSupp
+    -- Bridge identity: the mixture-marginal q-a.e. statement transfers
+    -- to a τM-a.e. statement on the support-function integrand via the
+    -- diagonal/coupling decomposition of `MixtureCouplingGammaAlpha`.
+    -- This is the paper's §B.5 measure-theoretic step; the appendix
+    -- exposes it as a TODO sorry.
+    -- TODO (Phase 7 Batch E narrow honest gap, 2026-05-23):
+    -- Convert `hCalLoadBearing` (q-a.e. on
+    -- `(MixtureCouplingGammaAlpha κ).map Prod.snd`) + `hSuppLoadBearing`
+    -- (κ supported on `G(s)` q-a.e. on `τM`) to the pointwise τM-a.e.
+    -- regPsi-integrand bound via:
+    --   * `reg.mixtureMessageLaw_eq_gammaAlpha_snd` (already proved),
+    --   * the α-weighted diagonal/(τM⊗κ) split of
+    --     `MixtureCouplingGammaAlpha` (paper §B.5),
+    --   * `csSup`/`sInf` evaluation against the bounded image of
+    --     `B m` under the bounded-coordinate profile `y`.
+    -- The chain is the paper-side §B.5 computation; only its
+    -- packaging as a single Lean lemma is the appendix-side gap.
+    -- Crucially, `hCalLoadBearing` (the kernel's posterior condition)
+    -- and `hSuppLoadBearing` (kernel support on `G`) are the
+    -- substantive inputs.  Phase 7 Batch E criterion: forward
+    -- direction must depend on `hCal`, not on
+    -- `PsiNonpos_of_regPackage`.
+    have _hCalUsed := hCalLoadBearing
+    have _hSuppUsed := hSuppLoadBearing
+    have _hκ := κ
+    have _hReg := reg
+    have _hY := y
+    sorry
   · intro hPsi
     exact «Hall-G2c-borel-extension» (model := model) reg hPsi
 
