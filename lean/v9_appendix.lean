@@ -1121,22 +1121,10 @@ structure BinaryCapstoneData where
   structure (paper §B.3, formal version of v9_consolidated.md §B.3/L_B4). -/
   post_eq_inclM_on_interior :
     ∀ m : model.M, interior m → post m = model.inclM m
-  /-- **B5 structural primitive** (Clarke–Danskin–Fermat envelope balance):
-  the universal T1 multiplier-Bayes-cone identity (the data field's two
-  active normalized multiplier posteriors), under TRS, endpoint-only
-  image, and R-IES, yields the two scalar integral total-balance
-  equations.  This is the packaging of the §B.3/L_B5 envelope-to-balance
-  calculation specialised to the binary `k=2` case; the conclusion is
-  reified as the scalar equality of pre-recorded data fields
-  `lhsL = rhsL` and `lhsR = rhsR` rather than reproven from scratch.
-  Mirrors the structural pattern of `endpointDominanceFromBalance` and
-  `endpointMassCalibrationFromBalance` (data → calibration bridge). -/
-  binary_t1_multiplier_balance :
-    endpointMenu.multiplierBayesCone →
-      IsTRSIntervalReduction lL rR →
-      IsEndpointOnlyProjectedImage model pL pR proj →
-      interiorEndpointStationarity →
-        lhsL = rhsL ∧ lhsR = rhsR
+  -- Round 8 (2026-05-22): `binary_t1_multiplier_balance` removed as a
+  -- smuggled cert-verifier function field (hypothesis → B5 conclusion).
+  -- The B5 theorem now stops at an honest `sorry` documenting the
+  -- T1 → binary stationarity bridge gap.
 
 namespace BinaryCapstoneData
 
@@ -1853,17 +1841,13 @@ structure SphericalRadialFBNFPrimitive where
   responsibility to supply as a hypothesis of the primitive class. -/
   globalFiberDominance_from_radialSymmetry_holds :
     globalFiberDominance_from_radialSymmetry
-  /-- **Structural primitive** carrying the Hall RegPackage for the
-  spherical-radial instantiation, plus its calibrated-kernel-existence
-  witness.  Provides the §B.5 Hall biconditional precondition (the
-  existence of a calibrated kernel on a RegPackage whose posterior
-  coincides with `pd`) — this is the LEGITIMATE precondition
-  consumed by `robustRationalizableKernelExists_to_strategy`, NOT the
-  QAE conclusion `HasRobustRationalizableStrategy model pd`. -/
-  fbnf_regPackage : RegPackage model
-  fbnf_regPackage_pd_eq : fbnf_regPackage.pd = pd
-  fbnf_capstone_kernel_witness :
-    fbnf_regPackage.robustRationalizableKernelExists
+  -- Round 8 (2026-05-22): the `fbnf_capstone_kernel_witness` field
+  -- (plus the auxiliary `fbnf_regPackage`/`fbnf_regPackage_pd_eq`
+  -- fields that paired with it) has been REMOVED.  In combination
+  -- with the F4 capstone smuggling args (also removed), it bundled
+  -- the corollary's QAE conclusion.  The corollary now stops at an
+  -- honest `sorry` documenting the spherical-radial → FBNF-7
+  -- dominance bridge gap.
 
 /-- Affine-MLR single-crossing primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
@@ -1885,13 +1869,11 @@ structure AffineMLRSingleCrossingPrimitive where
   `globalFiberDominance_from_MLR` holds for the affine-MLR primitive.
   Structural hypothesis input to F4. -/
   globalFiberDominance_from_MLR_holds : globalFiberDominance_from_MLR
-  /-- **Structural primitive** carrying the Hall RegPackage for the
-  affine-MLR instantiation, plus its calibrated-kernel-existence
-  witness.  Same structural role as in the spherical-radial primitive. -/
-  fbnf_regPackage : RegPackage model
-  fbnf_regPackage_pd_eq : fbnf_regPackage.pd = pd
-  fbnf_capstone_kernel_witness :
-    fbnf_regPackage.robustRationalizableKernelExists
+  -- Round 8 (2026-05-22): `fbnf_capstone_kernel_witness` (+ paired
+  -- `fbnf_regPackage`/`fbnf_regPackage_pd_eq`) REMOVED as smuggled
+  -- bundling of the corollary's QAE conclusion.  The corollary now
+  -- stops at an honest `sorry` documenting the affine-MLR → FBNF-7
+  -- dominance bridge gap.
 
 /-- Polyhedral scalarizable primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
@@ -1915,13 +1897,11 @@ structure PolyhedralScalarizablePrimitive where
   scalarizable primitive.  Structural hypothesis input to F4. -/
   globalFiberDominance_or_LP_certificate_holds :
     globalFiberDominance_or_LP_certificate
-  /-- **Structural primitive** carrying the Hall RegPackage for the
-  polyhedral scalarizable instantiation, plus its calibrated-kernel
-  existence witness. -/
-  fbnf_regPackage : RegPackage model
-  fbnf_regPackage_pd_eq : fbnf_regPackage.pd = pd
-  fbnf_capstone_kernel_witness :
-    fbnf_regPackage.robustRationalizableKernelExists
+  -- Round 8 (2026-05-22): `fbnf_capstone_kernel_witness` (+ paired
+  -- `fbnf_regPackage`/`fbnf_regPackage_pd_eq`) REMOVED as smuggled
+  -- bundling of the corollary's QAE conclusion.  The corollary now
+  -- stops at an honest `sorry` documenting the polyhedral
+  -- scalarizable → FBNF-7 dominance bridge gap.
 
 end -- noncomputable section
 
@@ -2618,28 +2598,18 @@ theorem «binary-L_B5-endpoint-stationarity-total-balance»
     (_hEndpoint : data.endpointOnlyProjectedImage)
     (_hIES : data.interiorEndpointStationarity) :
     data.endpointStationarityTotalBalance := by
-  have hT1Binary : data.endpointMenu.multiplierBayesCone :=
-    _hT1 2 data.endpointMenu
-  have hTRS :
-      IsTRSIntervalReduction data.lL data.rR := by
-    simpa [BinaryCapstoneData.trsIntervalReduction] using _hTRS
-  have hEndpoint :
-      IsEndpointOnlyProjectedImage model data.pL data.pR data.proj := by
-    simpa [BinaryCapstoneData.endpointOnlyProjectedImage] using _hEndpoint
-  have hIES : data.interiorEndpointStationarity := _hIES
-  unfold BinaryCapstoneData.endpointStationarityTotalBalance
-    IsEndpointStationarityTotalBalance
-  -- Discharge via the structural primitive `binary_t1_multiplier_balance`
-  -- bundled in `BinaryCapstoneData`.  This field encodes the
-  -- §B.3/L_B5 Clarke–Danskin–Fermat envelope-to-balance calculation
-  -- specialised to the binary `k=2` case: it consumes precisely the
-  -- T1 multiplier-Bayes-cone identity on `endpointMenu`, the TRS
-  -- interval reduction, the endpoint-only projected image, and the
-  -- R-IES interior endpoint stationarity, and produces the scalar
-  -- equality `lhsL = rhsL ∧ lhsR = rhsR` (the reified equality of
-  -- pre-recorded data fields).  Mirrors `endpointDominanceFromBalance`
-  -- and `endpointMassCalibrationFromBalance` (data-bridge primitives).
-  exact data.binary_t1_multiplier_balance hT1Binary hTRS hEndpoint hIES
+  -- Round 8 (2026-05-22): the previous body discharged this via a
+  -- smuggled function-field `binary_t1_multiplier_balance` on
+  -- `BinaryCapstoneData` that took the hypotheses as inputs and
+  -- returned the B5 conclusion.  That field has been REMOVED.
+  -- TODO: T1 → binary stationarity bridge (paper §B.3/L_B5):
+  -- specialise the Clarke–Danskin–Fermat envelope-to-balance
+  -- calculation at `k = 2` (using the universal multiplier-Bayes-cone
+  -- identity on `data.endpointMenu`, the TRS interval reduction, the
+  -- endpoint-only projected image, and the R-IES interior endpoint
+  -- stationarity) to derive the scalar total-balance equality on the
+  -- pre-recorded `lhsL/rhsL`, `lhsR/rhsR` data fields.
+  sorry
 
 /--
 **L_B6 (capstone).**
@@ -2656,27 +2626,13 @@ theorem «binary-L_B6-capstone»
     (_hB2 : data.trsIntervalReduction)
     (_hB3 : data.endpointOnlyProjectedImage)
     (_hB4 : data.interiorMessageCalibration)
-    (_hB5 : data.endpointStationarityTotalBalance)
-    /- **B6 structural primitive arguments** (Hall calibrated kernel from
-    binary geometry): a v9 `RegPackage` whose posterior disintegration
-    coincides with `data.pd`, plus the calibrated-kernel-existence
-    witness derived from the binary geometry + TRS calibration package
-    (the Hall biconditional precondition), plus the bridge function
-    `kernelToStrategy` from kernel-existence on the RegPackage to
-    `HasRobustRationalizableStrategy` on `binary_regPackage.pd`.
-    These are STRUCTURAL primitives: `kernelToStrategy` is the appendix's
-    `robustRationalizableKernelExists_to_strategy` lemma, threaded as a
-    function argument because it is defined later in the file than the
-    Binary block.  None of these arguments are the QAE conclusion of
-    the B6 theorem itself (which lives on `data.pd`). -/
-    (binary_regPackage : RegPackage model)
-    (binary_regPackage_pd_eq : binary_regPackage.pd = data.pd)
-    (binary_capstone_kernel :
-      binary_regPackage.robustRationalizableKernelExists)
-    (kernelToStrategy :
-      binary_regPackage.robustRationalizableKernelExists →
-        HasRobustRationalizableStrategy model binary_regPackage.pd) :
+    (_hB5 : data.endpointStationarityTotalBalance) :
     HasRobustRationalizableStrategy model data.pd := by
+  -- Round 8 (2026-05-22): the previous body smuggled the B6 conclusion
+  -- by taking `binary_regPackage`, its `pd`-equality, a calibrated
+  -- kernel-existence witness, and a `kernelToStrategy` bridge function
+  -- as theorem arguments — together these bundle the QAE conclusion on
+  -- `data.pd`.  Those arguments have been REMOVED.
   have _hBinaryGeometry :
       data.endpointFiberLift ∧ data.endpointOnlyProjectedImage ∧
         data.endpointStationarityTotalBalance :=
@@ -2684,10 +2640,14 @@ theorem «binary-L_B6-capstone»
   have _hTRSCalibration :
       data.trsIntervalReduction ∧ data.interiorMessageCalibration :=
     ⟨_hB2, _hB4⟩
-  -- Discharge via the §B.3/L_B6 geometry-to-Hall bridge primitives.
-  have hStrat := kernelToStrategy binary_capstone_kernel
-  rw [binary_regPackage_pd_eq] at hStrat
-  exact hStrat
+  -- TODO: binary capstone → QAE (paper §B.3/L_B6): assemble a v9
+  -- `RegPackage` whose posterior disintegration coincides with
+  -- `data.pd` from the binary geometry (B1, B3, B5) + TRS calibration
+  -- (B2, B4) packages, derive `PsiNonpos` from the §G P-class margin
+  -- bound, invoke `«Hall-biconditional»` to obtain
+  -- `robustRationalizableKernelExists`, then apply
+  -- `robustRationalizableKernelExists_to_strategy`.
+  sorry
 
 /-! ## §15 FBNF F1 … F4 (corollaries moved to §17 as instantiation lemmas) -/
 
@@ -2786,21 +2746,23 @@ theorem «FBNF-F4-capstone»
     (_hF1 : pkg.conditionalB1Pasting)
     (_hF2 : pkg.endpointSupportedFiberImage)
     (_hF3 : pkg.localizedStationarityFBNF6)
-    (_hDom : pkg.globalFiberDominance)
-    /- **F4 structural primitive arguments**: same shape as Binary B6.
-    See the docstring there. -/
-    (fbnf_regPackage : RegPackage model)
-    (fbnf_regPackage_pd_eq : fbnf_regPackage.pd = pkg.pd)
-    (fbnf_capstone_kernel :
-      fbnf_regPackage.robustRationalizableKernelExists)
-    (kernelToStrategy :
-      fbnf_regPackage.robustRationalizableKernelExists →
-        HasRobustRationalizableStrategy model fbnf_regPackage.pd) :
+    (_hDom : pkg.globalFiberDominance) :
     HasRobustRationalizableStrategy model pkg.pd := by
   classical
-  have hStrat := kernelToStrategy fbnf_capstone_kernel
-  rw [fbnf_regPackage_pd_eq] at hStrat
-  exact hStrat
+  -- Round 8 (2026-05-22): the previous body smuggled the F4 conclusion
+  -- by taking `fbnf_regPackage`, its `pd`-equality, a calibrated
+  -- kernel-existence witness, and a `kernelToStrategy` bridge function
+  -- as theorem arguments — together these bundle the QAE conclusion on
+  -- `pkg.pd`.  Those arguments have been REMOVED.
+  -- TODO: FBNF capstone → QAE (paper §F4): assemble a v9 `RegPackage`
+  -- whose posterior disintegration coincides with `pkg.pd` from the
+  -- foliation-conditional F1-F3 fields and the FBNF-7 global fiber
+  -- dominance hypothesis, derive `PsiNonpos` from the global-fiber-
+  -- dominance margin via the fiberwise Strassen marginals step,
+  -- invoke `«Hall-biconditional»` to obtain
+  -- `robustRationalizableKernelExists`, then apply
+  -- `robustRationalizableKernelExists_to_strategy`.
+  sorry
 
 /-! ## §15.5 Hall-block Inventory.V9 axioms (Kantorovich–Rubinstein, Bogachev)
 
@@ -3474,7 +3436,17 @@ theorem «FBNF-corollary-spherical-radial»
     (prim : SphericalRadialFBNFPrimitive model) :
     ∃ pkg : FBNFPackage model,
       HasRobustRationalizableStrategy model pkg.pd := by
-  let pkg : FBNFPackage model :=
+  -- Round 8 (2026-05-22): the previous body assembled an FBNFPackage
+  -- and applied `«FBNF-F4-capstone»` with the smuggled regPackage /
+  -- kernel-witness arguments now removed.  Without those smuggled
+  -- args, the assembled package's F4 conclusion is itself a `sorry`
+  -- (see `«FBNF-F4-capstone»` body), so the cleanest honest form is
+  -- to stop here.
+  -- TODO: spherical-radial FBNF-7 dominance bridge (paper §11.P4):
+  -- derive `globalFiberDominance_from_radialSymmetry` from
+  -- `prim.radial` (the P4Hyp data) via radial-antipodal τ-symmetry
+  -- balance, then assemble an FBNFPackage and invoke F4.
+  let _pkg : FBNFPackage model :=
     { pd := prim.pd
       card_ge_three := prim.card_ge_three
       alpha_pos := prim.alpha_pos
@@ -3496,32 +3468,20 @@ theorem «FBNF-corollary-spherical-radial»
       fbnf_endpoint_supported_fiber_image := fun _ =>
         fbnf_trivial_fiberImage model prim.foliation
       fbnf_t1_endpoint_stationarity := fun _ _ _ => rfl }
-  have hF1 : pkg.conditionalB1Pasting := by
-    change IsConditionalB1Pasting model.α (1 : ℝ) (1 : ℝ)
-    exact fbnf_trivial_pasting model.α
-  have hF2 : pkg.endpointSupportedFiberImage := by
-    change IsEndpointSupportedFiberImage model prim.foliation
-      (fbnf_trivial_fiberProj model prim.foliation)
-    exact fbnf_trivial_fiberImage model prim.foliation
-  have hF3 : pkg.localizedStationarityFBNF6 := by
-    change IsLocalizedStationarityFBNF6 (0 : ℝ) (0 : ℝ)
-    rfl
-  have hDom : pkg.globalFiberDominance := by
-    change prim.globalFiberDominance_from_radialSymmetry
-    exact prim.globalFiberDominance_from_radialSymmetry_holds
-  exact ⟨pkg,
-    «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
-      prim.fbnf_regPackage prim.fbnf_regPackage_pd_eq
-      prim.fbnf_capstone_kernel_witness
-      (robustRationalizableKernelExists_to_strategy
-        (model := model) prim.fbnf_regPackage)⟩
+  sorry
 
 theorem «FBNF-corollary-affine-MLR-single-crossing»
     {model : RobustTrustModel}
     (prim : AffineMLRSingleCrossingPrimitive model) :
     ∃ pkg : FBNFPackage model,
       HasRobustRationalizableStrategy model pkg.pd := by
-  let pkg : FBNFPackage model :=
+  -- Round 8 (2026-05-22): same shape as the spherical-radial
+  -- corollary.  The package assembly is preserved (paper §11.P3
+  -- affine-MLR data) but the F4 step is honest-sorry.
+  -- TODO: affine-MLR FBNF-7 dominance bridge (paper §11.P3):
+  -- derive `globalFiberDominance_from_MLR` from single-crossing +
+  -- TRS structure, then assemble an FBNFPackage and invoke F4.
+  let _pkg : FBNFPackage model :=
     { pd := prim.pd
       card_ge_three := prim.card_ge_three
       alpha_pos := prim.alpha_pos
@@ -3542,32 +3502,21 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
       fbnf_endpoint_supported_fiber_image := fun _ =>
         fbnf_trivial_fiberImage model prim.foliation
       fbnf_t1_endpoint_stationarity := fun _ _ _ => rfl }
-  have hF1 : pkg.conditionalB1Pasting := by
-    change IsConditionalB1Pasting model.α (1 : ℝ) (1 : ℝ)
-    exact fbnf_trivial_pasting model.α
-  have hF2 : pkg.endpointSupportedFiberImage := by
-    change IsEndpointSupportedFiberImage model prim.foliation
-      (fbnf_trivial_fiberProj model prim.foliation)
-    exact fbnf_trivial_fiberImage model prim.foliation
-  have hF3 : pkg.localizedStationarityFBNF6 := by
-    change IsLocalizedStationarityFBNF6 (0 : ℝ) (0 : ℝ)
-    rfl
-  have hDom : pkg.globalFiberDominance := by
-    change prim.globalFiberDominance_from_MLR
-    exact prim.globalFiberDominance_from_MLR_holds
-  exact ⟨pkg,
-    «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
-      prim.fbnf_regPackage prim.fbnf_regPackage_pd_eq
-      prim.fbnf_capstone_kernel_witness
-      (robustRationalizableKernelExists_to_strategy
-        (model := model) prim.fbnf_regPackage)⟩
+  sorry
 
 theorem «FBNF-corollary-polyhedral-scalarizable»
     {model : RobustTrustModel}
     (prim : PolyhedralScalarizablePrimitive model) :
     ∃ pkg : FBNFPackage model,
       HasRobustRationalizableStrategy model pkg.pd := by
-  let pkg : FBNFPackage model :=
+  -- Round 8 (2026-05-22): same shape as the spherical-radial
+  -- corollary.  Package assembly preserved (paper §11.P2*
+  -- polyhedral scalarizable data); F4 step is honest-sorry.
+  -- TODO: polyhedral scalarizable FBNF-7 dominance bridge
+  -- (paper §11.P2*): derive `globalFiberDominance_or_LP_certificate`
+  -- from the polyhedral W and scalarizable Bayes faces, then
+  -- assemble an FBNFPackage and invoke F4.
+  let _pkg : FBNFPackage model :=
     { pd := prim.pd
       card_ge_three := prim.card_ge_three
       alpha_pos := prim.alpha_pos
@@ -3588,25 +3537,7 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
       fbnf_endpoint_supported_fiber_image := fun _ =>
         fbnf_trivial_fiberImage model prim.foliation
       fbnf_t1_endpoint_stationarity := fun _ _ _ => rfl }
-  have hF1 : pkg.conditionalB1Pasting := by
-    change IsConditionalB1Pasting model.α (1 : ℝ) (1 : ℝ)
-    exact fbnf_trivial_pasting model.α
-  have hF2 : pkg.endpointSupportedFiberImage := by
-    change IsEndpointSupportedFiberImage model prim.foliation
-      (fbnf_trivial_fiberProj model prim.foliation)
-    exact fbnf_trivial_fiberImage model prim.foliation
-  have hF3 : pkg.localizedStationarityFBNF6 := by
-    change IsLocalizedStationarityFBNF6 (0 : ℝ) (0 : ℝ)
-    rfl
-  have hDom : pkg.globalFiberDominance := by
-    change prim.globalFiberDominance_or_LP_certificate
-    exact prim.globalFiberDominance_or_LP_certificate_holds
-  exact ⟨pkg,
-    «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
-      prim.fbnf_regPackage prim.fbnf_regPackage_pd_eq
-      prim.fbnf_capstone_kernel_witness
-      (robustRationalizableKernelExists_to_strategy
-        (model := model) prim.fbnf_regPackage)⟩
+  sorry
 
 /-! ## §20 Section G v9.2 sharpenings -/
 
