@@ -4942,18 +4942,141 @@ lemma PsiNonpos_of_FBNFPackage
         pkg.localizedStationarityFBNF6Fiberwise :=
     ⟨_hF1, _hF2, _hF3, _hDom, pkg.fbnf7DominanceMargin_pos,
       pkg.L_ge_a, pkg.R_le_b, pkg.L_le_R, pkg.fbnf_fiberwise_balance⟩
-  -- TODO (Phase 7 Batch D narrow honest gap, 2026-05-23):
-  -- The paper §F4 derivation routes the FBNF inputs above through:
-  --   * the fiberwise binary-B1 endpoint lift (Inventory v9 §B.3),
-  --   * Strassen marginals on `pkg.lambdaBase` (Inventory v9 §F1),
-  --   * the trust-band endpoint-projection identity (paper §F2),
-  --   * the FBNF-7 cone-margin support-function bound,
-  -- to derive the integrated Ψ ≤ 0 statement on `pkg.regBridge`.
-  -- The appendix does not currently package this fiberwise →
-  -- integrated bridge as a single named lemma; the narrow sorry
-  -- below records this remaining gap honestly.  It is the ONLY
-  -- point at which FBNF→Ψ is unproven; in particular it does NOT
-  -- smuggle through `PsiNonpos_of_regPackage`.
+  -- TODO (Phase 10 narrow honest gap, 2026-05-23):
+  --
+  -- INTEGRATION CHAIN (paper §F4 derivation, fiberwise → integrated):
+  --
+  -- Goal: ∀ y : BoundedBorelProfile model, regPsi model pkg.regBridge y ≤ 0,
+  -- which unfolds to:
+  --   α · ∫ m, (beliefDot (inclM m) (y m) − h_{B m}(y m)) dτM
+  --     + (1−α) · ∫ s, sInf ((·) '' G s) dτM ≤ 0,
+  -- where `B := pkg.regBridge.B`, `G := pkg.regBridge.G`, and `τM := model.τM`.
+  --
+  -- Per paper §F4, the honest derivation factors through:
+  --
+  --   Step F4.1 (Foliation disintegration of τM):  Disintegrate
+  --     `model.τM = ∫_z (τM | Fiber_z) d pkg.lambdaBase z`
+  --     along the affine foliation `pkg.foliation : Foliation model`,
+  --     where `Fiber_z = pkg.foliation.fiber z` and the per-fiber
+  --     conditional `τM | Fiber_z` is the restricted measure on the
+  --     affine slice indexed by `z : pkg.foliation.Z`.  This requires
+  --     a measurable foliation projection `π : M → pkg.foliation.Z`
+  --     and the Mathlib disintegration theorem
+  --     (`MeasureTheory.Measure.disintegrate` / regular conditional
+  --     probability).
+  --
+  --   Step F4.2 (Trust-band endpoint-projection identity, F2 + L,R):
+  --     On each fiber `z`, the projected fiber payoff `pkg.fiberProj z`
+  --     is supported on the trust band `T_z = ell_z([pkg.L z, pkg.R z])`
+  --     (via `pkg.fbnf_endpoint_supported_fiber_image` driven by
+  --     `pkg.fiberPreservingTRS` and the band constraints
+  --     `pkg.L_ge_a`, `pkg.R_le_b`, `pkg.L_le_R`).  This yields the
+  --     fiberwise identity
+  --       supportFunction (B m) (y m) = max over {L_z, R_z}
+  --         of beliefDot (inclM (ell_z e)) (y m)   for e ∈ {L z, R z},
+  --     i.e. the support function reduces to the two endpoint masses.
+  --
+  --   Step F4.3 (Fiberwise binary-B1 endpoint lift, F1 + wL, wR):
+  --     On each fiber `z`, with `pkg.fbnf_conditional_b1_pasting`
+  --     providing `0 ≤ wL`, `0 ≤ wR`, `α·wL + (1−α)·wR = 1`, apply the
+  --     binary-B1 endpoint-fiber lift (`IsEndpointFiberLift`) to obtain
+  --     the per-fiber kernel pair `(kappaL z, kappaR z)` realising
+  --     the endpoint-supported image.
+  --
+  --   Step F4.4 (Fiberwise λ-a.e. balance, F3 + balanceL, balanceR):
+  --     `pkg.fbnf_fiberwise_balance` gives λ-a.e. z, both `balanceL z`
+  --     and `balanceR z` hold, encoding the Clarke–Danskin envelope
+  --     equalities at the two endpoints.  Combined with F4.2, these
+  --     produce the per-fiber bound
+  --       per-fiber Ψ contribution (z, y | Fiber_z) ≤ 0.
+  --
+  --   Step F4.5 (FBNF-7 cone-margin support-function bound):
+  --     `pkg.globalFiberDominance` + `pkg.fbnf7DominanceMargin > 0`
+  --     give the strictly positive cone-margin slack ensuring the
+  --     rowwise-minimizer sInf term is bounded above by 0 on each
+  --     fiber, λ-a.e.  This is the cross-fiber dominance step that
+  --     promotes per-fiber bounds to the global rowwise-minimizer
+  --     bound on G.
+  --
+  --   Step F4.6 (Fubini integration):  Combine F4.1 with the per-fiber
+  --     bounds from F4.2--F4.5 via Fubini on the disintegration:
+  --       ∫ m, … dτM = ∫_z (∫_{Fiber_z} … d(τM | Fiber_z)) dλ
+  --     and similarly for the misaligned `s` integral.  Each inner
+  --     integral is ≤ 0 by F4.4; integrating over `z` against
+  --     `pkg.lambdaBase` (nonnegative measure) preserves the inequality,
+  --     yielding regPsi y ≤ 0.
+  --
+  -- STRUCTURAL OBSTRUCTION (Phase 10 attempt, 2026-05-23):
+  --
+  -- Step F4.1 is BLOCKED at the FBNFPackage typing layer.  `FBNFPackage`
+  -- carries `pkg.foliation : Foliation model`, `pkg.lambdaBase :
+  -- Measure pkg.foliation.Z`, and the band/balance fields, but it does
+  -- NOT carry:
+  --   (a) a measurable foliation projection `π : model.M → pkg.foliation.Z`,
+  --   (b) a disintegration identity
+  --         `model.τM = ∫_z (τM | π⁻¹{z}) d pkg.lambdaBase z`
+  --       wiring `model.τM` to `pkg.lambdaBase` via `π`,
+  --   (c) per-fiber conditional measures `τM | Fiber_z`,
+  --   (d) a measurable family of trust-band parametrisations
+  --         `ell_z : ℝ → model.M` realising the band `T_z` inside `model.M`,
+  --   (e) an identification of `pkg.regBridge.B m` and `pkg.regBridge.G s`
+  --       with the fiber-supported sets coming from `pkg.fiberProj`.
+  --
+  -- Without (a)--(e) as structural fields, Step F4.1 cannot be carried
+  -- out: the integrals in `regPsi pkg.regBridge y` are over `model.τM`,
+  -- which has no recorded relationship with `pkg.lambdaBase` or the
+  -- foliation.  Any "construction" of such a disintegration from the
+  -- existing fields would either (i) invent non-canonical data
+  -- (smuggling on the conclusion shape), or (ii) collapse to the
+  -- `PsiNonpos_of_regPackage` Reg-2 shortcut (the central F4 defect
+  -- per the Phase 6 audit).  Neither is acceptable.
+  --
+  -- Likewise, Step F4.2 (band endpoint-projection identity inside
+  -- `model.M`) requires the per-fiber chart `ell_z : ℝ → model.M`
+  -- which is not exposed by `Foliation model` as currently typed:
+  -- `Foliation` records `a, b : Z → ℝ` (endpoint scalars), measurable
+  -- structure on `Z`, but not a Carathéodory section landing in
+  -- `model.M`.  The §F2 endpoint-supported fiber image is expressed
+  -- on `pkg.fiberProj : foliation.Z → model.M → Belief model.Ω` which
+  -- speaks to `Belief model.Ω`, not directly to the Bayes-cone sets
+  -- `B m` / `G s` used by `regPsi`.
+  --
+  -- PATH FORWARD (out of scope for the present phase, requires
+  -- FBNFPackage structure refactor — parallel to the documented P3
+  -- refactor at line 10301):
+  --   (1) Strengthen `FBNFPackage` to carry
+  --         foliationProjection : model.M → pkg.foliation.Z
+  --         foliationProjection_measurable : Measurable foliationProjection
+  --         tauM_disintegration :
+  --           model.τM = MeasureTheory.Measure.bind pkg.lambdaBase
+  --             (fun z => τM_conditional z)
+  --         fiberChart : ∀ z, ℝ → model.M
+  --         fiberChart_measurable, fiberChart_image_band
+  --         regBridge_B_fiber_alignment :
+  --           ∀ m, pkg.regBridge.B m =
+  --             pkg.fiberProj (foliationProjection m) '' [L (·), R (·)]
+  --         regBridge_G_fiber_alignment : (analogous for G).
+  --   (2) Then the closure becomes:
+  --         rw [pkg.tauM_disintegration]
+  --         rw [MeasureTheory.integral_bind_lambdaBase]   -- (Fubini)
+  --         apply integral_nonpos
+  --         intro z hz
+  --         -- per-fiber: use F1/F2/F3/FBNF-7 fields on fiber z
+  --         exact per_fiber_psi_nonpos pkg z hz hF1 hF2 hF3 hDom.
+  --   (3) The per-fiber lemma `per_fiber_psi_nonpos` is exactly the
+  --       Binary B1 capstone (`L_B6_capstone` / B1-B3-B5 chain) applied
+  --       to the endpoint-supported fiber image — already proven for
+  --       the binary case in V9Main.
+  --
+  -- This refactor is deferred: the v9 appendix has not packaged a
+  -- foliation-to-base-measure disintegration as a structural primitive
+  -- on `FBNFPackage`.  The narrow sorry below records this remaining
+  -- gap honestly.  It is the ONLY point at which FBNF→Ψ is unproven;
+  -- in particular it does NOT smuggle through `PsiNonpos_of_regPackage`,
+  -- and the FBNF hypotheses `_hF1`, `_hF2`, `_hF3`, `_hDom` plus the
+  -- band fields `pkg.L`, `pkg.R`, `pkg.fbnf7DominanceMargin`, plus the
+  -- fiberwise balance `pkg.fbnf_fiberwise_balance`, are visibly the
+  -- inputs the derivation would consume (see `_hFBNFInputs` above).
   sorry
 
 /--
