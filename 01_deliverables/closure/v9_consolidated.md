@@ -734,6 +734,17 @@ Thus
 
 Scope. This is a full infinite-M,Θ Theorem 2 existence result in the binary-state subclass, conditional on (R-EE),(R-TD),(R-IES). These do not follow from standing hypotheses alone.
 
+**Binary B6 derivation chain (assembly order).** The binary capstone is assembled in the following staged order; each stage uses only the previously established stages:
+
+1. **B2 — TRS interval reduction**: optimal trust region is an interval `[L, R]`.
+2. **B3 — Endpoint-only projected image**: convexity of `V(μ) = max_w μ·w` gives `min_{μ ∈ [L,R]} s·w*(μ) = min{s·w_L, s·w_R}`.
+3. **B1 — Endpoint-fiber lift (via Strassen)**: scalar coupling on each endpoint fiber `A_L ↔ S_+`, `A_R ↔ S_−` produces Borel kernels `κ_L, κ_R` realizing the endpoint balances.
+4. **B4 — Interior calibration**: for `m ∈ (L, R) ∩ M`, no extra mass arrives, so the posterior equals `m` q-a.e.
+5. **B5 — Endpoint stationarity / total balance**: Clarke–Danskin at the two active endpoint labels gives the two endpoint balance equations, which are exactly the hypotheses B1 requires.
+6. **B6 — Capstone assembly via Hall + bridge**: paste κ_L, κ_R, and the truthful interior kernel into a global Borel adversary, then verify Definition 2 q-a.e. using B3 + B4 + endpoint exposure.
+
+The Lean `BinaryCapstoneData` reflects exactly this order, with `binaryIntegrand` aggregating the endpoint-fiber + interior pieces and the structural upper bound supplied at B5.
+
 B.4 FBNF capstone: ∣Ω∣≥3 with fibered-binary normal fan
 
 Assume
@@ -1060,6 +1071,15 @@ FBNF conclusion
 
 Under standing hypotheses, ∣Ω∣≥3, α∈(0,1), FBNF-1 through FBNF-5, local two-sided perturbability, and FBNF-7, there exists a robustly rationalizable optimal strategy.
 
+**F4 disintegration data (explicit list).** The FBNF capstone consumes the following typed data, which together constitute the F4 fiber-disintegration package:
+
+* `foliationProjection : M → Z` — measurable projection onto the standard Borel base `Z`.
+* `fiberChart : Z × ℝ → M` — jointly Borel affine fiber chart `(z, t) ↦ ℓ_z(t)`.
+* `tauFiber : Z → Measure M` — τM-fiber-disintegration `z ↦ τ_z`, with `τM = ∫_Z τ_z dλ(z)` and `supp(τ_z) ⊆ ℓ_z([a_z, b_z])` λ-a.e.
+* **B/G fiber-alignment** (τM-a.e. equalities): `B(ℓ_z(t)) ∩ ℓ_z([a_z,b_z]) = {ℓ_z(L(z)), ℓ_z(R(z))}` and `G(s) ∩ ℓ_z([a_z,b_z]) = argmin_{u ∈ [a_z,b_z]} s · w*(ℓ_z(u))` for τM-a.e. `(z, t)` and τ-a.e. `s`. These alignment equalities are what turn fiberwise rowwise minimizers into global rowwise minimizers (they realize FBNF-7 in disintegrated form).
+
+Quotient consistency on overlapping coordinates is part of FBNF-1; the alignment fields above are part of F4 proper.
+
 The adversarial kernel has endpoint-fiber support:
 
 suppβ
@@ -1161,6 +1181,11 @@ Compatibility with WTA. WTA ternary is not ruled out because a 2-simplex cannot 
 prover_11_response
 
 B.5 G1, G2c, and G3: cone-Hall classification
+
+**Bayes cone as a construction map (Reg-2 setup).** Make explicit that the messagewise Bayes cone is the value of a construction map from belief space to subsets, evaluated at the message-induced prior. Define
+`bayesConeFromPrior : Belief(Ω) → Set(Belief(Ω))` by
+`bayesConeFromPrior(p) := B_W(w*(p))`, i.e. the Bayes cone associated with the payoff label used at belief/prior `p`. Then `B(m) = bayesConeFromPrior(prior(m))`, where `prior(m)` is the included message belief. This makes the paper's informal "Bayes cone at a message" a typed object: it is the construction map evaluated at the message-induced prior, not a separate ad-hoc field per message.
+
 G1: finite cone-Hall theorem
 
 In a finite source-message model with closed convex Bayes cones B
@@ -1494,6 +1519,17 @@ continuous Gauss/normal map.
 “Borel-positive” phrasing should not be used here. The needed primitive is globally continuous Bayes-optimal selection, not positivity on a Borel patch.
 
 B.7 Primitive sufficient classes
+
+**Per-class structural Ψ bounds (convention).** Each primitive theorem below proves `Ψ_{w*}(y) ≤ 0` by first establishing a *structural upper bound* of the form `regPsi(y) ≤ class-specific integral`. The class-specific integrand makes the geometric mechanism visible:
+
+* **P2***: `regPsi(y) ≤ α · ∫(jam − η) dτM`, where `jam` is the bounded rowwise-jamming traffic and `η` is the uniform cone margin (displacement bound + Bayes-cone consistency).
+* **P3 / G4**: `regPsi(y) ≤ ∑_{j,ℓ}(g_{jℓ} · n_j − c_{jℓ} q_j)`, the finite-facet LP residual.
+* **P4 radial**: `regPsi(y) ≤ ∫ reflectionBalance(m) dτM`, with the per-message reflection-balance integrand below.
+* **FBNF (F4)**: `regPsi(y) ≤ ∫_Z ∫ fiberPsiIntegrand(z,t) dτ_z(t) dλ(z)`, the fiber-disintegrated upper bound.
+* **GraphFBNF (P6^G)**: `regPsi(y) ≤ ∑_{e ∈ E} ∫ edgeIntegrand_e dτ_e`, the edgewise upper bound under Kirchhoff balance.
+
+These are stated explicitly in the theorem hypotheses so that geometry-to-Ψ is not hidden behind a `Ψ ≤ 0` certificate.
+
 P2*: cone-margin plus bounded rowwise jamming
 
 Assume Reg-1/Reg-2. Suppose truthful messages sit uniformly inside their Bayes cones: there is η>0 such that
@@ -1744,6 +1780,16 @@ Tie discipline is required for this simple per-cell equivalence. If rowwise mini
 
 Raw polyhedrality is not enough. WTA ternary is the warning beacon: finite vertices can still fail Ψ≤0. What polyhedrality gives is a computable pass/fail test.
 
+**P3 finite LP encoding (explicit form).** The "finite-facet LP" is a concrete finite LP, not a black-box reduction. Its variables and constraints are:
+
+* **Variables**: `x_{ij} ≥ 0` for each source cell `i` and active label `j` (flow of adversarial mass from source `i` to label `j`).
+* **Source balance**: `∑_j x_{ij} = (1−α) τ(S_i)` for every source cell `i`.
+* **Aggregate q_j and n_j definitions**: `q_j = α τ(A_j) + ∑_i x_{ij}`, `n_j = α ∫_{A_j} m dτ + ∑_i x_{ij} s_i`.
+* **Facet feasibility** (per Bayes-cone facet `(g_{jℓ}, c_{jℓ})`): `g_{jℓ} · n_j ≤ c_{jℓ} q_j` for all `j, ℓ`.
+* **Farkas certificate**: infeasibility of this LP is equivalent to existence of a dual price vector `y_{jℓ} ≥ 0` (one per facet) certifying `Ψ(y) > 0`; this is the conic Farkas instance encoded by the LP.
+
+See `v9_executive_summary` G4 LP threshold paragraph for the WTA `K=3` instantiation.
+
 WTA threshold normalization
 
 Use the following convention throughout. Let D be aligned baseline depth normalized so that the aligned contribution of the WTA certificate is −2D. Then
@@ -1782,10 +1828,18 @@ D≥
 
 .
 
-(Corrected 2026-05-21: prior reciprocal-form display D ≥ 9α/(2(1−α)) was
-a transcription error; the Lean theorem `Hall-WTA-reopening-threshold-D`
-verifies the corrected algebra. See lean/decomposition.md §13 and
-03_runs/v9_lean_formalization/decomposition_review_response.md item A.)
+(Corrected 2026-05-21: the form [STALE — DO NOT USE] `D ≥ 9α/(2(1−α))`
+[/STALE] was a transcription error; the Lean theorem
+`Hall-WTA-reopening-threshold-D` verifies the corrected algebra
+`D ≥ 2(1−α)/(9α)`. See lean/decomposition.md §13 and
+03_runs/v9_lean_formalization/decomposition_review_response.md item A.
+This annotation is the only mention of the stale reciprocal form in
+this memo; all live displays use the corrected form.)
+
+**Live form.** `D ≥ 2(1−α)/(9α)` is the live threshold. The reciprocal-form
+`D ≥ 9α/(2(1−α))` is incorrect (see correction note dated 2026-05-21
+in this section). Future audits should not read the [STALE] marker above
+as a live conflicting display.
 
 This is the single normalization used in this memo. The reciprocal formula is discarded.
 
@@ -1804,6 +1858,10 @@ the adversary routes to antipodal boundary points;
 a scalar radial balance calibrates the posterior.
 
 The constructed kernel is primal-feasible; G2c then implies Ψ(y)≤0 for all bounded Borel y.
+
+**Reflection-balance integrand (explicit form).** The "antipodal τ-symmetry" used here is a per-message *measurable* reflection-balance function `reflectionBalance : M → ℝ`, defined by
+`reflectionBalance(m) := y(m)·m − h_{B(m)}(y(m)) + y(σ(m))·σ(m) − h_{B(σ(m))}(y(σ(m)))`,
+where `σ : M → M` is the radial antipodal involution. Under radial/equivariant primitives, the integrand satisfies the σ-antisymmetry identity `reflectionBalance(σ(m)) = −reflectionBalance(m)` τ-a.e., so `∫ reflectionBalance dτM = 0`, which is the scalar radial balance used to calibrate boundary posteriors. This is the Lean-level `reflectionBalance` object underlying P4's structural Ψ bound.
 
 Section C — Hypothesis ledger
 C.1 Classification key
@@ -2019,6 +2077,30 @@ primitive: "piecewise continuous $w^*$" upgrades to "edgewise
 finite-contact (no-fractal contact) + vertex quotient consistency."
 Effect: P6^G's primitive class becomes fully derivable from
 $(u, A, \Omega, \Theta, \tau, \text{graph}\,G)$.
+
+**GraphFBNF Kirchhoff edge-flow LP (explicit form).** The graph-FBNF
+calibration is an edge-flow LP on the finite embedded graph
+$G = (V, E)$:
+
+* **Edgewise scalar transports**: for each edge $e \in E$ with affine
+  arc $\ell_e : [a_e, b_e] \to \Delta(\Omega)$, scalar
+  transports $x_e^L, x_e^R \ge 0$ realize the endpoint-fiber balances
+  on $e$.
+* **Node deficit / surplus**: at each vertex $v \in V$ with incident
+  half-edges $\{e_1, \ldots, e_{d(v)}\}$, define the signed half-edge
+  contributions $\delta_{v, e_i}$ (positive if mass flows into the
+  shared vertex, negative if out).
+* **Kirchhoff balance at each vertex $v$**:
+  $\sum_{i=1}^{d(v)} \delta_{v, e_i} = 0$, i.e. signed half-edge
+  contributions sum to zero.
+* **Cross-edge dominance condition**: for $\bar\tau$-a.e. $(e, t)$,
+  $\min_{\mu \in T} \ell_e(t) \cdot w^*(\mu) =
+   \min_{\mu \in T_e} \ell_e(t) \cdot w^*(\mu)$,
+  i.e. edgewise minimizers are globally rowwise minimizing.
+
+This is the edge analogue of FBNF-7 plus the F4 disintegration data;
+the structural Ψ upper bound is $\sum_e \int \text{edgeIntegrand}_e
+\, d\tau_e$ assembled across edges under Kirchhoff balance.
 
 **Net for v9.2**: three sharpenings, all economically meaningful,
 none changing the headline framing. The package remains a **strong

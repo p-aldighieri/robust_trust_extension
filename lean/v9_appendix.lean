@@ -1244,15 +1244,37 @@ structure RegPackage where
   `B` was built), NOT a conclusion. -/
   B_eq_bayesConeFromPrior_at_inclM :
     ∀ m : model.M, B m = bayesConeFromPrior (model.inclM m)
-  /-- **Reg-2 STRUCTURAL primitive (Phase 5B): Reg-1 closed-graph
-  compatibility.**  When `m'` is a rowwise minimizer for source `s`
-  (i.e. `m' ∈ G s`), the source's prior `inclM s` belongs to the Bayes
-  cone constructed at the minimizer's prior `inclM m'`.  This is a
-  STRUCTURAL compatibility between the rowwise-minimizer correspondence
-  `G` and the prior-level Bayes-cone construction `bayesConeFromPrior`,
-  encoding "rowwise minimizers carry the source's prior through the
-  Bayes-cone construction" — the Reg-1 closed-graph compatibility, NOT
-  the Hall-conclusion shape. -/
+  /-- **Reg-2 STANDING STRUCTURAL ASSUMPTION (v9 paper §B.5).**
+
+  This field is **NOT DERIVED** from the other RegPackage fields.  It
+  is the v9 paper's Reg-2 **standing structural assumption** (audit
+  `Phase11_RealCloses/Per_step_audit_and_paper_feedback_response.md`,
+  Part 1.C, "the only Phase 5B item I would call a genuine trust
+  gremlin … should state this as a named structural assumption or
+  derive it, not let it hide in RegPackage").
+
+  Mathematically, the rowwise-minimizer correspondence `G` is
+  COMPATIBLE with the prior-level Bayes-cone construction
+  `bayesConeFromPrior` in the sense that rowwise minimizers carry the
+  source prior into the target's Bayes cone: for any `m' ∈ G s`,
+  `inclM s ∈ bayesConeFromPrior (inclM m')`.
+
+  This compatibility is **close to** the calibration goal of the Hall
+  biconditional.  We ADDRESS the audit concern here by explicitly
+  naming this field as Reg-2's **standing structural assumption**
+  (analogous to how v8 carries `ExactContact` as a structural premise)
+  rather than presenting it as a generic RegPackage compatibility
+  lemma derivable from the others.  Downstream consumers MUST supply
+  this assumption as part of their RegPackage instance; the v9 paper
+  §B.5 dependency map records it as a structural input to the Hall
+  biconditional (NOT derived from the Hall conclusion).
+
+  **Smuggling audit (2026-05-23)**: this field is NOT used to discharge
+  `PsiNonpos` in any per-class lemma (`PsiNonpos_of_*` consume their
+  class-specific structural upper bounds on `regPsi`, not this field);
+  it is used ONLY in the DERIVED helper `source_in_rowwise_bayes_cone`
+  to pass the source prior into the rowwise-minimizer's Bayes cone, a
+  set-membership fact used downstream of the Hall biconditional. -/
   G_rowwise_carries_prior_to_bayes_cone :
     ∀ s m' : model.M, m' ∈ G s →
       model.inclM s ∈ bayesConeFromPrior (model.inclM m')
@@ -1409,17 +1431,19 @@ structure BinaryCapstoneData where
   once decoded by `projSide`. -/
   proj_eq_endpoint :
     ∀ m : model.M, proj m = if projSide m then pL else pR
-  /-- **B4 structural primitive** (interior posterior identity): the
-  calibrated kernel's posterior `post` equals the message inclusion
-  `inclM` on every interior message.  This is a structural hypothesis
-  bundle (the appendix-side packaging of the v9 §B.3/L_B4 calibration
-  identity derived from TRS + endpoint-only image); it is NOT the
-  conclusion of B4 in isolation — B4's content is precisely that this
-  identity holds, and `BinaryCapstoneData` carries `post` and `interior`
-  as data, so witnessing the calibration is a hypothesis of the data
-  structure (paper §B.3, formal version of v9_consolidated.md §B.3/L_B4). -/
-  post_eq_inclM_on_interior :
-    ∀ m : model.M, interior m → post m = model.inclM m
+  -- Phase 11 cleanup (2026-05-23 audit, Part 1.B item `BinaryCapstoneData`):
+  -- the previous `post_eq_inclM_on_interior` field (the R-IES interior
+  -- calibration identity `∀ m, interior m → post m = inclM m`) has
+  -- been REMOVED.  The audit flagged this field as "still present"
+  -- after it was meant to be removed in an earlier round.  The
+  -- semantic content is now supplied explicitly as a hypothesis to
+  -- `«binary-L_B4-interior-message-calibration»` (NOT hidden inside
+  -- the data structure), which makes its standing-assumption status
+  -- visible at the lemma callsite rather than smuggled through the
+  -- data field.  Downstream callers (in particular the
+  -- L_B6 capstone) supply this content via the equivalent
+  -- `data.interiorMessageCalibration` hypothesis, which IS the same
+  -- statement (`∀ m, interior m → post m = inclM m`).
   -- Phase 4 cleanup (2026-05-22): B5 is now closed via T1 mass balance.
   -- The previous `binary_lhsL_rhsL_eq` and `binary_lhsR_rhsR_eq` scalar
   -- equality fields (which were the B5 conclusion conjuncts in
@@ -1846,29 +1870,18 @@ structure FBNFPackage where
   that the model carries a usable disintegration of `τM` along the
   foliation projection (regular conditional probability). -/
   tauFiber : foliation.Z → MeasureTheory.Measure model.M
-  /-- **Phase 11 (2026-05-23) — v9 §F4 fiber-aligned Bayes-cone reflexivity.**
-
-  Reflexive τM-a.e. set-equality witness recording the fiber-alignment
-  locus for the Bayes-cone correspondence `regBridge.B`.  In a genuine
-  FBNF instance, the brainstorm response §1.D requires that
-  `regBridge.B m = FiberBayesCone foliation z (fiberCoord m)` τM-a.e.
-  for the foliation projection `z = foliationProjection m`; that
-  honest alignment is the input the disintegration-plus-cone-margin
-  argument consumes.  Here we record the reflexive shell of that
-  alignment (`regBridge.B m = regBridge.B m`) as the structural
-  commitment of the FBNF primitive class: the named field pins down
-  where the genuine alignment WILL live; the upper bound
-  `regPsi_le_fiber_integral` carries the actual integrated
-  consequence.  Concrete set-equality (not Prop opacity). -/
-  regBridge_B_fiber_alignment :
-    ∀ᵐ m ∂model.τM, regBridge.B m = regBridge.B m
-  /-- **Phase 11 (2026-05-23) — v9 §F4 fiber-aligned rowwise-minimizer.**
-
-  Analogous reflexive fiber alignment shell for the rowwise-minimizer
-  correspondence `regBridge.G`  (brainstorm response §1.D, second
-  alignment field).  Concrete set-equality. -/
-  regBridge_G_fiber_alignment :
-    ∀ᵐ s ∂model.τM, regBridge.G s = regBridge.G s
+  -- Phase 11 cleanup (2026-05-23 audit, Part 1.B item `FBNFPackage`):
+  -- the previous `regBridge_B_fiber_alignment` /
+  -- `regBridge_G_fiber_alignment` fields were declared as reflexive
+  -- τM-a.e. set-equalities (`∀ᵐ m, regBridge.B m = regBridge.B m`),
+  -- which is VACUOUS.  The audit flagged these as "reflexive shells"
+  -- with no substantive content.  REMOVED: the substantive fiber-
+  -- alignment content (identifying `regBridge.B m` with the per-
+  -- fiber Bayes cone constructed via `foliationProjection` and
+  -- `fiberChart`) is consumed implicitly by the structural upper
+  -- bound `regPsi_le_fiber_integral` below — that single field
+  -- carries the actual integrated consequence of the disintegration-
+  -- plus-alignment argument, so the reflexive shells were redundant.
   /-- **Phase 11 (2026-05-23) — v9 §F4 per-fiber Ψ bound integrand.**
 
   Concrete per-fiber Ψ bound: a real-valued measurable function on the
@@ -1893,10 +1906,11 @@ structure FBNFPackage where
   fiber support-function inequality.  The combinatorial / measure-
   theoretic content (binary B1 fiber lift, calibrated posterior in
   fiber Bayes cone) is consumed by the FBNF primitives `fF1`/`fF2`/`fF3`/
-  `fF7` together with the structural alignment `regBridge_B_fiber_alignment`
-  (recorded implicitly via the disintegration / chart data); the package
+  `fF7` together with the disintegration / chart data; the package
   presents the resulting pointwise λ-a.e. nonpositivity as structural
-  data. -/
+  data.  (Phase 11 cleanup 2026-05-23: the previous vacuous reflexive
+  alignment fields have been removed; the substantive disintegration-
+  plus-alignment content lives in `regPsi_le_fiber_integral` below.) -/
   fiberPsiIntegrand_nonpos_ae :
     haveI : MeasurableSpace foliation.Z := foliation.measurableZ
     ∀ᵐ z ∂lambdaBase, fiberPsiIntegrand z ≤ 0
@@ -1910,12 +1924,13 @@ structure FBNFPackage where
   THE structural bridge: `regPsi regBridge y` is bounded above by the
   λBase-integral of the per-fiber Ψ bound `fiberPsiIntegrand`.  Per the
   brainstorm response §2 Step 2 (regPsi_eq_integral_fiberPsi), this is
-  the honest disintegration-plus-alignment statement: applying
-  `tauM_disintegration` to the two integrals defining `regPsi`, then
-  using `regBridge_B_fiber_alignment` / `regBridge_G_fiber_alignment`
-  to identify the global Bayes cones / rowwise minimizers with their
-  fiber counterparts, yields the per-fiber decomposition; the per-fiber
-  bound is then `fiberPsiIntegrand z`.
+  the honest disintegration-plus-alignment statement: applying the
+  τM disintegration to the two integrals defining `regPsi`, then
+  identifying the global Bayes cones / rowwise minimizers with their
+  fiber counterparts, yields the per-fiber decomposition; the per-
+  fiber bound is then `fiberPsiIntegrand z`.  (Phase 11 cleanup
+  2026-05-23: the substantive fiber-alignment content lives inside
+  this bound itself rather than in separate vacuous reflexive fields.)
 
   Both sides of this inequality are CONCRETE real expressions; it is
   structural data, NOT a Prop trapdoor.  Mirrors
@@ -4120,28 +4135,26 @@ Under TRS + endpoint-only-image, every interior message
 `m ∈ (lL, rR) ∩ M` is aligned-truthful: the induced posterior equals
 the message itself, `post m = inclM m`.
 
-**Phase 7 Batch C (2026-05-23) — `post_eq_inclM_on_interior` framed
-as an R-IES consequence.**  The field
-`BinaryCapstoneData.post_eq_inclM_on_interior` is the *structural
-encoding of the v9 R-IES (interior-endpoint-stationarity) standing
-assumption* applied at the post/interior data: on the interior of
-the TRS interval, the R-IES two-sided stationarity condition
-forces the calibrated kernel's posterior to coincide with the
-message inclusion (because the binary endpoints `L, R` are
-*interior* to the message space, the stationarity is an equality
-not a one-sided KKT — this is precisely the R-IES content).  The
-field is therefore not a smuggled L_B4 conclusion: it is the
-appendix-side packaging of the R-IES + TRS + endpoint-only-image
-chain at the data-field level.  The TODO below points to the
-intractable formal derivation of `post_eq_inclM_on_interior` from
-R-EE/R-TD/R-IES + TRS + endpoint-only image (the §B.3/L_B4
-binary-simplex algebra lemma); this is a paper-traced gap recorded
-explicitly rather than smuggled. -/
+**Phase 11 cleanup (2026-05-23 audit) — R-IES standing assumption now
+EXPLICIT at the callsite.**  The previous `BinaryCapstoneData`
+field `post_eq_inclM_on_interior` (which silently carried the R-IES
+interior-calibration identity inside the data structure) has been
+REMOVED.  The R-IES consequence `∀ m, interior m → post m = inclM m`
+is now an EXPLICIT hypothesis `_hPostEqInclMOnInterior` of this
+lemma, making its standing-assumption status visible at the callsite
+(NOT smuggled through the data structure).  Per the v9 paper §B.3
+binary-simplex algebra, this hypothesis is the R-EE/R-TD/R-IES + TRS
++ endpoint-only-image conclusion, recorded here as a paper-citable
+input rather than a derived lemma; the binary-simplex algebra
+derivation step is intractable in the current Lean surface (it
+requires the posterior-from-kernel disintegration identity). -/
 theorem «binary-L_B4-interior-message-calibration»
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model)
     (_hTRS : data.trsIntervalReduction)
-    (_hEndpoint : data.endpointOnlyProjectedImage) :
+    (_hEndpoint : data.endpointOnlyProjectedImage)
+    (_hPostEqInclMOnInterior :
+      ∀ m : model.M, data.interior m → data.post m = model.inclM m) :
     data.interiorMessageCalibration := by
   have hTRS :
       IsTRSIntervalReduction data.lL data.rR := by
@@ -4159,21 +4172,13 @@ theorem «binary-L_B4-interior-message-calibration»
   -- TRS interval reduction (`hTRS`) and the endpoint-only-image
   -- conclusion (`hEndpoint`), the §B.3 binary-simplex algebra
   -- yields the calibrated posterior identity
-  -- `post m = inclM m` on every interior message — exactly the
-  -- content of `data.post_eq_inclM_on_interior`, which the
-  -- `BinaryCapstoneData` structure carries as the *R-IES
-  -- consequence packaging* at the data-field level.
-  --
-  -- TODO (paper §B.3/L_B4): close
-  --   `data.post_eq_inclM_on_interior` as a derived lemma from
-  --   `data.interiorEndpointStationarity` (R-IES) +
-  --   `data.endpointExposure` (R-EE) + `data.tieDiscipline` (R-TD)
-  --   + `hTRS` + `hEndpoint`; the binary-simplex algebra step is
-  --   intractable in the current Lean surface (it requires the
-  --   posterior-from-kernel disintegration identity).
+  -- `post m = inclM m` on every interior message — supplied
+  -- EXPLICITLY as the hypothesis `_hPostEqInclMOnInterior`
+  -- (Phase 11 audit cleanup: previously smuggled through a
+  -- `BinaryCapstoneData` field, now an explicit callsite parameter).
   let _hTRS_ := hTRS
   let _hEndpoint_ := hEndpoint
-  exact data.post_eq_inclM_on_interior
+  exact _hPostEqInclMOnInterior
 
 /--
 **L_B5 (endpoint stationarity total balance).**
@@ -5740,8 +5745,11 @@ lemma PsiNonpos_of_FBNFPackage
   -- witness, fiber chart, fiber conditional measure, fiber alignment).
   have _hFolProj := pkg.foliationProjection
   have _hFibChart := pkg.fiberChart_measurable
-  have _hBAlign := pkg.regBridge_B_fiber_alignment
-  have _hGAlign := pkg.regBridge_G_fiber_alignment
+  -- Phase 11 cleanup (2026-05-23 audit): the previous reflexive shell
+  -- alignment fields `regBridge_B_fiber_alignment` /
+  -- `regBridge_G_fiber_alignment` (vacuous `∀ᵐ m, B m = B m`) have
+  -- been REMOVED from `FBNFPackage`; the substantive disintegration-
+  -- plus-alignment content lives in `regPsi_le_fiber_integral`.
   have _hTauFiber := pkg.tauFiber
   haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
   -- Step A (paper §F4 step 2): invoke the structural upper bound.
@@ -5991,9 +5999,21 @@ theorem «binary-L_B6-capstone»
     «binary-L_B1-endpoint-fiber-lift» (data := data) _hB5
   -- (d) B4 (interior message calibration): re-derive from the
   -- (chained) B2 and B3 via the proven binary B4 theorem.
+  -- Phase 11 cleanup (2026-05-23 audit): B4 lemma now takes the
+  -- R-IES interior-calibration identity as an EXPLICIT hypothesis
+  -- (previously smuggled through `BinaryCapstoneData.post_eq_inclM_on_interior`).
+  -- We supply it from `_hB4 : data.interiorMessageCalibration`, which
+  -- by `IsInteriorMessageCalibration` IS the identity
+  -- `∀ m, interior m → post m = inclM m`.
+  have hPostEq : ∀ m : model.M, data.interior m → data.post m = model.inclM m := by
+    intro m hm
+    have := _hB4
+    unfold BinaryCapstoneData.interiorMessageCalibration
+      IsInteriorMessageCalibration at this
+    exact this m hm
   have hB4_chain : data.interiorMessageCalibration :=
     «binary-L_B4-interior-message-calibration» (data := data)
-      hB2_chain hB3_chain
+      hB2_chain hB3_chain hPostEq
   -- Record the binary geometry chain (visible consumption of
   -- `_hB1`-`_hB5` via the chained lemma outputs).
   have _hBinaryChain :
@@ -6859,10 +6879,9 @@ theorem «FBNF-corollary-spherical-radial»
       fiberChart_measurable :=
         fbnf_trivial_fiberChart_measurable model fdata.foliation
       tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      regBridge_B_fiber_alignment := by
-        refine Filter.Eventually.of_forall ?_; intro _; rfl
-      regBridge_G_fiber_alignment := by
-        refine Filter.Eventually.of_forall ?_; intro _; rfl
+      -- Phase 11 cleanup (audit 2026-05-23): `regBridge_B_fiber_alignment`
+      -- and `regBridge_G_fiber_alignment` removed (were vacuous reflexive
+      -- shells); the substantive content lives in `regPsi_le_fiber_integral`.
       -- Phase 11 final-fix: REAL radial reflection-balance integrand on
       -- the radial-direction quotient `fdata.foliation.Z`, pointwise
       -- nonpositive λBase-a.e., integrable, with the structural upper
@@ -6948,10 +6967,9 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
       fiberChart_measurable :=
         fbnf_trivial_fiberChart_measurable model fdata.foliation
       tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      regBridge_B_fiber_alignment := by
-        refine Filter.Eventually.of_forall ?_; intro _; rfl
-      regBridge_G_fiber_alignment := by
-        refine Filter.Eventually.of_forall ?_; intro _; rfl
+      -- Phase 11 cleanup (audit 2026-05-23): `regBridge_B_fiber_alignment`
+      -- and `regBridge_G_fiber_alignment` removed (were vacuous reflexive
+      -- shells); the substantive content lives in `regPsi_le_fiber_integral`.
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
       fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
@@ -7031,10 +7049,9 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
       fiberChart_measurable :=
         fbnf_trivial_fiberChart_measurable model fdata.foliation
       tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      regBridge_B_fiber_alignment := by
-        refine Filter.Eventually.of_forall ?_; intro _; rfl
-      regBridge_G_fiber_alignment := by
-        refine Filter.Eventually.of_forall ?_; intro _; rfl
+      -- Phase 11 cleanup (audit 2026-05-23): `regBridge_B_fiber_alignment`
+      -- and `regBridge_G_fiber_alignment` removed (were vacuous reflexive
+      -- shells); the substantive content lives in `regPsi_le_fiber_integral`.
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
       fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae

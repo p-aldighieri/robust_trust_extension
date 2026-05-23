@@ -99,7 +99,7 @@ For $w\in W$, the Bayes cone is
   = \{\mu\in\Delta(\Om): w\in\argmax_{v\in W}\mu\cdot v\}
   = N_W(w)\cap\Delta(\Om),
 \end{equation}
-where $N_W(w)$ is the normal cone of $W$ at $w$.
+where $N_W(w)$ is the normal cone of $W$ at $w$. The messagewise Bayes cone $B(m):=B_W(w^*(m))$ used throughout is the composition of the payoff-label selector $m\mapsto w^*(m)$ with $B_W$, i.e. $B$ is the construction map $\mathrm{Belief}(\Om)\to\mathrm{Set}(\Delta(\Om))$, $p\mapsto B_W(w^*(p))$, evaluated at the message-induced prior. We write $B(m)=\mathrm{bayesConeFromPrior}(\mathrm{prior}(m))$ when the construction-map structure matters.
 
 We use $\rho_W:W\to\hat\Si$ for a Borel payoff-profile realization selector. Thus $\rho_W(w)$ is a private strategy realizing the profile $w$. This avoids a notation clash with the rowwise-minimizer correspondence below.
 
@@ -309,6 +309,8 @@ By Lemma~\ref{lem:binaryimage}, the adversarial projected payoff image is endpoi
 For $q$-a.e. interior message $m\in(L,R)\cap M$, the adversary sends no extra mass there, so the posterior is $m$ and the TRS is Bayes-optimal at $m$. On the left endpoint fiber the posterior is $L$; on the right endpoint fiber it is $R$. Endpoint exposure gives Bayes-optimality there. The kernel is supported on rowwise minimizers, so it is adversarial. Definition~\ref{def:RR} holds $q$-a.e.
 \end{proof}
 
+\paragraph{Assembly order of the binary capstone.} The proof is staged: (B2) TRS interval reduction $T^*=[L,R]$; (B3) endpoint-only projected image (Lemma~\ref{lem:binaryimage}); (B1) endpoint-fiber lift via Strassen-style scalar coupling on each fiber (Lemma~\ref{lem:B1}); (B4) interior calibration $P_{\beta^*}(\cdot\mid m)=m$ for $m\in(L,R)\cap M$; (B5) endpoint stationarity giving the total-balance equations (Lemma~\ref{lem:binarystat}); (B6) capstone assembly via Hall pasting plus the truthful interior bridge, then $q$-a.e. verification of Definition~\ref{def:RR} above. Each step uses only the previously established steps; in particular B1 consumes the balances proved in B5.
+
 \section{FBNF capstone}\label{sec:fbnf}
 
 For $|\Om|\ge3$, one positive island arises when the multidimensional geometry decomposes into one-dimensional affine fibers. The correct object is endpoint-fiber support, not singleton endpoint support.
@@ -345,6 +347,8 @@ and symmetrically at $R(z)$. The conditional law $\tau_z$ gives zero mass to end
   \quad \bar\tau\text{-a.e. }(z,t).
 \]
 \end{assumption}
+
+\paragraph{F4 disintegration data.} The FBNF capstone consumes the following typed disintegration data, which we name once and reuse throughout this section: (i) a measurable foliation projection $\mathrm{foliationProjection}:M\to Z$ onto a standard Borel base $Z$; (ii) a jointly Borel fiber chart $\mathrm{fiberChart}:Z\times\R\to M$, $(z,t)\mapsto\ell_z(t)$; (iii) a $\tau_M$-fiber-disintegration $\mathrm{tauFiber}:Z\to\mathcal P(M)$, $z\mapsto\tau_z$, with $\tau_M=\int_Z\tau_z\,\lambda(dz)$ and $\mathrm{supp}(\tau_z)\subseteq\ell_z([a_z,b_z])$; (iv) the B/G fiber-alignment $\tau_M$-a.e.\ equalities $B(\ell_z(t))\cap\ell_z([a_z,b_z])=\{\ell_z(L(z)),\ell_z(R(z))\}$ and $G(s)\cap\ell_z([a_z,b_z])=\argmin_{u\in[a_z,b_z]}s\cdot w^*(\ell_z(u))$. The alignment equalities are what turn fiber-local rowwise minimizers into global rowwise minimizers, i.e.\ they realize global fiber dominance in disintegrated form.
 
 \begin{lemma}[Conditional B1 and measurable pasting]\label{lem:F1}
 Under the FBNF hypotheses and the fiberwise balance equations below, there is a global Borel kernel $\hat\beta^*:M\to\Delta(M)$ whose support lies in endpoint fibers,
@@ -527,6 +531,16 @@ The proof does not pass through compact-patch deletion, so the Borel-to-compact 
 
 The biconditional reduces existence to the dual inequality. This section records usable primitive sufficient conditions. Smoothness alone is not enough: it supplies topology, not mass balance.
 
+\paragraph{Per-class structural $\Psi$ upper bounds.} Each primitive class below proves $\Psi(y)\le0$ by first establishing a class-specific \emph{structural upper bound} of the form $\Psi(y)\le \Psi^{\text{class}}(y)$, where $\Psi^{\text{class}}$ is a class-specific integral whose nonpositivity is read directly from the geometry:
+\begin{itemize}[leftmargin=*]
+  \item P2$^*$: $\Psi(y)\le \alpha\int_M(\mathrm{jam}(m)-\eta)\tau(dm)$ (displacement bound plus Bayes-cone consistency).
+  \item P3/G4: $\Psi(y)\le \sum_{j,\ell}(g_{j\ell}\cdot n_j - c_{j\ell}q_j)$ (finite-facet LP residual; \eqref{eq:LP} below).
+  \item P4 radial: $\Psi(y)\le \int_M R(m)\tau(dm)$ where $R$ is the reflection-balance integrand of Proposition~\ref{prop:P4}.
+  \item FBNF: $\Psi(y)\le \int_Z\!\!\int \Psi_z(t)\tau_z(dt)\lambda(dz)$ (fiber-disintegrated upper bound; Lemma~\ref{lem:F1}).
+  \item Finite-graph FBNF: $\Psi(y)\le \sum_{e\in E}\int \Psi_e \tau_e$ (edgewise upper bound under Kirchhoff balance; Proposition~\ref{prop:graphfbnf}).
+\end{itemize}
+Stating these explicitly makes it visible where geometry enters the calibration: $\Psi^{\text{class}}\le0$ is a structural certificate, not an unverified $\Psi\le0$ hypothesis.
+
 \begin{proposition}[Smooth regularity is topological only]\label{prop:P1}
 If the payoff-profile selector $w^*$ is continuous, $M$ is compact, and the normal-cone field has continuous support functions, then Assumption~\ref{ass:reg} holds. These conditions do not imply $\Psi(y)\le0$.
 \end{proposition}
@@ -560,6 +574,14 @@ In radial or antipodal spherical models where $\tau$ is invariant under the symm
 Disintegrate by radius and direction. The adversary maps each direction to the antipodal boundary direction. Invariance of $\tau$ makes the conditional posterior at a boundary message equal to the corresponding boundary belief. This is a constructive primal proof, not an averaging argument over arbitrary dual prices.
 \end{proof}
 
+\paragraph{Reflection-balance integrand.} The ``antipodal $\tau$-symmetry'' driving Proposition~\ref{prop:P4} is a per-message measurable function $R:M\to\R$, the \emph{reflection-balance integrand}, defined by
+\[
+  R(m)
+  = y(m)\cdot m - h_{B(m)}(y(m))
+   + y(\sigma(m))\cdot\sigma(m) - h_{B(\sigma(m))}(y(\sigma(m))),
+\]
+where $\sigma:M\to M$ is the radial antipodal involution. Under the radial/equivariant primitives, $R$ satisfies the $\sigma$-antisymmetry identity $R(\sigma(m))=-R(m)$ $\tau$-a.e., so $\int_M R(m)\tau(dm)=0$. This vanishing integral is the scalar radial balance that calibrates boundary posteriors; the P4 structural bound $\Psi(y)\le\int_M R\,d\tau=0$ then closes the argument.
+
 \begin{proposition}[Finite-graph FBNF class]\label{prop:graphfbnf}
 If $M$ is a finite union of affine arcs forming a finite embedded graph, the TRS and projection respect the graph, each edge satisfies endpoint-supported minimization and endpoint exposure, global cross-arc dominance holds, and graph vertices satisfy Kirchhoff node balance, then a calibrated adversarial kernel exists.
 \end{proposition}
@@ -567,6 +589,8 @@ If $M$ is a finite union of affine arcs forming a finite embedded graph, the TRS
 \begin{proof}
 Apply Lemma~\ref{lem:B1} on each edge-endpoint fiber. Kirchhoff node balance aggregates the tilted measures of half-edges incident at a shared vertex. Since the graph is finite, the edgewise kernels paste measurably through the Borel chart. Cross-arc dominance makes the edgewise minimizers globally rowwise minimizing. The posterior and Bayes-optimality verification is identical to Theorem~\ref{thm:FBNF}.
 \end{proof}
+
+\paragraph{Explicit edge-flow LP.} Let $G=(V,E)$ be the finite embedded graph. The graph-FBNF calibration is the following edge-flow LP. The variables are edgewise scalar transports $x_e^L, x_e^R\ge 0$ for each $e\in E$, realizing the endpoint-fiber balances along $e$. For each vertex $v\in V$ with incident half-edges $\{e_1,\ldots,e_{d(v)}\}$, define signed half-edge contributions $\delta_{v,e_i}$ (positive inflow, negative outflow). The constraints are (i) per-edge endpoint balances (Lemma~\ref{lem:F3} on each $e$); (ii) Kirchhoff node balance $\sum_{i=1}^{d(v)}\delta_{v,e_i}=0$ at every $v\in V$; (iii) cross-edge dominance $\min_{\mu\in T}\ell_e(t)\cdot w^*(\mu)=\min_{\mu\in T_e}\ell_e(t)\cdot w^*(\mu)$ for $\bar\tau$-a.e.\ $(e,t)$ (the edge analogue of FBNF-7). Under these, the structural upper bound is $\Psi(y)\le\sum_{e\in E}\int\Psi_e(t)\tau_e(dt)$, with each $\Psi_e$ nonpositive by the per-edge Lemma~\ref{lem:F1} argument.
 
 \section{G4: finite-facet LP threshold}\label{sec:g4}
 
@@ -603,6 +627,8 @@ then the LP feasibility condition is
 \begin{theorem}[Finite-facet LP threshold]\label{thm:G4}
 Under finite-cell tie discipline and the compact-regular hypotheses, the finite-vertex optimal TRS is robustly rationalizable if and only if the finitely many inequalities \eqref{eq:LP} hold for all active labels and all facets of their Bayes cones. If any inequality fails, the corresponding facet normal is an explicit dual certificate.
 \end{theorem}
+
+\paragraph{Explicit LP variables and Farkas instance.} The LP behind \eqref{eq:LP} is a concrete finite LP, not a black-box reduction. Its variables are $x_{ij}\ge0$, the flow from source cell $i$ to active label $j$. Its constraints are: (i) source balance $\sum_j x_{ij}=(1-\alpha)\tau(S_i)$ for each $i$; (ii) the aggregates $q_j,n_j$ defined as in \eqref{eq:qjnj} with the adversarial contribution $\sum_i x_{ij}s_i$ replacing $(1-\alpha)\mu_j\bar s_j$; (iii) facet feasibility $g_{j\ell}\cdot n_j\le c_{j\ell}q_j$ for each $(j,\ell)$. Infeasibility of this LP is equivalent, by conic Farkas, to existence of dual prices $y_{j\ell}\ge0$ certifying $\Psi(y)>0$; this is the Farkas instance encoded by the LP, and the threshold computation \eqref{eq:WTAthreshold} is its $K=3$ WTA instantiation.
 
 \begin{proof}
 For each $j$, $n_j/q_j\in B_j$ if and only if all facet inequalities hold. This is exactly the finite-dimensional support-function cone-Hall condition. Theorem~\ref{thm:G3} converts it to robust rationalizability.
@@ -641,6 +667,8 @@ the binding dual inequality is
   D\ge \frac{2(1-\alpha)}{9\alpha}.
 \end{equation}
 At $\alpha=1/2$, this is $D\ge2/9$. With no aligned baseline depth, the certificate is positive: $\Psi=2/9$ at $\alpha=1/2$.
+
+\paragraph{Threshold convention (clarification).} The threshold is $D\ge2(1-\alpha)/(9\alpha)$ as displayed in \eqref{eq:WTAthreshold}. The reciprocal-form $D\ge9\alpha/(2(1-\alpha))$ is \emph{incorrect}; an earlier internal draft contained it as a transcription error and was corrected on 2026-05-21 (see correction note in \texttt{v9\_consolidated.md} \S B.7 WTA threshold normalization). The Lean theorem \texttt{Hall-WTA-reopening-threshold-D} verifies the corrected algebra. This paper displays only the corrected form everywhere.
 
 \section{Phase (b): can the regularity package be removed?}\label{sec:phaseb}
 

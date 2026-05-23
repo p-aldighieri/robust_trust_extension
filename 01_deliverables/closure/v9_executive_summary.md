@@ -83,9 +83,12 @@ D≥
 
 .
 
-(Corrected 2026-05-21: the prior displayed form D ≥ 9α/(2(1−α)) was a
-reciprocal-direction transcription error. The Lean ledger `Hall-WTA-reopening-threshold-D`
-proves the corrected algebra.)
+(Corrected 2026-05-21: the form [STALE — DO NOT USE] `D ≥ 9α/(2(1−α))`
+[/STALE] was a reciprocal-direction transcription error. The Lean ledger
+`Hall-WTA-reopening-threshold-D` proves the corrected algebra
+`D ≥ 2(1−α)/(9α)`, which is the only live display elsewhere in this
+summary. The [STALE] marker is a historical note, not a live conflicting
+threshold.)
 
 This is a useful diagnostic, not just a counterexample: WTA is no longer a foggy “maybe impossible” case. It has an explicit dual certificate and an explicit reopening threshold.
 
