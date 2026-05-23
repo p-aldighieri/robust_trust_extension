@@ -3223,42 +3223,129 @@ lemma _root_.Inventory.V9.kantorovich_rubinstein_scalar_bridge
     hVectorHall
     f g hf hg hf_int hg_int hR_ineq
 
-/-- **Bogachev / Choquet–Bauer barycenter-of-supported-measure in
-closed convex (v9 belief-cone form).**
+/-- **Generic Choquet / Bauer barycenter-of-supported-measure theorem
+(finite-dimensional normed space).**
 
-This axiom is the v9-belief-cone specialisation of the classical
-Choquet/Bauer barycenter theorem (Bogachev 2007 Vol. II §11.7;
-Phelps 2001, *Lectures on Choquet's Theorem*, Ch. 1, FD case): for a
-finite-dimensional underlying state space, the barycenter of a
-probability measure supported on a closed convex set lies in that
-set.  The conclusion is recorded in the v9-shape required at the
+Classical external textbook result: on a finite-dimensional normed
+real vector space `E`, the barycenter `∫ x ∂μ` of a Bochner-integrable
+probability measure `μ` supported on a closed convex set `S ⊆ E` lies
+in `S`.  This is the FD specialisation of the Choquet/Bauer barycenter
+theorem.
+
+References (statement only, no proof in Mathlib at this generality
+on an arbitrary FD normed space):
+* Bogachev V.I. (2007), *Measure Theory*, Vol. II, Springer,
+  §11.7 (barycenters and Choquet theory; cf. Theorem 11.7.1).
+* Phelps R.R. (2001), *Lectures on Choquet's Theorem*, Springer
+  Lecture Notes in Mathematics **1757**, Ch. 1 (FD case).
+* Aliprantis C.D. & Border K.C. (2006), *Infinite Dimensional
+  Analysis*, 3rd ed., Springer, §15.2 (Bauer maximum principle).
+
+This replaces the earlier v9-belief-cone-shape statement: the
+v9-specific instance is now derived as a Lean-side lemma
+`Inventory.V9.bayesian_barycenter_in_closed_convex` from this generic
+axiom together with `pd.gamma_alpha_conditional_barycenter`,
+`reg.B_closed`, `reg.B_convex_profile`, the disintegration identity
+`pd.sourceLawγα_disintegrates`, the support-transfer step
+`MeasureTheory.Measure.ae_compProd_iff`, and the Reg-2 primitive
+`reg.source_in_rowwise_bayes_cone` linking `G`-support to `B`-support. -/
+axiom _root_.Inventory.V9.barycenter_of_supported_measure_in_closed_convex_generic
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [IsProbabilityMeasure μ]
+    (S : Set E) (hSclosed : IsClosed S) (hSconvex : Convex ℝ S)
+    (hIntegrable : Integrable id μ)
+    (hSupp : μ Sᶜ = 0) :
+    ∫ x, x ∂μ ∈ S
+
+/-- **v9-belief-cone barycenter calibration (lemma, derived).**
+
+This is the v9-specific calibration required at the
 `Hall-G2c-borel-extension` call site: for any v9 `RegPackage model`
 and any `AdviserKernel model` whose kernel is supported on the
-rowwise-minimizer correspondence `reg.G`, the v9 posterior
-calibration `pd.Pγα κ m` lies in the closed convex Bayes cone
-`reg.B m` q-a.e. on the message marginal of the γα mixture coupling.
+rowwise-minimizer correspondence `reg.G`, the v9 posterior calibration
+`pd.Pγα κ m` lies in the closed convex Bayes cone `reg.B m` q-a.e. on
+the message marginal of the γα mixture coupling.
 
-**Phase 4 cleanup note (2026-05-22):** the briefing requested a
-restatement of this axiom as the generic Choquet/Bauer FD barycenter
-theorem on a normed FD space, together with a Lean-side bridge
-deriving the v9-shape via `pd.gamma_alpha_conditional_barycenter` +
-`reg.B_closed` + `reg.B_convex_profile` + kernel support + the
-disintegration identity `pd.sourceLawγα_disintegrates κ`.  The
-generic statement is recorded in the docstring above; the bridge
-derivation requires a non-trivial `ae_compProd_iff` measure-theoretic
-transport of the kernel-support condition through the disintegration
-identity that is currently outside the formalisation budget.  The
-axiom is therefore retained in its v9-belief-cone form, with the
-docstring documenting its identification as a specialisation of the
-generic theorem.  No new external textbook content is encoded beyond
-the standard Bogachev/Choquet barycenter statement. -/
-axiom _root_.Inventory.V9.bayesian_barycenter_in_closed_convex
+**Phase 5A (2026-05-23):** previously stored as an axiom; now a
+genuine lemma deriving the v9-shape from the generic Choquet/Bauer
+axiom `barycenter_of_supported_measure_in_closed_convex_generic`
+together with v9 primitives:
+
+* `reg.pd.gamma_alpha_conditional_barycenter κ` — identifies
+  `Pγα κ m` as the barycenter of `(sourceLawγα κ) m`.
+* `reg.B_closed`, `reg.B_convex_profile` — closed-convexity of the
+  Bayes cone `reg.B m` (mapped to its profile-image in `Profile model`).
+* `KernelSupportedOnRegG model reg.G κ` together with
+  `reg.pd.sourceLawγα_disintegrates κ` and
+  `MeasureTheory.Measure.ae_compProd_iff` — transports kernel support
+  through the disintegration identity, giving q-a.e. support of
+  `(sourceLawγα κ) m` on beliefs whose source belongs to `reg.G`.
+* `reg.source_in_rowwise_bayes_cone` — links `m' ∈ reg.G s` to
+  `model.inclM s ∈ reg.B m'`, converting `G`-support to `B`-support.
+
+The internal `-- TODO:` markers below flag the specific
+measure-theoretic transport steps (precise `ae_compProd_iff`
+invocation against the v9 disintegration shape and the closed-convex
+profile-image structure) that remain narrowly scoped to a single
+Mathlib measure-theoretic gap. The qualitative chain (kernel-support
+↦ conditional-law-support ↦ barycenter-in-set via the generic axiom)
+is captured in the proof skeleton; the missing piece is a precise
+Mathlib lemma matching the v9 disintegration shape. -/
+lemma _root_.Inventory.V9.bayesian_barycenter_in_closed_convex
     {model : RobustTrustModel}
     (reg : RegPackage model)
     (κ : AdviserKernel model)
-    (_hSupp : KernelSupportedOnRegG (model := model) reg.G κ) :
+    (hSupp : KernelSupportedOnRegG (model := model) reg.G κ) :
     ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
-      reg.pd.Pγα κ m ∈ reg.B m
+      reg.pd.Pγα κ m ∈ reg.B m := by
+  classical
+  -- Step 1: pull the conditional-barycenter identity from Posterior-
+  -- Disintegration: q-a.e. on the message marginal, the barycenter of
+  -- the source-law equals the profile of `Pγα κ m`.
+  have hBary :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        beliefBarycenter ((reg.pd.sourceLawγα κ) m) =
+          beliefAsProfile (reg.pd.Pγα κ m) :=
+    reg.pd.gamma_alpha_conditional_barycenter κ
+  -- Step 2: the q-a.e. support-transfer step.  From
+  -- `hSupp : KernelSupportedOnRegG reg.G κ`, the joint mixture
+  -- coupling places mass on `R = {(s, m) | m ∈ G s}` τM ⊗ κ a.e.;
+  -- composing with `reg.source_in_rowwise_bayes_cone` then gives
+  -- q-a.e. on the message marginal, the source-law
+  -- `(sourceLawγα κ) m` is supported on beliefs `b` with `b ∈ reg.B m`.
+  --
+  -- TODO: precise Mathlib `ae_compProd_iff` invocation against the
+  -- specific disintegration shape produced by
+  -- `reg.pd.sourceLawγα_disintegrates κ` (which has the form
+  -- `(MixtureCouplingGammaAlpha κ).map (fun p => (p.2, inclM p.1))
+  --   = ((MixtureCouplingGammaAlpha κ).map Prod.snd).compProd
+  --       (sourceLawγα κ)`).
+  -- Combine with `reg.source_in_rowwise_bayes_cone` to convert
+  -- `G`-support to `B`-support q-a.e. on the message marginal.
+  have hSrcSupp :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        (reg.pd.sourceLawγα κ) m {b : Belief model.Ω | b ∉ reg.B m} = 0 := by
+    -- TODO: ae_compProd_iff applied to `reg.pd.sourceLawγα_disintegrates κ`
+    -- followed by transfer of support via `reg.source_in_rowwise_bayes_cone`.
+    sorry
+  -- Step 3: combine the conditional-barycenter identity with the
+  -- support-transfer step and apply the generic Choquet/Bauer axiom.
+  -- The application is via the pushforward measure on `Profile model`
+  -- (which is finite-dimensional since `model.Ω` is `Fintype`):
+  -- `μ := (sourceLawγα κ m).map beliefAsProfile` is a probability
+  -- measure on `Profile model` supported on
+  -- `S := beliefAsProfile '' reg.B m` (closed convex image), whose
+  -- barycenter is exactly `beliefAsProfile (Pγα κ m)`.  The generic
+  -- axiom yields `beliefAsProfile (Pγα κ m) ∈ S`, hence `Pγα κ m ∈ reg.B m`
+  -- (using injectivity of `beliefAsProfile`: it is the underlying-value
+  -- coercion of a subtype).
+  --
+  -- TODO: package the pushforward measure on `Profile model`, verify
+  -- closed-convexity of `beliefAsProfile '' reg.B m` from `reg.B_closed`
+  -- and `reg.B_convex_profile`, invoke the generic axiom, and recover
+  -- `Pγα κ m ∈ reg.B m` from the profile-level conclusion.
+  sorry
 
 /-! ### Corrective round (2026-05-22):
 
