@@ -5261,7 +5261,7 @@ lemma PsiNonpos_of_P3Hyp
         hyp.polyhedralW ∧ hyp.finiteVertexMenu ∧
         hyp.positiveConeMargin ∧ hyp.finiteLPFeasible :=
     ⟨hyp.polyhedralConeMarginScalar_pos, _hPoly, _hFinite, _hMargin, _hLP⟩
-  -- TODO (Phase 7 Batch F narrow honest gap, 2026-05-23):
+  -- TODO (Phase 9 narrow honest gap, 2026-05-23):
   -- The paper §B.5 P3 polyhedral derivation routes the finite
   -- vertex enumeration / polyhedral cone-margin / finite-LP inputs
   -- through:
@@ -5274,11 +5274,79 @@ lemma PsiNonpos_of_P3Hyp
   --     `polyhedralConeMarginScalar > 0` against the per-vertex
   --     support gap,
   -- to derive the integrated `Ψ ≤ 0` statement on `hyp.reg`.
-  -- The appendix does not currently package this polyhedral
-  -- vertex → integrated bridge as a single named lemma; the
-  -- narrow sorry below records this remaining gap honestly.
-  -- It is the ONLY point at which P3→Ψ is unproven; in particular
-  -- it does NOT smuggle through `PsiNonpos_of_regPackage`.
+  --
+  -- Phase 9 closure attempt (2026-05-23) — STRUCTURAL OBSTRUCTION:
+  -- The intended closure path is
+  --   (1) construct a `FiniteConeHallInstance` from `hyp.vertexIndex`
+  --       (Fintype index of the polyhedral vertex set) and the per-
+  --       vertex column data of the polyhedral W;
+  --   (2) apply `«Hall-G1-finite-cone-hall-farkas-LP»` (which routes
+  --       to `Inventory.V9.farkas_lp_duality_conic`) to obtain
+  --       `FiniteConeHallInstance.psiNonpos`, i.e.
+  --       `conicDualNonpositive inst.conic`;
+  --   (3) bridge `conicDualNonpositive inst.conic` to
+  --       `PsiNonpos model hyp.reg` (i.e. the integrated `regPsi ≤ 0`
+  --       statement over bounded Borel profiles) via the polyhedral
+  --       support-function identification of paper §B.5 step P3.2.
+  --
+  -- Step (1) is BLOCKED at the v9 typing layer: `P3Hyp` exposes
+  -- `polyhedralW`, `finiteVertexMenu`, `positiveConeMargin`, and
+  -- `finiteLPFeasible` as **bare `Prop` fields** carrying no
+  -- structural content (no `ConicFarkasInstance` field, no per-
+  -- vertex `A i j` / `b i` data, no support-function tabulation
+  -- against `hyp.reg.B`).  Constructing a `FiniteConeHallInstance`
+  -- with `I := hyp.vertexIndex` requires an actual `A : I → J → ℝ`
+  -- and `b : I → ℝ` that encode the polyhedral primal LP for the
+  -- specific `RobustTrustModel model` and `hyp.reg : RegPackage
+  -- model`; that data is *not present* on `P3Hyp` and cannot be
+  -- fabricated without inventing a non-canonical instance (which
+  -- would be smuggling on the conclusion shape and would not
+  -- recover the integrated `regPsi` statement).
+  --
+  -- Step (3) is independently blocked: even *granting* a conic
+  -- dual nonpositivity certificate over an abstract index pair
+  -- `(I, J)`, the bridge to `PsiNonpos model hyp.reg` requires
+  -- identifying the discrete LP dual functional with the
+  -- continuous `regPsi reg y` integrand
+  --   `α · ∫ (beliefDot (inclM m) y(m) − h_{B m}(y m)) dτM
+  --      + (1−α) · ∫ sInf (… '' G s) dτM`,
+  -- which the appendix derives via the polyhedral vertex
+  -- support-function identity (`supportFunction model (B m) y =
+  -- max over vertices of B m`) integrated against `τM`.  That
+  -- identification is exactly the missing §B.5 step P3.2 lemma:
+  -- it is not packaged in V9Main and cannot be reconstructed
+  -- from the `Prop`-typed P3 bridges alone.
+  --
+  -- Path forward (out of scope for the present phase, requires
+  -- structure refactor):
+  --   (a) Strengthen `P3Hyp` to carry a structural
+  --       `polyhedralInstance : FiniteConeHallInstance` field
+  --       (with `I := vertexIndex`) plus a `Prop` bridge
+  --       `polyhedralInstance_realises_reg :
+  --         polyhedralInstance.psiNonpos → PsiNonpos model reg`
+  --       which encodes paper §B.5 step P3.2;
+  --   (b) Then the closure becomes
+  --         have hLP : hyp.polyhedralInstance.flowFeasible := …
+  --         have hDual : hyp.polyhedralInstance.psiNonpos :=
+  --           («Hall-G1-finite-cone-hall-farkas-LP»
+  --              hyp.polyhedralInstance).mp hLP
+  --         exact hyp.polyhedralInstance_realises_reg hDual.
+  --   (c) Either add the LP-flow-feasibility witness to `P3Hyp`
+  --       or — more honestly — wire the §17 G4 polyhedral LP
+  --       threshold (`«G4-finite-facet-polyhedral-LP-threshold»`)
+  --       directly against the polyhedral vertex enumeration to
+  --       derive primal feasibility from `finiteLPFeasible`
+  --       upgraded to its concrete Prop content.
+  --
+  -- This structural refactor is deferred: the appendix-side
+  -- structural primitive on `P3Hyp` is the load-bearing missing
+  -- input.  The narrow sorry below records this remaining gap
+  -- honestly.  It is the ONLY point at which P3→Ψ is unproven;
+  -- in particular it does NOT smuggle through
+  -- `PsiNonpos_of_regPackage` (the Reg-2 shortcut), and the
+  -- polyhedral primitives `hyp.vertexIndex`, `hyp.vertexIndex_fintype`,
+  -- and `hyp.polyhedralConeMarginScalar_pos` are visibly the
+  -- inputs the derivation would consume (see `_hP3Inputs` above).
   sorry
 
 /-- **Phase 7 Batch F (2026-05-23): honest P4 → Ψ derivation.**
