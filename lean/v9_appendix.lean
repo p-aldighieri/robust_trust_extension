@@ -2042,6 +2042,97 @@ def RegPackage.robustRationalizableKernelExists
     (reg : RegPackage model) : Prop :=
   RegRobustRationalizableKernelExists model reg.pd reg.G reg.B
 
+/-! ### §9.5 Phase 12a — Common pattern for zero-gap derivations.
+
+Per the Phase 12 brainstorm (Section 0,
+`03_runs/v9_lean_formalization/Phase12_ZeroGap/Brainstorm_Reg2_derivation_response.md`,
+2026-05-23), the upper-bound fields `regPsi_le_X_integral` carried as
+structural primitives by each P-class package are slated to become
+derived theorems.  Before refactoring any P-class, this section adds
+the **common pattern** lemmas used by every class's derivation:
+
+1. `localSlack` — pointwise Hall slack `beliefDot p y(m) − h_{B(m)}(y(m))`.
+   (Defined here, near `regPsi`.)
+2. `localSlack_nonpos_of_mem_B` — slack ≤ 0 whenever `p ∈ B(m)`
+   (direct support-function bound; no measure theory).
+   (Proved here, near `regPsi`.)
+3. `regPsi_le_integral_localSlack_of_kernel` — for an `AdviserKernel κ`
+   supported on `reg.G` q-a.e., `regPsi` is bounded above by the integral
+   of `localSlack reg y m (Pγα κ m)` along the mixture marginal qκ.
+4. `regPsi_nonpos_of_calibrated_kernel` — for a calibrated kernel
+   (`κ` supported on `G`, posterior `Pγα κ` lies in `B(m)` q-a.e. on the
+   mixture marginal), `regPsi ≤ 0` for every `BoundedBorelProfile`.
+
+Lemmas (3) and (4) are placed AFTER `«Hall-biconditional»` (§15 below)
+because (4) is a direct corollary of `«Hall-biconditional».mp` and
+(3) shares the same qκ-decomposition chain.  Lemma (4) is proved
+without sorry.  Lemma (3) carries a single narrow `-- TODO` sorry
+recording the qκ-decomposition Mathlib gap; the signature is correct
+and downstream classes will build on it.  Phase 12b–12i class
+refactors will call (1)–(4) as the common derivation core. -/
+
+/-- **Common pattern (1): Pointwise Hall slack.**
+
+`localSlack reg y m p = ⟨p, y(m)⟩ − h_{B(m)}(y(m))`.
+
+This is the local integrand the Hall functional `regPsi` averages.
+For a posterior `p` lying in the Bayes cone `B(m)`, the slack is ≤ 0
+by the support-function bound (lemma (2) below). -/
+noncomputable def localSlack
+    (reg : RegPackage model) (y : BoundedBorelProfile model)
+    (m : model.M) (p : Belief model.Ω) : ℝ :=
+  beliefDot p (y.toFun m) - supportFunction model (reg.B m) (y.toFun m)
+
+/-- **Common pattern (2): `p ∈ B(m)` ⇒ `localSlack ≤ 0`.**
+
+The pointwise support-function bound: if a posterior `p` lies in the
+Bayes cone `B(m)`, then `⟨p, y(m)⟩ ≤ h_{B(m)}(y(m))`, i.e. the slack
+is nonpositive.  Proof is the direct `le_csSup` argument against the
+bounded image of `B(m)` under `y(m)` (mirrors the existing
+`«Hall-biconditional»` forward proof step at line 5400+). -/
+lemma localSlack_nonpos_of_mem_B
+    (reg : RegPackage model) (y : BoundedBorelProfile model)
+    {m : model.M} {p : Belief model.Ω}
+    (hp : p ∈ reg.B m) :
+    localSlack model reg y m p ≤ 0 := by
+  classical
+  unfold localSlack
+  -- `beliefDot p (y.toFun m)` is in the image of `B m` under
+  -- `μ ↦ beliefDot μ (y.toFun m)`, which is bounded above (Ω finite,
+  -- `y` coordinate-bounded), so its sSup (= supportFunction) majorizes
+  -- it.
+  have hImage :
+      beliefDot p (y.toFun m) ∈
+        (fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m :=
+    ⟨p, hp, rfl⟩
+  have hBdd :
+      BddAbove ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) ''
+        reg.B m) := by
+    obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
+    refine ⟨C, ?_⟩
+    rintro x ⟨μ, _hμ, rfl⟩
+    unfold beliefDot
+    have hmono :
+        ∀ ω : model.Ω, μ.val ω * y.toFun m ω ≤ μ.val ω * C := by
+      intro ω
+      have hμω : 0 ≤ μ.val ω := μ.property.1 ω
+      have hy_le_C : y.toFun m ω ≤ C := (abs_le.mp (hC m ω)).2
+      exact mul_le_mul_of_nonneg_left hy_le_C hμω
+    have hsum_le :
+        (∑ ω : model.Ω, μ.val ω * y.toFun m ω) ≤
+          (∑ ω : model.Ω, μ.val ω * C) :=
+      Finset.sum_le_sum (fun ω _ => hmono ω)
+    have hsum_eq :
+        (∑ ω : model.Ω, μ.val ω * C) = C := by
+      haveI : Fintype model.Ω := model.Ω_fintype
+      rw [← Finset.sum_mul, μ.property.2, one_mul]
+    linarith
+  have hle :
+      beliefDot p (y.toFun m) ≤
+        supportFunction model (reg.B m) (y.toFun m) :=
+    le_csSup hBdd hImage
+  linarith
+
 /-- **v9 → v8 ExactContact bridge.**
 
 Projects the legitimate Reg-2 structural primitive `reg.exactContact`
@@ -5543,6 +5634,89 @@ theorem «Hall-biconditional»
       exact le_trans hsInf_le hval_nonpos
   · intro hPsi
     exact «Hall-G2c-borel-extension» (model := model) reg hPsi
+
+/-! ### Phase 12a — Common pattern lemmas (3) and (4).
+
+Continuation of the Phase 12a common-pattern API (lemmas (1) `localSlack`
+and (2) `localSlack_nonpos_of_mem_B` were defined in §9.5 near `regPsi`).
+Lemmas (3) and (4) are placed here because they consume the
+`«Hall-biconditional»` forward chain and (4) is exactly its corollary. -/
+
+/-- **Common pattern (4): Calibrated kernel ⇒ `regPsi ≤ 0` for all `y`.**
+
+The corollary that drives every P-class's `regPsi ≤ 0` derivation: for
+a calibrated kernel (`κ` supported on `G`, posterior `Pγα κ` lies in
+`B(m)` q-a.e. on the mixture marginal), `regPsi reg y ≤ 0` for every
+`BoundedBorelProfile y`.
+
+This is exactly the forward direction of `«Hall-biconditional»`,
+packaged as a named lemma so that the Phase 12b–12i class refactors
+can call it as the common derivation core: each class will assemble a
+calibrated kernel from its class-specific primitives (cone margin,
+LP feasibility, radial-antipodal symmetry, …) and then close
+`regPsi ≤ 0` via this lemma. -/
+lemma regPsi_nonpos_of_calibrated_kernel
+    {model : RobustTrustModel}
+    (reg : RegPackage model)
+    (κ : AdviserKernel model)
+    (hκG : KernelSupportedOnRegG model reg.G κ)
+    (hcal :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        reg.pd.Pγα κ m ∈ reg.B m) :
+    ∀ y : BoundedBorelProfile model, regPsi model reg y ≤ 0 := by
+  -- The calibrated kernel `κ` together with `hκG` and `hcal` witnesses
+  -- `reg.robustRationalizableKernelExists`.  The forward direction of
+  -- `«Hall-biconditional»` then delivers `PsiNonpos`, which unfolds
+  -- exactly to the desired conclusion.
+  have hKernel : reg.robustRationalizableKernelExists :=
+    ⟨κ, hκG, hcal⟩
+  have hPsi : PsiNonpos model reg :=
+    («Hall-biconditional» reg).mp hKernel
+  exact hPsi
+
+/-- **Common pattern (3): `regPsi` is bounded above by an integral of
+`localSlack` along the mixture marginal.**
+
+For an adviser kernel `κ` supported on `reg.G` q-a.e., the Hall dual
+`regPsi reg y` is bounded above by
+`∫ m, localSlack reg y m (Pγα κ m) ∂qκ`, where
+`qκ = (MixtureCouplingGammaAlpha κ).map Prod.snd` is the mixture
+message marginal and `Pγα κ` is the canonical posterior.
+
+The substantive content is the qκ-decomposition identity
+  qκ = α·(inclM)#τM + (1−α)·(τM ⊗ κ).map snd
+combined with the sInf ≤ value bound on the misaligned `regPsi`
+integrand against any rowwise-minimizer kernel `κ` supported on `G`.
+
+**Phase 12a status**: lemma signature is correct; proof body carries a
+narrow `-- TODO` sorry recording the precise Mathlib gap (the
+qκ-decomposition identity reducing the two-piece regPsi additive form
+to a single qκ-integral via `mixtureMessageLaw_eq_gammaAlpha_snd` +
+`integral_add` + `integral_map` chain).  Phase 12b will close this
+sorry by extracting the qκ-decomposition as a standalone lemma. -/
+lemma regPsi_le_integral_localSlack_of_kernel
+    {model : RobustTrustModel}
+    (reg : RegPackage model) (y : BoundedBorelProfile model)
+    (κ : AdviserKernel model)
+    (_hκG : KernelSupportedOnRegG model reg.G κ) :
+    regPsi model reg y ≤
+      ∫ m, localSlack model reg y m (reg.pd.Pγα κ m)
+        ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd) := by
+  -- TODO (Phase 12b Mathlib gap): the qκ-decomposition identity
+  --   ∫ m, localSlack reg y m (Pγα κ m) ∂qκ
+  --     = α · ∫ m, (beliefDot (inclM m) y(m) - hB(m)(y(m))) ∂τM
+  --       + (1-α) · ∫ s, localSlack reg y (kernel-routed) ∂τM
+  -- requires `mixtureMessageLaw_eq_gammaAlpha_snd` plus
+  -- `integral_add` and `integral_map` (the latter for the (τM ⊗ κ).map
+  -- snd piece).  Once that identity is established as a standalone
+  -- lemma, the proof closes by:
+  --   (a) on the aligned piece, the integrand matches regPsi's
+  --       first term (aligned posterior = inclM by diagonal coupling);
+  --   (b) on the misaligned piece, the regPsi term uses
+  --       `sInf … ∂reg.G s` which is ≤ the kernel-routed integrand
+  --       (use `_hκG` to place the kernel-routed `m'` in `reg.G s`
+  --       and apply `csInf_le` against the bounded image).
+  sorry
 
 /-- Bridge from Hall's calibrated-kernel-exists labeling to strategy
 existence. Constructs the q-a.e. Bayes-optimal Definition-2 witness from
