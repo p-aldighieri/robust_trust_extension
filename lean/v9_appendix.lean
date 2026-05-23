@@ -2480,165 +2480,32 @@ theorem «T2-alpha-zero-singleton-prior-strategy»
   obtain ⟨data⟩ := AlphaZeroSingletonData_exists (model := model) hα plc msupp prs
   exact AlphaZeroSingletonData.to_hasRobustRationalizableStrategy pd data
 
-/-! ## §13.5 Binary / FBNF capstone Inventory.V9 axioms (Phase 1 closure 2026-05-22)
+/-! ## §13.5 Phase 2b clean sweep (2026-05-22): REMOVED smuggled axioms
 
-These axioms package the v9-specific capstone derivations that go from
-the binary / FBNF primitive geometric witnesses to the
-`HasRobustRationalizableStrategy` conclusion, citing v9_consolidated.md
-§B.3 (L_B5, L_B6) and §F4 respectively.  Phase 2 audit will reclassify
-each one as a genuine external dependency (KEEP) or a smuggled
-derivation (REVERT).  For now: closure first, audit later. -/
+PHASE 2 AUDIT (2026-05-22) flagged eight Inventory.V9 axioms that were
+each cited to `v9_consolidated.md` (the v9 paper) rather than to an
+external textbook.  Per the policy "Inventory.V9 is ONLY for genuine
+external textbook theorems Mathlib lacks; downstream derivations dressed
+as axioms are smuggling", these eight axioms have been REMOVED and each
+call site below now carries a Lean derivation with narrowly-scoped
+`-- TODO: <specific gap>` sorries documenting the precise residual
+v9-paper step that has not been mechanised in Lean.
 
-/-- **Binary T1 → endpoint balance.**
+The removed axioms (each previously cited to v9_consolidated.md) were:
 
-Specialises the v9 §B.3/L_B5 Clarke–Danskin–Fermat envelope-to-balance
-calculation at `k = 2` (using the universal multiplier-Bayes-cone
-identity on `data.endpointMenu`, the TRS interval reduction, the
-endpoint-only projected image, and the R-IES interior endpoint
-stationarity) to derive the scalar total-balance equality on the
-pre-recorded `lhsL/rhsL`, `lhsR/rhsR` data fields.
+* `binary_T1_to_endpoint_balance` (§B.3/L_B5 envelope→balance at k=2)
+* `binary_capstone_to_QAE`         (§B.3/L_B6 capstone routing)
+* `fbnf_capstone_to_QAE`           (§F4 capstone routing)
+* `psi_nonpos_from_cone_margin_p2_star`    (§B.5.P2* Ψ ≤ 0)
+* `psi_nonpos_from_polyhedral_p3`          (§B.5.P3  Ψ ≤ 0)
+* `psi_nonpos_from_radial_antipodal_p4`    (§B.5.P4  Ψ ≤ 0)
+* `psi_nonpos_from_variable_margin`        (§G.P2*'  Ψ ≤ 0)
+* `graph_FBNF_to_QAE`                       (§G6_G   capstone routing)
 
-Source: v9_consolidated.md §B.3/L_B5. -/
-axiom _root_.Inventory.V9.binary_T1_to_endpoint_balance
-    {model : RobustTrustModel}
-    (data : BinaryCapstoneData model)
-    (_hT1 : ∀ k (fd : FiniteMenuData model k), fd.multiplierBayesCone)
-    (_hTRS : data.trsIntervalReduction)
-    (_hEndpoint : data.endpointOnlyProjectedImage)
-    (_hIES : data.interiorEndpointStationarity) :
-    data.endpointStationarityTotalBalance
-
-/-- **Binary capstone → QAE.**
-
-Assembles the v9 binary capstone from B1 (endpoint-fiber lift), B2 (TRS),
-B3 (endpoint-only projected image), B4 (interior message calibration),
-and B5 (endpoint stationarity total balance), into a robustly
-rationalizable strategy for `data.pd`.
-
-The derivation routes through the construction of a `RegPackage` whose
-posterior disintegration coincides with `data.pd`, derives `PsiNonpos`
-from the binary geometry via the §G P-class margin bound, invokes
-`«Hall-biconditional»` to obtain `robustRationalizableKernelExists`,
-then applies `robustRationalizableKernelExists_to_strategy`.
-
-Source: v9_consolidated.md §B.3/L_B6. -/
-axiom _root_.Inventory.V9.binary_capstone_to_QAE
-    {model : RobustTrustModel}
-    (data : BinaryCapstoneData model)
-    (_hB1 : data.endpointFiberLift)
-    (_hB2 : data.trsIntervalReduction)
-    (_hB3 : data.endpointOnlyProjectedImage)
-    (_hB4 : data.interiorMessageCalibration)
-    (_hB5 : data.endpointStationarityTotalBalance) :
-    HasRobustRationalizableStrategy model data.pd
-
-/-- **FBNF capstone → QAE.**
-
-Assembles the v9 FBNF capstone from F1 (conditional B1 measurable
-pasting), F2 (endpoint-supported projected fiber image), F3 (localised
-stationarity FBNF-6), and FBNF-7 (global fiber dominance), into a
-robustly rationalizable strategy for `pkg.pd`.
-
-The derivation routes through the construction of a `RegPackage` whose
-posterior disintegration coincides with `pkg.pd`, derives `PsiNonpos`
-from the foliation-conditional FBNF-7 global-fiber-dominance margin via
-the fiberwise Strassen marginals step, invokes `«Hall-biconditional»`
-to obtain `robustRationalizableKernelExists`, then applies
-`robustRationalizableKernelExists_to_strategy`.
-
-Source: v9_consolidated.md §F4. -/
-axiom _root_.Inventory.V9.fbnf_capstone_to_QAE
-    {model : RobustTrustModel}
-    (pkg : FBNFPackage model)
-    (_hF1 : pkg.conditionalB1Pasting)
-    (_hF2 : pkg.endpointSupportedFiberImage)
-    (_hF3 : pkg.localizedStationarityFBNF6)
-    (_hDom : pkg.globalFiberDominance) :
-    HasRobustRationalizableStrategy model pkg.pd
-
-/-- **P2* cone-margin → Ψ ≤ 0.**
-
-Routes the §B.5 P2* cone-margin scalar primitives
-(`coneMarginScalar > 0`, `jammingBound`, `margin_dominates_jamming`)
-through the per-message support-function inequality on bounded Borel
-`y`, integrates against `model.τM`, and concludes `regPsi reg y ≤ 0`.
-
-Source: v9_consolidated.md §B.5.P2*. -/
-axiom _root_.Inventory.V9.psi_nonpos_from_cone_margin_p2_star
-    {model : RobustTrustModel}
-    (hyp : P2StarHyp model)
-    (_hMargin : hyp.coneMargin)
-    (_hJam : hyp.boundedJamming)
-    (_hBase : hyp.enoughAlignedBaseline) :
-    PsiNonpos model hyp.reg
-
-/-- **P3 polyhedral cone-margin → Ψ ≤ 0.**
-
-Combines the polyhedral cone-margin primitives
-(`vertexIndex` finite, `polyhedralConeMarginScalar > 0`,
-`finiteLPFeasible`) with the finite conic Farkas instance to conclude
-`PsiNonpos`.
-
-Source: v9_consolidated.md §B.5.P3. -/
-axiom _root_.Inventory.V9.psi_nonpos_from_polyhedral_p3
-    {model : RobustTrustModel}
-    (hyp : P3Hyp model)
-    (_hPoly : hyp.polyhedralW)
-    (_hFinite : hyp.finiteVertexMenu)
-    (_hMargin : hyp.positiveConeMargin)
-    (_hLP : hyp.finiteLPFeasible) :
-    PsiNonpos model hyp.reg
-
-/-- **P4 radial-antipodal symmetry → Ψ ≤ 0.**
-
-Routes the radial-antipodal symmetry primitives
-(`radialSymmetry` measurable involution, `radialTau`,
-`utilityEquivariant`) through a change of variables under
-`radialSymmetry_involutive` to swap aligned and misaligned integrands
-and concludes `regPsi reg y ≤ 0`.
-
-Source: v9_consolidated.md §B.5.P4. -/
-axiom _root_.Inventory.V9.psi_nonpos_from_radial_antipodal_p4
-    {model : RobustTrustModel}
-    (hyp : P4Hyp model)
-    (_hRadial : hyp.radialTau)
-    (_hEq : hyp.utilityEquivariant)
-    (_hKernel : hyp.antipodalKernelConstructed)
-    (_hBalance : hyp.scalarRadialBalance) :
-    PsiNonpos model hyp.reg
-
-/-- **Variable-margin (G-addendum P2*') → Ψ ≤ 0.**
-
-Combines the uniform floor `eta_floor_le` with the density-cap
-balance `margin_dominates_density` and integrates against `model.τM`
-to conclude `regPsi reg y ≤ 0`.
-
-Source: v9_consolidated.md §G.P2*' (variable-margin addendum). -/
-axiom _root_.Inventory.V9.psi_nonpos_from_variable_margin
-    {model : RobustTrustModel}
-    (hyp : VariableMarginP2Hyp model)
-    (_hEta : ∀ᵐ m ∂model.τM, 0 < hyp.eta m)
-    (_hCap : hyp.localDensityCap)
-    (_hCone : hyp.variableConeMargin) :
-    PsiNonpos model hyp.reg
-
-/-- **Graph-FBNF → QAE.**
-
-Packages the Kirchhoff node balances and cross-edge dominance margins
-into an FBNFPackage's localised stationarity / global dominance
-fields, then invokes the F4 capstone to derive
-`HasRobustRationalizableStrategy model pkg.pd`.
-
-Source: v9_consolidated.md §G6_G (graph-FBNF chain). -/
-axiom _root_.Inventory.V9.graph_FBNF_to_QAE
-    {model : RobustTrustModel}
-    (pkg : GraphFBNFPackage model)
-    (_hGraph : pkg.finiteGraph)
-    (_hArcs : pkg.affineArcCharts)
-    (_hEdge : pkg.endpointFiberTransportOnEdges)
-    (_hKirchhoff : pkg.kirchhoffNodeBalance)
-    (_hDom : pkg.crossEdgeDominance) :
-    HasRobustRationalizableStrategy model pkg.pd
+Each is a v9 internal derivation, not a missing external textbook
+result.  Re-encoding them as Inventory axioms (with v9 paper citations
+in the docstring) was the smuggling pattern flagged by the Phase 2
+audit.  The replacement strategy is documented at each call site. -/
 
 /-! ## §14 Binary capstone L_B1 … L_B6 -/
 
@@ -2758,15 +2625,26 @@ theorem «binary-L_B5-endpoint-stationarity-total-balance»
     (_hEndpoint : data.endpointOnlyProjectedImage)
     (_hIES : data.interiorEndpointStationarity) :
     data.endpointStationarityTotalBalance := by
-  -- Round 8 (2026-05-22): the previous body discharged this via a
-  -- smuggled function-field `binary_t1_multiplier_balance` on
-  -- `BinaryCapstoneData` that took the hypotheses as inputs and
-  -- returned the B5 conclusion.  That field has been REMOVED.
-  -- Phase 1 (2026-05-22): close via the new Inventory.V9 axiom
-  -- `binary_T1_to_endpoint_balance`, citing v9_consolidated.md §B.3/L_B5
-  -- (Clarke–Danskin–Fermat envelope-to-balance at `k = 2`).
-  exact _root_.Inventory.V9.binary_T1_to_endpoint_balance
-    (model := model) data _hT1 _hTRS _hEndpoint _hIES
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.binary_T1_to_endpoint_balance` axiom (cited to
+  -- v9_consolidated.md §B.3/L_B5 — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest derivation is the v9 §B.3
+  -- envelope-to-balance calculation specialised to k = 2:
+  --   (a) apply `_hT1` to `data.endpointMenu : FiniteMenuData model 2`
+  --       to get `∀ i, p_i ∈ BayesConeW model (paretoMenu i)` for
+  --       `p_i = g_i / q_i` at the two binary labels;
+  --   (b) write out the two-label Bayes-cone inequality and project
+  --       it to the scalar identity `α·∫_{[0,L]}… = (1−α)·∫_{S⁺}…`
+  --       (and symmetric `R` identity) using `_hTRS`, `_hEndpoint`, and
+  --       the interior endpoint stationarity `_hIES`;
+  --   (c) read off `lhsL = rhsL` and `lhsR = rhsR` algebraically.
+  -- TODO: T1 scalar projection at k = 2.  The Lean realisation of
+  -- step (b) requires lifting the BayesConeW vector inequality on the
+  -- two-label menu to a scalar identity on the pre-recorded
+  -- `lhsL/rhsL`, `lhsR/rhsR` data fields; this involves a Clarke
+  -- subdifferential calculation that is not currently mechanised in
+  -- Lean.  Narrowly-scoped residual gap; NOT a re-smuggled axiom.
+  sorry
 
 /--
 **L_B6 (capstone).**
@@ -2785,11 +2663,21 @@ theorem «binary-L_B6-capstone»
     (_hB4 : data.interiorMessageCalibration)
     (_hB5 : data.endpointStationarityTotalBalance) :
     HasRobustRationalizableStrategy model data.pd := by
-  -- Round 8 (2026-05-22): the previous body smuggled the B6 conclusion
-  -- by taking `binary_regPackage`, its `pd`-equality, a calibrated
-  -- kernel-existence witness, and a `kernelToStrategy` bridge function
-  -- as theorem arguments — together these bundle the QAE conclusion on
-  -- `data.pd`.  Those arguments have been REMOVED.
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.binary_capstone_to_QAE` axiom (cited to
+  -- v9_consolidated.md §B.3/L_B6 — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest derivation follows the
+  -- v9 paper §B.3 routing:
+  --   (a) construct a `RegPackage model` whose `pd` coincides with
+  --       `data.pd`, using the binary data's `endpointMenu`,
+  --       `proj` (endpoint-only image from `_hB3`), and the calibrated
+  --       endpoint kernel pair `(kappaL, kappaR)` from `_hB1`;
+  --   (b) derive `PsiNonpos model reg` from the binary geometry via
+  --       the §B.5 cone-margin / endpoint-balance route (using `_hB2`,
+  --       `_hB4`, `_hB5`);
+  --   (c) apply `«Hall-biconditional»` reverse direction to obtain
+  --       `reg.robustRationalizableKernelExists`;
+  --   (d) finish with `robustRationalizableKernelExists_to_strategy`.
   have _hBinaryGeometry :
       data.endpointFiberLift ∧ data.endpointOnlyProjectedImage ∧
         data.endpointStationarityTotalBalance :=
@@ -2797,12 +2685,16 @@ theorem «binary-L_B6-capstone»
   have _hTRSCalibration :
       data.trsIntervalReduction ∧ data.interiorMessageCalibration :=
     ⟨_hB2, _hB4⟩
-  -- Phase 1 (2026-05-22): close via the new Inventory.V9 axiom
-  -- `binary_capstone_to_QAE`, citing v9_consolidated.md §B.3/L_B6
-  -- (Hall biconditional + kernel-to-strategy bridge specialised to
-  -- the binary endpoint geometry).
-  exact _root_.Inventory.V9.binary_capstone_to_QAE
-    (model := model) data _hB1 _hB2 _hB3 _hB4 _hB5
+  -- TODO: binary RegPackage construction.  Step (a) requires plumbing
+  -- the binary primitives (`data.endpointMenu`, `data.proj`,
+  -- `data.kappaL`, `data.kappaR`, `data.cL`, `data.cR`) into all the
+  -- `RegPackage` fields (`G`, `B`, `σstar`, `exactContact`,
+  -- `wstar`, `B_support_continuous`, etc.).  No `RegPackage`
+  -- constructor from `BinaryCapstoneData` currently exists; this is a
+  -- substantial structural plumbing job that the v9 paper performs at
+  -- §B.3 but that has not been mechanised in Lean.  Narrowly-scoped
+  -- residual gap; NOT a re-smuggled axiom.
+  sorry
 
 /-! ## §15 FBNF F1 … F4 (corollaries moved to §17 as instantiation lemmas) -/
 
@@ -2904,17 +2796,27 @@ theorem «FBNF-F4-capstone»
     (_hDom : pkg.globalFiberDominance) :
     HasRobustRationalizableStrategy model pkg.pd := by
   classical
-  -- Round 8 (2026-05-22): the previous body smuggled the F4 conclusion
-  -- by taking `fbnf_regPackage`, its `pd`-equality, a calibrated
-  -- kernel-existence witness, and a `kernelToStrategy` bridge function
-  -- as theorem arguments — together these bundle the QAE conclusion on
-  -- `pkg.pd`.  Those arguments have been REMOVED.
-  -- Phase 1 (2026-05-22): close via the new Inventory.V9 axiom
-  -- `fbnf_capstone_to_QAE`, citing v9_consolidated.md §F4 (Hall
-  -- biconditional + kernel-to-strategy bridge specialised to the
-  -- foliation-conditional fiberwise geometry under FBNF-7 dominance).
-  exact _root_.Inventory.V9.fbnf_capstone_to_QAE
-    (model := model) pkg _hF1 _hF2 _hF3 _hDom
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.fbnf_capstone_to_QAE` axiom (cited to
+  -- v9_consolidated.md §F4 — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest derivation follows the
+  -- v9 paper §F4 routing (the FBNF analogue of binary L_B6):
+  --   (a) construct a `RegPackage model` whose `pd` coincides with
+  --       `pkg.pd`, using the foliation's affine fibers, the
+  --       endpoint-supported `pkg.fiberProj` from `_hF2`, and the
+  --       fiberwise pasting weights `pkg.wL, pkg.wR` from `_hF1`;
+  --   (b) derive `PsiNonpos model reg` from the fiberwise localised
+  --       stationarity (`_hF3`) + the FBNF-7 global fiber dominance
+  --       (`_hDom`) via fiberwise application of
+  --       `Inventory.V9.strassen_marginals`;
+  --   (c) apply `«Hall-biconditional»` to obtain
+  --       `reg.robustRationalizableKernelExists`;
+  --   (d) finish with `robustRationalizableKernelExists_to_strategy`.
+  -- TODO: FBNF RegPackage construction.  Step (a) requires plumbing
+  -- the foliation primitives + the `pkg.foliation` chart data into
+  -- the `RegPackage` fields — no constructor currently exists.
+  -- Narrowly-scoped residual gap; NOT a re-smuggled axiom.
+  sorry
 
 /-! ## §15.5 Hall-block Inventory.V9 axioms (Kantorovich–Rubinstein, Bogachev)
 
@@ -3530,24 +3432,28 @@ theorem «P2-star-cone-margin-bounded-jamming»
     (_hJam : hyp.boundedJamming)
     (_hBase : hyp.enoughAlignedBaseline) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Round-6 refactor (2026-05-22): the previous body invoked the smuggled
-  -- cert-verifier field `hyp.psiNonposWitness : PsiNonpos model hyp.reg`,
-  -- bundling the Hall conclusion as data.  That field has been REMOVED.
-  -- The honest derivation routes the §B.5 cone-margin geometric primitives
-  -- (`hyp.coneMarginScalar > 0`, `hyp.jammingBound`,
-  -- `hyp.margin_dominates_jamming`) through the cone-margin → Ψ ≤ 0 bridge,
-  -- then applies `Hall-biconditional` + `robustRationalizableKernelExists_to_strategy`.
-  -- TODO: cone-margin → Ψ ≤ 0 geometric derivation
-  -- (paper §B.5 P2*: route `hyp.margin_dominates_jamming` through the
-  -- per-message support-function inequality on bounded Borel `y`, integrate
-  -- against `model.τM`, and conclude `regPsi reg y ≤ 0`).
-  have hPsi : PsiNonpos model hyp.reg :=
-    _root_.Inventory.V9.psi_nonpos_from_cone_margin_p2_star
-      (model := model) hyp _hMargin _hJam _hBase
-  have hKernel : hyp.reg.robustRationalizableKernelExists :=
-    («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
-  exact robustRationalizableKernelExists_to_strategy
-    (model := model) hyp.reg hKernel
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.psi_nonpos_from_cone_margin_p2_star` axiom (cited to
+  -- v9_consolidated.md §B.5.P2* — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest §B.5 P2* derivation route:
+  --   (a) for every `y : BoundedBorelProfile model`, write the
+  --       per-message support-function gap
+  --       `beliefDot (inclM m) (y m) − h_{B m}(y m)` and bound it by
+  --       `hyp.jammingBound`;
+  --   (b) bound the misaligned rowwise-infimum term by
+  --       `−hyp.coneMarginScalar − hyp.alignedBaselineFloor` (the
+  --       cone-margin lower bound);
+  --   (c) combine via `hyp.margin_dominates_jamming` to conclude
+  --       `regPsi reg y ≤ 0` after integration against `model.τM`;
+  --   (d) apply `«Hall-biconditional».mpr` and finish with
+  --       `robustRationalizableKernelExists_to_strategy`.
+  -- TODO: cone-margin → Ψ ≤ 0 derivation.  Step (a)–(c) is a
+  -- measure-theoretic integration argument; the Lean realisation
+  -- requires a per-message support-function inequality and a
+  -- Bochner-integral linearity step that have not yet been
+  -- mechanised.  Narrowly-scoped residual gap; NOT a re-smuggled
+  -- axiom.
+  sorry
 
 theorem «P3-polyhedral-cone-margin»
     {model : RobustTrustModel}
@@ -3557,21 +3463,29 @@ theorem «P3-polyhedral-cone-margin»
     (_hMargin : hyp.positiveConeMargin)
     (_hLP : hyp.finiteLPFeasible) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Round-6 refactor: smuggled `psiNonposWitness` REMOVED.  Honest route:
-  -- the polyhedral cone-margin primitives (`hyp.vertexIndex` finite,
-  -- `hyp.polyhedralConeMarginScalar > 0`) feed the §B.5 polyhedral
-  -- Ψ-nonpositivity bridge via the finite conic Farkas instance pulled
-  -- from `hyp.finiteLPFeasible`.
-  -- TODO: polyhedral cone-margin → Ψ ≤ 0 derivation
-  -- (paper §B.5 P3: combine `hyp.polyhedralConeMarginScalar_pos` with
-  -- the finite vertex enumeration and apply `farkas_lp_duality_conic`).
-  have hPsi : PsiNonpos model hyp.reg :=
-    _root_.Inventory.V9.psi_nonpos_from_polyhedral_p3
-      (model := model) hyp _hPoly _hFinite _hMargin _hLP
-  have hKernel : hyp.reg.robustRationalizableKernelExists :=
-    («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
-  exact robustRationalizableKernelExists_to_strategy
-    (model := model) hyp.reg hKernel
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.psi_nonpos_from_polyhedral_p3` axiom (cited to
+  -- v9_consolidated.md §B.5.P3 — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest §B.5 P3 derivation route:
+  --   (a) enumerate the finite vertex set `hyp.vertexIndex` (using
+  --       `hyp.vertexIndex_fintype` and `hyp.finiteVertexMenu`);
+  --   (b) at each vertex `v`, the polyhedral cone-margin scalar
+  --       `hyp.polyhedralConeMarginScalar > 0` gives a strict
+  --       per-vertex Bayes-cone gap; combining via the finite conic
+  --       Farkas instance from `hyp.finiteLPFeasible` (applied via
+  --       `Inventory.V9.farkas_lp_duality_conic`) yields a finite-LP
+  --       dual certificate;
+  --   (c) lift the finite vertex-by-vertex inequality to the bounded
+  --       Borel test profile `y` via the polyhedral support function,
+  --       conclude `regPsi reg y ≤ 0` for all `y`;
+  --   (d) apply `«Hall-biconditional».mpr` and finish with
+  --       `robustRationalizableKernelExists_to_strategy`.
+  -- TODO: polyhedral vertex-enumeration → Ψ ≤ 0 derivation.  Step
+  -- (b)–(c) requires constructing a `ConicHallInstance` from the
+  -- polyhedral primitives; this finite-LP packaging has not yet been
+  -- mechanised.  Narrowly-scoped residual gap; NOT a re-smuggled
+  -- axiom.
+  sorry
 
 theorem «P4-radial-antipodal-tau-symmetry»
     {model : RobustTrustModel}
@@ -3581,22 +3495,31 @@ theorem «P4-radial-antipodal-tau-symmetry»
     (_hKernel : hyp.antipodalKernelConstructed)
     (_hBalance : hyp.scalarRadialBalance) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Round-6 refactor: smuggled `psiNonposWitness` REMOVED.  Honest route:
-  -- the radial-antipodal symmetry primitives
-  -- (`hyp.radialSymmetry` measurable involution) realise the §B.5 radial
-  -- Ψ-nonpositivity argument: antipodal balance cancels the misaligned
-  -- contribution against the aligned contribution.
-  -- TODO: radial-antipodal symmetry → Ψ ≤ 0 derivation
-  -- (paper §B.5 P4: change of variables under
-  -- `hyp.radialSymmetry_involutive` + `Measurable` to swap aligned and
-  -- misaligned integrands and conclude `regPsi reg y ≤ 0`).
-  have hPsi : PsiNonpos model hyp.reg :=
-    _root_.Inventory.V9.psi_nonpos_from_radial_antipodal_p4
-      (model := model) hyp _hRadial _hEq _hKernel _hBalance
-  have hKernel : hyp.reg.robustRationalizableKernelExists :=
-    («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
-  exact robustRationalizableKernelExists_to_strategy
-    (model := model) hyp.reg hKernel
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.psi_nonpos_from_radial_antipodal_p4` axiom (cited to
+  -- v9_consolidated.md §B.5.P4 — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest §B.5 P4 derivation route:
+  --   (a) for every `y : BoundedBorelProfile model`, perform a
+  --       change-of-variables in the τM-integral defining `regPsi`
+  --       under the radial involution `hyp.radialSymmetry` (which is
+  --       measurable by `hyp.radialSymmetry_measurable` and
+  --       involutive by `hyp.radialSymmetry_involutive`);
+  --   (b) the τ-symmetry (encoded by `_hRadial` and the τ-measure
+  --       preservation under `radialSymmetry`) swaps the aligned and
+  --       misaligned integrands, and the `utilityEquivariant`
+  --       hypothesis ensures the support functions transform
+  --       compatibly;
+  --   (c) average the two equal integrands and use
+  --       `hyp.scalarRadialBalance` to conclude `regPsi reg y ≤ 0`;
+  --   (d) apply `«Hall-biconditional».mpr` and finish with
+  --       `robustRationalizableKernelExists_to_strategy`.
+  -- TODO: change-of-variables under measurable involution.  The Lean
+  -- realisation of step (a)–(b) requires
+  -- `MeasureTheory.integral_map` against the involution and a
+  -- pointwise rewriting of `regPsi`'s integrand; this has not yet
+  -- been mechanised.  Narrowly-scoped residual gap; NOT a
+  -- re-smuggled axiom.
+  sorry
 
 /-! ## §19 FBNF instantiation lemmas (replace vacuous corollaries) -/
 
@@ -3674,8 +3597,12 @@ theorem «FBNF-corollary-spherical-radial»
     show (0 : ℝ) = 0; rfl
   have hDom : pkg.globalFiberDominance :=
     prim.globalFiberDominance_from_radialSymmetry_holds
-  exact _root_.Inventory.V9.fbnf_capstone_to_QAE
-    (model := model) pkg hF1 hF2 hF3 hDom
+  -- Phase 2b clean sweep (2026-05-22): replaced the call to the
+  -- smuggled `Inventory.V9.fbnf_capstone_to_QAE` axiom with a call to
+  -- the `«FBNF-F4-capstone»` theorem.  F4 itself currently carries a
+  -- narrowly-scoped TODO sorry (RegPackage construction from
+  -- foliation primitives); this corollary inherits that gap honestly.
+  exact «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
 
 theorem «FBNF-corollary-affine-MLR-single-crossing»
     {model : RobustTrustModel}
@@ -3714,8 +3641,9 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
     show (0 : ℝ) = 0; rfl
   have hDom : pkg.globalFiberDominance :=
     prim.globalFiberDominance_from_MLR_holds
-  exact _root_.Inventory.V9.fbnf_capstone_to_QAE
-    (model := model) pkg hF1 hF2 hF3 hDom
+  -- Phase 2b clean sweep (2026-05-22): replaced axiom call with
+  -- `«FBNF-F4-capstone»` theorem.
+  exact «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
 
 theorem «FBNF-corollary-polyhedral-scalarizable»
     {model : RobustTrustModel}
@@ -3754,8 +3682,9 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
     show (0 : ℝ) = 0; rfl
   have hDom : pkg.globalFiberDominance :=
     prim.globalFiberDominance_or_LP_certificate_holds
-  exact _root_.Inventory.V9.fbnf_capstone_to_QAE
-    (model := model) pkg hF1 hF2 hF3 hDom
+  -- Phase 2b clean sweep (2026-05-22): replaced axiom call with
+  -- `«FBNF-F4-capstone»` theorem.
+  exact «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
 
 /-! ## §20 Section G v9.2 sharpenings -/
 
@@ -3775,21 +3704,27 @@ theorem «G-addendum-variable-margin-P2-star-prime»
     (_hCap : hyp.localDensityCap)
     (_hCone : hyp.variableConeMargin) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Round-6 refactor: smuggled `psiNonposWitness` REMOVED.  Honest route:
-  -- the variable-margin primitives (`hyp.eta_floor > 0` with
-  -- `∀ᵐ m, eta_floor ≤ eta m`, `hyp.densityCap ≤ eta_floor`) feed the
-  -- §G addendum P2*' variable-margin Ψ-nonpositivity bridge.
-  -- TODO: variable cone-margin → Ψ ≤ 0 derivation
-  -- (paper §G P2*': combine the uniform floor `hyp.eta_floor_le` with
-  -- the density-cap balance `hyp.margin_dominates_density` and integrate
-  -- against `model.τM`).
-  have hPsi : PsiNonpos model hyp.reg :=
-    _root_.Inventory.V9.psi_nonpos_from_variable_margin
-      (model := model) hyp _hEta _hCap _hCone
-  have hKernel : hyp.reg.robustRationalizableKernelExists :=
-    («Hall-biconditional» (model := model) hyp.reg).mpr hPsi
-  exact robustRationalizableKernelExists_to_strategy
-    (model := model) hyp.reg hKernel
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.psi_nonpos_from_variable_margin` axiom (cited to
+  -- v9_consolidated.md §G.P2*' — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest §G P2*' derivation:
+  --   (a) for every `y : BoundedBorelProfile model`, use the τM-a.e.
+  --       uniform floor `hyp.eta_floor_le : ∀ᵐ m, eta_floor ≤ eta m`
+  --       to bound the per-message Bayes-cone gap below by
+  --       `hyp.eta_floor > 0`;
+  --   (b) use `hyp.margin_dominates_density : densityCap ≤ eta_floor`
+  --       to bound the misaligned jamming term by `densityCap`;
+  --   (c) the τM-integral comparison `densityCap ≤ eta_floor` yields
+  --       `regPsi reg y ≤ 0`;
+  --   (d) apply `«Hall-biconditional».mpr` and finish with
+  --       `robustRationalizableKernelExists_to_strategy`.
+  -- TODO: variable-margin integral comparison.  The Lean realisation
+  -- of step (a)–(c) requires
+  -- `MeasureTheory.integral_mono_ae` against the a.e. floor and a
+  -- pointwise comparison with the density cap; this has not yet been
+  -- mechanised.  Narrowly-scoped residual gap; NOT a re-smuggled
+  -- axiom.
+  sorry
 
 theorem «G-addendum-P6_G-finite-graph-FBNF»
     {model : RobustTrustModel}
@@ -3800,19 +3735,27 @@ theorem «G-addendum-P6_G-finite-graph-FBNF»
     (_hKirchhoff : pkg.kirchhoffNodeBalance)
     (_hDom : pkg.crossEdgeDominance) :
     HasRobustRationalizableStrategy model pkg.pd := by
-  -- Round-6 refactor (2026-05-22): the previous body projected the
-  -- smuggled `pkg.capstoneWitness : HasRobustRationalizableStrategy
-  -- model pkg.pd` cert-verifier field directly.  That field has been
-  -- REMOVED.  The honest route assembles an `FBNFPackage model` from
-  -- the genuine graph primitives (`pkg.nodeIndex`/`pkg.edgeIndex`
-  -- finite, `pkg.kirchhoffBalanceScalar_zero`,
-  -- `pkg.crossEdgeDominanceMargin > 0`) and applies the FBNF F4
-  -- capstone.
-  -- Phase 1 (2026-05-22): close via the new Inventory.V9 axiom
-  -- `graph_FBNF_to_QAE`, citing v9_consolidated.md §G6_G (graph-FBNF
-  -- chain via the FBNF capstone applied to the Kirchhoff-balanced
-  -- nodewise data + cross-edge dominance margins).
-  exact _root_.Inventory.V9.graph_FBNF_to_QAE
-    (model := model) pkg _hGraph _hArcs _hEdge _hKirchhoff _hDom
+  -- Phase 2b clean sweep (2026-05-22): the smuggled
+  -- `Inventory.V9.graph_FBNF_to_QAE` axiom (cited to
+  -- v9_consolidated.md §G6_G — the v9 paper, not an external
+  -- textbook) has been REMOVED.  The honest §G6_G route assembles
+  -- an `FBNFPackage model` from the graph primitives and applies
+  -- `«FBNF-F4-capstone»`:
+  --   (a) build a `Foliation model` from the finite graph: the
+  --       base `Z = pkg.nodeIndex`, the affine arc charts from
+  --       `pkg.affineArcCharts`, the endpoint-fiber transport on
+  --       edges from `pkg.endpointFiberTransportOnEdges`;
+  --   (b) build an `FBNFPackage` whose `wL, wR` are recovered from
+  --       Kirchhoff balance (`pkg.kirchhoffBalanceScalar_zero`) and
+  --       whose `globalFiberDominance` follows from the cross-edge
+  --       margin (`pkg.crossEdgeDominanceMargin_pos`);
+  --   (c) discharge F1, F2, F3, FBNF-7 from the graph primitives;
+  --   (d) apply `«FBNF-F4-capstone»` to conclude.
+  -- TODO: graph→foliation FBNFPackage construction.  Step (a)–(c)
+  -- requires building a `Foliation model` from `pkg.nodeIndex` and
+  -- `pkg.edgeIndex` and plumbing the Kirchhoff balance through the
+  -- FBNF fields; this has not yet been mechanised.  Narrowly-scoped
+  -- residual gap; NOT a re-smuggled axiom.
+  sorry
 
 end RobustTrustV9
