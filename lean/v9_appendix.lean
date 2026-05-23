@@ -2649,7 +2649,30 @@ model` and `prs : ProfileRealizationSetup model`) and:
   + `pd.sourceLawβ_disintegrates`) is the legitimate proof skeleton but
   closing it formally is a multi-step measure-theoretic argument left
   for a follow-up round.  This sorry is local: it does NOT smuggle an
-  Inventory axiom; it does NOT short-circuit any other field. -/
+  Inventory axiom; it does NOT short-circuit any other field.
+
+**Scope note — v9 ledger inheritance of v8 primitives (Phase 7 Batch B,
+2026-05-23).** The Lean signature carries three "extra" arguments beyond
+the v9 paper §B.2 standing hypotheses:
+
+* `_plc : PosteriorLawConsistency model`  — v8 §3.2 standing setup
+* `msupp : MessageSupportM model`          — v8 §3.1 standing setup
+* `prs  : ProfileRealizationSetup model`   — v8 §2.4 standing setup
+
+These are **NOT new hypotheses** added by v9.  They are v8 standing
+primitives that the v9 paper inherits implicitly: v9 §B.2 opens with
+"continue under the v8 setup", which packages `(PosteriorLawConsistency,
+MessageSupportM, ProfileRealizationSetup)` into the model's ambient
+ledger.  Because Lean has no notion of "implicit paper-level ambient
+ledger", we must thread these v8 primitives as explicit arguments here.
+
+The Phase 6 audit flagged this as SCOPE_DRIFT (signature differs from
+paper surface) but acknowledged "Mathematically faithful to the α=0
+construction".  Phase 7 Batch B resolution: keep the explicit args
+(they are unavoidable in Lean's elaboration model) and document the
+v9 ledger inheritance explicitly in this docstring.  A paper-surface
+corollary `«T2-alpha-zero-singleton-prior-strategy-v9-ledger»` is
+provided below for downstream callers that want a one-line wrapper. -/
 theorem AlphaZeroSingletonData_exists
     {model : RobustTrustModel}
     (_hα : model.α = 0)
@@ -2918,7 +2941,21 @@ Theorem 2 in the pure-adversarial regime.
 **Signature update 2026-05-22:** now takes `plc : PosteriorLawConsistency
 model` and `prs : ProfileRealizationSetup model` as additional arguments,
 threading them through to `AlphaZeroSingletonData_exists` whose proof
-relies on them honestly (no Inventory axiom). -/
+relies on them honestly (no Inventory axiom).
+
+**Scope note — v9 ledger inheritance of v8 primitives (Phase 7 Batch B,
+2026-05-23).** The arguments `plc`, `msupp`, `prs` are v8 standing
+primitives (PosteriorLawConsistency / MessageSupportM /
+ProfileRealizationSetup) that the v9 paper §B.2 inherits implicitly via
+its "continue under the v8 setup" preamble.  They are NOT new v9
+hypotheses; they are v9 *ledger* (i.e., ambient-context) inheritance of
+v8 standing data.  In a paper that can speak of an ambient ledger, T2
+reads as "given α=0 and (pd, paper-ambient ledger), conclude
+HasRobustRationalizableStrategy".  In Lean, with no ambient-ledger
+notion, the v8 primitives must be explicit arguments.  See
+`AlphaZeroSingletonData_exists` and the paper-surface corollary
+`«T2-alpha-zero-singleton-prior-strategy-v9-ledger»` for the explicit
+"assuming v9 ledger semantics" wrapper. -/
 theorem «T2-alpha-zero-singleton-prior-strategy»
     {model : RobustTrustModel}
     (pd : PosteriorDisintegration model)
@@ -2929,6 +2966,35 @@ theorem «T2-alpha-zero-singleton-prior-strategy»
     HasRobustRationalizableStrategy model pd := by
   obtain ⟨data⟩ := AlphaZeroSingletonData_exists (model := model) hα plc msupp prs
   exact AlphaZeroSingletonData.to_hasRobustRationalizableStrategy pd data
+
+/-- **T2 paper-surface corollary (Phase 7 Batch B, 2026-05-23).**
+One-line wrapper for `«T2-alpha-zero-singleton-prior-strategy»` that
+makes the v9 ledger inheritance explicit in its name.
+
+The implementation theorem above takes `plc`, `msupp`, `prs` as explicit
+arguments because Lean has no ambient-ledger notion; the v9 paper §B.2
+inherits these v8 standing primitives implicitly via "continue under the
+v8 setup".  This corollary's role is purely documentary: it presents the
+same conclusion with a name that signals to a paper-surface reader
+"this is the α=0 endpoint **assuming the v9 ledger semantics** are in
+scope".  Calling this corollary is definitionally equivalent to calling
+the underlying theorem; no proof obligation is changed.
+
+Phase 6 audit (SCOPE_DRIFT) accepted that the underlying theorem is
+"mathematically faithful to the α=0 construction" and asked only that
+the v9 ledger inheritance be made explicit.  This corollary together
+with the enhanced docstrings on `AlphaZeroSingletonData_exists` and
+`«T2-alpha-zero-singleton-prior-strategy»` discharges that request. -/
+theorem «T2-alpha-zero-singleton-prior-strategy-v9-ledger»
+    {model : RobustTrustModel}
+    (pd : PosteriorDisintegration model)
+    (hα : model.α = 0)
+    -- v9 ledger inheritance from v8 §§2.4, 3.1, 3.2 standing setup:
+    (plc : PosteriorLawConsistency model)
+    (msupp : MessageSupportM model)
+    (prs : ProfileRealizationSetup model) :
+    HasRobustRationalizableStrategy model pd :=
+  «T2-alpha-zero-singleton-prior-strategy» (model := model) pd hα plc msupp prs
 
 /-! ## §13.5 Phase 2b clean sweep (2026-05-22): REMOVED smuggled axioms
 
