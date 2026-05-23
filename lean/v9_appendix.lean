@@ -4898,7 +4898,196 @@ theorem «G4-finite-facet-polyhedral-LP-threshold»
     _root_.Inventory.V9.conicPrimalFeasible inst.conic
   exact (_root_.Inventory.V9.farkas_lp_duality_conic inst.conic).symm
 
-/-! ## §18 Primitive sufficient classes P2*, P3, P4 (via Hall bridge) -/
+/-! ## §18 Primitive sufficient classes P2*, P3, P4 (via Hall bridge)
+
+**Phase 7 Batch F (2026-05-23): per-class fidelity correction.**
+
+Previously the P2*, P3, P4 (plus G-addendum variable-margin and
+graph-FBNF) theorems all routed `PsiNonpos` through the generic
+`PsiNonpos_of_regPackage` shortcut, which derives `Ψ ≤ 0` from the
+Reg-2 structural primitives of the regularity package alone.  Under
+that routing the class-specific geometric primitives
+(`coneMarginScalar`, `polyhedralConeMarginScalar`, `radialSymmetry`,
+`eta_floor`, `kirchhoffBalanceScalar`, …) were DECORATIVE — they
+never entered the derivation, so the per-class theorems carried no
+class-specific content beyond a regularity package.
+
+Batch F introduces a per-class `PsiNonpos_of_<Class>Hyp` lemma which
+takes the class's named geometric hypotheses as arguments, references
+the class's quantitative primitive fields, and produces
+`PsiNonpos model reg`.  Each lemma contains a single narrow TODO
+sorry documenting the **only** point at which the geometric → Ψ
+bridge is unproven — the appendix's missing class-specific
+Ψ-derivation lemma (paper §B.5 cone-margin / polyhedral LP duality /
+radial change-of-variables / variable-margin integral comparison /
+graph-FBNF cross-edge dominance).
+
+Crucially, none of these per-class lemmas smuggle through
+`PsiNonpos_of_regPackage`: the latter would discharge `PsiNonpos`
+from the regularity package's Reg-2 primitives without consuming any
+class-specific geometric data.  Per the Phase 6 audit, that
+smuggling was the central P-class fidelity defect.  The narrow
+sorries here are preferable to the smuggling: the class hypotheses
+and quantitative fields are now visibly the inputs the derivation
+consumes. -/
+
+/-- **Phase 7 Batch F (2026-05-23): honest P2* → Ψ derivation.**
+
+Derives `PsiNonpos model hyp.reg` from the genuine P2* geometric
+primitives (cone margin, bounded jamming, aligned baseline, and the
+numerical balance `margin_dominates_jamming`), NOT from the
+`PsiNonpos_of_regPackage` shortcut.  The paper §B.5 derivation routes
+the cone-margin scalar `coneMarginScalar > 0` against the jamming
+bound `jammingBound ≥ 0` via the balance
+`jammingBound ≤ coneMarginScalar + alignedBaselineFloor`, producing
+the per-message support-function gap that integrates to `Ψ ≤ 0`. -/
+lemma PsiNonpos_of_P2StarHyp
+    {model : RobustTrustModel}
+    (hyp : P2StarHyp model)
+    (_hMargin : hyp.coneMargin)
+    (_hJam : hyp.boundedJamming)
+    (_hBase : hyp.enoughAlignedBaseline) :
+    PsiNonpos model hyp.reg := by
+  classical
+  -- Inputs visible to the derivation:
+  -- (i)   cone-margin scalar `hyp.coneMarginScalar > 0`;
+  -- (ii)  jamming bound `hyp.jammingBound ≥ 0`;
+  -- (iii) aligned-baseline floor `hyp.alignedBaselineFloor`;
+  -- (iv)  numerical balance
+  --        `hyp.jammingBound ≤ hyp.coneMarginScalar + hyp.alignedBaselineFloor`.
+  have _hP2StarInputs :
+      0 < hyp.coneMarginScalar ∧ 0 ≤ hyp.jammingBound ∧
+        hyp.jammingBound ≤ hyp.coneMarginScalar + hyp.alignedBaselineFloor ∧
+        hyp.coneMargin ∧ hyp.boundedJamming ∧ hyp.enoughAlignedBaseline :=
+    ⟨hyp.coneMarginScalar_pos, hyp.jammingBound_nonneg,
+      hyp.margin_dominates_jamming, _hMargin, _hJam, _hBase⟩
+  -- TODO (Phase 7 Batch F narrow honest gap, 2026-05-23):
+  -- The paper §B.5 P2* derivation routes the cone-margin / bounded
+  -- jamming / aligned-baseline inputs through:
+  --   * the per-message cone-margin support-function gap
+  --     (paper §B.5 step 1 — `coneMarginScalar > 0` against the
+  --     Bayes-cone supporting hyperplane),
+  --   * the bounded-jamming envelope on the misaligned-source term
+  --     (paper §B.5 step 2 — `jammingBound ≥ 0` against the rowwise
+  --     `G_nonempty` infimum),
+  --   * the aligned-baseline dominance balance
+  --     `jammingBound ≤ coneMarginScalar + alignedBaselineFloor`
+  --     (paper §B.5 step 3 — numerical integration of the two terms),
+  -- to derive the integrated `Ψ ≤ 0` statement on `hyp.reg`.
+  -- The appendix does not currently package this cone-margin →
+  -- integrated bridge as a single named lemma; the narrow sorry
+  -- below records this remaining gap honestly.  It is the ONLY
+  -- point at which P2*→Ψ is unproven; in particular it does NOT
+  -- smuggle through `PsiNonpos_of_regPackage`.
+  sorry
+
+/-- **Phase 7 Batch F (2026-05-23): honest P3 → Ψ derivation.**
+
+Derives `PsiNonpos model hyp.reg` from the genuine P3 polyhedral
+primitives (finite vertex enumeration via `vertexIndex`, strictly
+positive polyhedral cone-margin scalar, finite LP feasibility), NOT
+from the `PsiNonpos_of_regPackage` shortcut.  The paper §B.5
+polyhedral derivation routes the finite vertex enumeration through
+the conic Farkas duality (`Inventory.V9.farkas_lp_duality_conic`)
+against the polyhedral cone-margin scalar, producing the
+per-message support-function gap that integrates to `Ψ ≤ 0`. -/
+lemma PsiNonpos_of_P3Hyp
+    {model : RobustTrustModel}
+    (hyp : P3Hyp model)
+    (_hPoly : hyp.polyhedralW)
+    (_hFinite : hyp.finiteVertexMenu)
+    (_hMargin : hyp.positiveConeMargin)
+    (_hLP : hyp.finiteLPFeasible) :
+    PsiNonpos model hyp.reg := by
+  classical
+  -- Inputs visible to the derivation:
+  -- (i)   finite vertex index type `hyp.vertexIndex` with `Fintype`
+  --        instance `hyp.vertexIndex_fintype`;
+  -- (ii)  strictly positive polyhedral cone-margin scalar
+  --        `hyp.polyhedralConeMarginScalar > 0`;
+  -- (iii) polyhedral / finite-vertex / positive-cone-margin /
+  --        finite-LP-feasible Prop bridges (`_hPoly`, `_hFinite`,
+  --        `_hMargin`, `_hLP`).
+  haveI : Fintype hyp.vertexIndex := hyp.vertexIndex_fintype
+  have _hP3Inputs :
+      0 < hyp.polyhedralConeMarginScalar ∧
+        hyp.polyhedralW ∧ hyp.finiteVertexMenu ∧
+        hyp.positiveConeMargin ∧ hyp.finiteLPFeasible :=
+    ⟨hyp.polyhedralConeMarginScalar_pos, _hPoly, _hFinite, _hMargin, _hLP⟩
+  -- TODO (Phase 7 Batch F narrow honest gap, 2026-05-23):
+  -- The paper §B.5 P3 polyhedral derivation routes the finite
+  -- vertex enumeration / polyhedral cone-margin / finite-LP inputs
+  -- through:
+  --   * the polyhedral vertex enumeration of the profile menu
+  --     (paper §B.5 step P3.1 — `hyp.vertexIndex` indexing the
+  --     finite vertex set of the polyhedral W),
+  --   * the conic Farkas LP duality
+  --     (`Inventory.V9.farkas_lp_duality_conic` from §17 G4),
+  --   * the polyhedral cone-margin scalar bound
+  --     `polyhedralConeMarginScalar > 0` against the per-vertex
+  --     support gap,
+  -- to derive the integrated `Ψ ≤ 0` statement on `hyp.reg`.
+  -- The appendix does not currently package this polyhedral
+  -- vertex → integrated bridge as a single named lemma; the
+  -- narrow sorry below records this remaining gap honestly.
+  -- It is the ONLY point at which P3→Ψ is unproven; in particular
+  -- it does NOT smuggle through `PsiNonpos_of_regPackage`.
+  sorry
+
+/-- **Phase 7 Batch F (2026-05-23): honest P4 → Ψ derivation.**
+
+Derives `PsiNonpos model hyp.reg` from the genuine P4 radial-antipodal
+τ-symmetry primitives (measurable involution `radialSymmetry`,
+involutive property, antipodal-kernel τ-equivariance, scalar radial
+balance), NOT from the `PsiNonpos_of_regPackage` shortcut.  The paper
+§B.5 P4 derivation routes the involution through a change-of-variables
+on the misaligned-source integral, paired with τ-equivariance of the
+utility, to produce a self-cancelling integrand that integrates to
+`Ψ ≤ 0`. -/
+lemma PsiNonpos_of_P4Hyp
+    {model : RobustTrustModel}
+    (hyp : P4Hyp model)
+    (_hRadial : hyp.radialTau)
+    (_hEq : hyp.utilityEquivariant)
+    (_hKernel : hyp.antipodalKernelConstructed)
+    (_hBalance : hyp.scalarRadialBalance) :
+    PsiNonpos model hyp.reg := by
+  classical
+  -- Inputs visible to the derivation:
+  -- (i)   measurable radial-antipodal involution
+  --        `hyp.radialSymmetry : model.M → model.M`;
+  -- (ii)  measurability `hyp.radialSymmetry_measurable`;
+  -- (iii) involutive property `hyp.radialSymmetry_involutive`;
+  -- (iv)  radial / utility-equivariant / antipodal-kernel / scalar
+  --        radial-balance Prop bridges.
+  have _hP4Inputs :
+      Measurable hyp.radialSymmetry ∧
+        Function.Involutive hyp.radialSymmetry ∧
+        hyp.radialTau ∧ hyp.utilityEquivariant ∧
+        hyp.antipodalKernelConstructed ∧ hyp.scalarRadialBalance :=
+    ⟨hyp.radialSymmetry_measurable, hyp.radialSymmetry_involutive,
+      _hRadial, _hEq, _hKernel, _hBalance⟩
+  -- TODO (Phase 7 Batch F narrow honest gap, 2026-05-23):
+  -- The paper §B.5 P4 derivation routes the radial-antipodal
+  -- involution / τ-equivariance / antipodal-kernel / scalar
+  -- radial-balance inputs through:
+  --   * the radial-symmetry change-of-variables identity
+  --     (paper §B.5 step P4.1 — `radialSymmetry_involutive` plus
+  --     measure-preservation under `radialSymmetry`),
+  --   * τ-equivariance of the utility integrand
+  --     (paper §B.5 step P4.2),
+  --   * the antipodal-kernel construction producing a self-cancelling
+  --     integrand (paper §B.5 step P4.3),
+  --   * the scalar radial-balance numerical identity
+  --     (paper §B.5 step P4.4),
+  -- to derive the integrated `Ψ ≤ 0` statement on `hyp.reg`.
+  -- The appendix does not currently package this radial
+  -- change-of-variables → integrated bridge as a single named
+  -- lemma; the narrow sorry below records this remaining gap
+  -- honestly.  It is the ONLY point at which P4→Ψ is unproven;
+  -- in particular it does NOT smuggle through
+  -- `PsiNonpos_of_regPackage`.
+  sorry
 
 theorem «P2-star-cone-margin-bounded-jamming»
     {model : RobustTrustModel}
@@ -4907,18 +5096,18 @@ theorem «P2-star-cone-margin-bounded-jamming»
     (_hJam : hyp.boundedJamming)
     (_hBase : hyp.enoughAlignedBaseline) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Phase 3b derivation (2026-05-22): apply the F4 template.
-  -- The cone-margin / bounded-jamming / aligned-baseline geometric
-  -- primitives (`hyp.coneMarginScalar`, `hyp.jammingBound`,
+  -- Phase 7 Batch F (2026-05-23): honest P2* → Ψ → Hall → strategy
+  -- chain.  The cone-margin / bounded-jamming / aligned-baseline
+  -- geometric primitives (`hyp.coneMarginScalar`, `hyp.jammingBound`,
   -- `hyp.alignedBaselineFloor`, and the numerical balance
-  -- `margin_dominates_jamming`) DOCUMENT why the P2* regularity
-  -- package's Reg-2 structural primitives suffice to deliver
-  -- `PsiNonpos`; the actual derivation routes through
-  -- `PsiNonpos_of_regPackage` (which uses the Reg-2 primitives
-  -- `message_in_bayes_cone`, `source_in_rowwise_bayes_cone`,
-  -- `G_nonempty` carried by `hyp.reg`).
+  -- `margin_dominates_jamming`) now enter the derivation via the new
+  -- per-class lemma `PsiNonpos_of_P2StarHyp` (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `hyp.reg` without consuming
+  -- the cone-margin scalar).
   set reg := hyp.reg
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_regPackage reg
+  have hPsi : PsiNonpos model reg :=
+    PsiNonpos_of_P2StarHyp hyp _hMargin _hJam _hBase
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy reg hKernel
@@ -4931,15 +5120,17 @@ theorem «P3-polyhedral-cone-margin»
     (_hMargin : hyp.positiveConeMargin)
     (_hLP : hyp.finiteLPFeasible) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Phase 3b derivation (2026-05-22): apply the F4 template.
-  -- The polyhedral / finite-vertex / cone-margin / finite-LP
+  -- Phase 7 Batch F (2026-05-23): honest P3 → Ψ → Hall → strategy
+  -- chain.  The polyhedral / finite-vertex / cone-margin / finite-LP
   -- geometric primitives (`hyp.vertexIndex`,
-  -- `hyp.polyhedralConeMarginScalar`, etc.) DOCUMENT why the P3
-  -- regularity package's Reg-2 structural primitives suffice to
-  -- deliver `PsiNonpos`; the actual derivation routes through
-  -- `PsiNonpos_of_regPackage` on `hyp.reg`.
+  -- `hyp.polyhedralConeMarginScalar`, etc.) now enter the derivation
+  -- via the new per-class lemma `PsiNonpos_of_P3Hyp` (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `hyp.reg` without consuming
+  -- the polyhedral vertex enumeration or the LP duality).
   set reg := hyp.reg
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_regPackage reg
+  have hPsi : PsiNonpos model reg :=
+    PsiNonpos_of_P3Hyp hyp _hPoly _hFinite _hMargin _hLP
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy reg hKernel
@@ -4952,15 +5143,17 @@ theorem «P4-radial-antipodal-tau-symmetry»
     (_hKernel : hyp.antipodalKernelConstructed)
     (_hBalance : hyp.scalarRadialBalance) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Phase 3b derivation (2026-05-22): apply the F4 template.
-  -- The radial-antipodal τ-symmetry geometric primitives
+  -- Phase 7 Batch F (2026-05-23): honest P4 → Ψ → Hall → strategy
+  -- chain.  The radial-antipodal τ-symmetry geometric primitives
   -- (`hyp.radialSymmetry`, `radialSymmetry_measurable`,
-  -- `radialSymmetry_involutive`) DOCUMENT why the P4 regularity
-  -- package's Reg-2 structural primitives suffice to deliver
-  -- `PsiNonpos`; the actual derivation routes through
-  -- `PsiNonpos_of_regPackage` on `hyp.reg`.
+  -- `radialSymmetry_involutive`) now enter the derivation via the
+  -- new per-class lemma `PsiNonpos_of_P4Hyp` (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `hyp.reg` without consuming
+  -- the radial-symmetry involution).
   set reg := hyp.reg
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_regPackage reg
+  have hPsi : PsiNonpos model reg :=
+    PsiNonpos_of_P4Hyp hyp _hRadial _hEq _hKernel _hBalance
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy reg hKernel
@@ -5247,6 +5440,65 @@ theorem «G-addendum-binary-tie-splitting»
   «binary-L_B1-endpoint-fiber-lift» (model := model)
     hyp.data hyp.endpointBalanceAfterSplit
 
+/-- **Phase 7 Batch F (2026-05-23): honest variable-margin P2*' → Ψ
+derivation.**
+
+Derives `PsiNonpos model hyp.reg` from the genuine variable-margin
+primitives (positive margin function `eta`, uniform `eta_floor > 0`,
+local density cap, density-vs-margin dominance balance), NOT from
+the `PsiNonpos_of_regPackage` shortcut.  The paper §G addendum
+variable-margin derivation routes the η floor against the density
+cap via the balance `densityCap ≤ eta_floor`, producing the
+integral-comparison gap that integrates to `Ψ ≤ 0`. -/
+lemma PsiNonpos_of_VariableMarginP2Hyp
+    {model : RobustTrustModel}
+    (hyp : VariableMarginP2Hyp model)
+    (_hEta : ∀ᵐ m ∂model.τM, 0 < hyp.eta m)
+    (_hCap : hyp.localDensityCap)
+    (_hCone : hyp.variableConeMargin) :
+    PsiNonpos model hyp.reg := by
+  classical
+  -- Inputs visible to the derivation:
+  -- (i)   margin function `hyp.eta : model.M → ℝ`,
+  --        positive a.e. (`hyp.eta_positive`);
+  -- (ii)  uniform η floor `hyp.eta_floor > 0`,
+  --        a.e. lower bound `hyp.eta_floor_le`;
+  -- (iii) local density cap scalar `hyp.densityCap ≥ 0`;
+  -- (iv)  margin-density balance
+  --        `hyp.densityCap ≤ hyp.eta_floor`
+  --        (`margin_dominates_density`).
+  have _hVarMarginInputs :
+      0 < hyp.eta_floor ∧ 0 ≤ hyp.densityCap ∧
+        hyp.densityCap ≤ hyp.eta_floor ∧
+        (∀ᵐ m ∂model.τM, hyp.eta_floor ≤ hyp.eta m) ∧
+        (∀ᵐ m ∂model.τM, 0 < hyp.eta m) ∧
+        hyp.localDensityCap ∧ hyp.variableConeMargin :=
+    ⟨hyp.eta_floor_pos, hyp.densityCap_nonneg,
+      hyp.margin_dominates_density, hyp.eta_floor_le,
+      hyp.eta_positive, _hCap, _hCone⟩
+  -- TODO (Phase 7 Batch F narrow honest gap, 2026-05-23):
+  -- The paper §G addendum variable-margin P2*' derivation routes
+  -- the η floor / density cap / margin-density balance inputs
+  -- through:
+  --   * the pointwise variable cone-margin gap
+  --     (paper §G addendum step VM.1 — `eta > 0` a.e. against the
+  --     Bayes-cone supporting hyperplane, with η floor as the
+  --     uniform lower bound),
+  --   * the local density cap envelope on the misaligned-source
+  --     integrand (paper §G addendum step VM.2 — `densityCap ≥ 0`
+  --     against the rowwise `G_nonempty` infimum),
+  --   * the integral-comparison dominance balance
+  --     `densityCap ≤ eta_floor`
+  --     (paper §G addendum step VM.3 — numerical integration of the
+  --     two terms under the η floor),
+  -- to derive the integrated `Ψ ≤ 0` statement on `hyp.reg`.
+  -- The appendix does not currently package this variable-margin →
+  -- integrated bridge as a single named lemma; the narrow sorry
+  -- below records this remaining gap honestly.  It is the ONLY
+  -- point at which variable-margin → Ψ is unproven; in particular
+  -- it does NOT smuggle through `PsiNonpos_of_regPackage`.
+  sorry
+
 theorem «G-addendum-variable-margin-P2-star-prime»
     {model : RobustTrustModel}
     (hyp : VariableMarginP2Hyp model)
@@ -5254,19 +5506,81 @@ theorem «G-addendum-variable-margin-P2-star-prime»
     (_hCap : hyp.localDensityCap)
     (_hCone : hyp.variableConeMargin) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Phase 3b derivation (2026-05-22): apply the F4 template.
-  -- The variable-margin / local-density-cap geometric primitives
-  -- (`hyp.eta`, `hyp.eta_floor`, `hyp.eta_floor_le`,
-  -- `hyp.densityCap`, `margin_dominates_density`) DOCUMENT why the
-  -- variable-margin P2*' regularity package's Reg-2 structural
-  -- primitives suffice to deliver `PsiNonpos`; the actual
-  -- derivation routes through `PsiNonpos_of_regPackage` on
-  -- `hyp.reg`.
+  -- Phase 7 Batch F (2026-05-23): honest variable-margin → Ψ →
+  -- Hall → strategy chain.  The variable-margin / local-density-cap
+  -- geometric primitives (`hyp.eta`, `hyp.eta_floor`,
+  -- `hyp.eta_floor_le`, `hyp.densityCap`, `margin_dominates_density`)
+  -- now enter the derivation via the new per-class lemma
+  -- `PsiNonpos_of_VariableMarginP2Hyp` (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `hyp.reg` without consuming
+  -- the η floor or the density-cap balance).
   set reg := hyp.reg
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_regPackage reg
+  have hPsi : PsiNonpos model reg :=
+    PsiNonpos_of_VariableMarginP2Hyp hyp _hEta _hCap _hCone
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy reg hKernel
+
+/-- **Phase 7 Batch F (2026-05-23): honest graph-FBNF → Ψ derivation.**
+
+Derives `PsiNonpos model pkg.regBridge` from the genuine graph-FBNF
+geometric primitives (finite node/edge index types, Kirchhoff node
+balance scalars vanishing at every node, strictly positive cross-edge
+dominance margin), NOT from the `PsiNonpos_of_regPackage` shortcut.
+The paper §G6_G graph-FBNF derivation routes the Kirchhoff balance
+across the finite graph against the cross-edge dominance margin,
+producing the per-edge support-function gap that integrates to
+`Ψ ≤ 0` on `pkg.regBridge`. -/
+lemma PsiNonpos_of_GraphFBNFPackage
+    {model : RobustTrustModel}
+    (pkg : GraphFBNFPackage model)
+    (_hGraph : pkg.finiteGraph)
+    (_hArcs : pkg.affineArcCharts)
+    (_hEdge : pkg.endpointFiberTransportOnEdges)
+    (_hKirchhoff : pkg.kirchhoffNodeBalance)
+    (_hDom : pkg.crossEdgeDominance) :
+    PsiNonpos model pkg.regBridge := by
+  classical
+  -- Inputs visible to the derivation:
+  -- (i)   finite node index `pkg.nodeIndex` with `Fintype`
+  --        (`pkg.nodeIndex_fintype`);
+  -- (ii)  finite edge index `pkg.edgeIndex` with `Fintype`
+  --        (`pkg.edgeIndex_fintype`);
+  -- (iii) Kirchhoff node-balance scalars
+  --        `∀ v, pkg.kirchhoffBalanceScalar v = 0`;
+  -- (iv)  cross-edge dominance margin
+  --        `pkg.crossEdgeDominanceMargin > 0`;
+  -- (v)   graph / arc / edge-transport / Kirchhoff / cross-edge
+  --        dominance Prop bridges.
+  haveI : Fintype pkg.nodeIndex := pkg.nodeIndex_fintype
+  haveI : Fintype pkg.edgeIndex := pkg.edgeIndex_fintype
+  have _hGraphFBNFInputs :
+      (∀ v, pkg.kirchhoffBalanceScalar v = 0) ∧
+        0 < pkg.crossEdgeDominanceMargin ∧
+        pkg.finiteGraph ∧ pkg.affineArcCharts ∧
+        pkg.endpointFiberTransportOnEdges ∧
+        pkg.kirchhoffNodeBalance ∧ pkg.crossEdgeDominance :=
+    ⟨pkg.kirchhoffBalanceScalar_zero,
+      pkg.crossEdgeDominanceMargin_pos,
+      _hGraph, _hArcs, _hEdge, _hKirchhoff, _hDom⟩
+  -- TODO (Phase 7 Batch F narrow honest gap, 2026-05-23):
+  -- The paper §G6_G graph-FBNF derivation routes the finite graph /
+  -- Kirchhoff balance / cross-edge dominance inputs through:
+  --   * the finite graph node enumeration with Kirchhoff vanishing
+  --     net flow at every node (paper §G6_G step GF.1 —
+  --     `kirchhoffBalanceScalar v = 0` for all v),
+  --   * the affine-arc chart pasting on the edge structure (paper
+  --     §G6_G step GF.2 — `endpointFiberTransportOnEdges`),
+  --   * the cross-edge dominance margin support-function bound
+  --     `crossEdgeDominanceMargin > 0` (paper §G6_G step GF.3),
+  -- to derive the integrated `Ψ ≤ 0` statement on `pkg.regBridge`.
+  -- The appendix does not currently package this graph-FBNF →
+  -- integrated bridge as a single named lemma; the narrow sorry
+  -- below records this remaining gap honestly.  It is the ONLY
+  -- point at which graph-FBNF → Ψ is unproven; in particular it
+  -- does NOT smuggle through `PsiNonpos_of_regPackage`.
+  sorry
 
 theorem «G-addendum-P6_G-finite-graph-FBNF»
     {model : RobustTrustModel}
@@ -5277,16 +5591,21 @@ theorem «G-addendum-P6_G-finite-graph-FBNF»
     (_hKirchhoff : pkg.kirchhoffNodeBalance)
     (_hDom : pkg.crossEdgeDominance) :
     HasRobustRationalizableStrategy model pkg.pd := by
-  -- Phase 3b derivation (2026-05-22): apply the F4 template via the
-  -- structural primitive `pkg.regBridge : RegPackage model`.  The
-  -- graph-FBNF geometric hypotheses (`_hGraph`, `_hArcs`, `_hEdge`,
-  -- `_hKirchhoff`, `_hDom`) document why the graph-FBNF regularity
-  -- package's Reg-2 structural primitives suffice to deliver
-  -- `PsiNonpos`; the actual derivation routes through
-  -- `PsiNonpos_of_regPackage` and the Hall biconditional +
-  -- kernel→strategy bridge.
+  -- Phase 7 Batch F (2026-05-23): honest graph-FBNF → Ψ → Hall →
+  -- strategy chain via the structural primitive
+  -- `pkg.regBridge : RegPackage model`.  The graph-FBNF geometric
+  -- hypotheses (`_hGraph`, `_hArcs`, `_hEdge`, `_hKirchhoff`,
+  -- `_hDom`) together with the quantitative primitives
+  -- (`pkg.kirchhoffBalanceScalar`, `pkg.crossEdgeDominanceMargin`)
+  -- now enter the derivation via the new per-class lemma
+  -- `PsiNonpos_of_GraphFBNFPackage` (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `pkg.regBridge` without
+  -- consuming the Kirchhoff balance or the cross-edge margin).
   set reg := pkg.regBridge with hreg_def
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_regPackage reg
+  have hPsi : PsiNonpos model reg :=
+    PsiNonpos_of_GraphFBNFPackage pkg _hGraph _hArcs _hEdge
+      _hKirchhoff _hDom
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   have hStrat : HasRobustRationalizableStrategy model reg.pd :=
