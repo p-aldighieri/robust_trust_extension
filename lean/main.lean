@@ -6177,8 +6177,17 @@ structure RegPackage where
           beliefDot (model.inclM s) (wstar m')
   B : model.M → Set (Belief model.Ω)
   B_closed : ∀ m, IsClosed (B m)
-  /-- Convexity expressed on the profile-image of the Bayes cone. -/
-  B_convex_profile : Prop
+  /-- Joint measurability of the Bayes-cone graph.
+  Used to invoke `MeasureTheory.Measure.ae_compProd_iff` against the
+  disintegration `pd.sourceLawγα_disintegrates` in the bridge lemma. -/
+  B_graph_measurable :
+    MeasurableSet {p : model.M × Belief model.Ω | p.2 ∈ B p.1}
+  /-- Convexity expressed on the profile-image of the Bayes cone.
+  This is the regularity assumption that the image
+  `beliefAsProfile '' B m ⊆ Profile model = model.Ω → ℝ` is convex in
+  `Profile model`.  Used by the generic Choquet/Bauer barycenter axiom
+  in the bridge lemma `Inventory.V9.bayesian_barycenter_in_closed_convex`. -/
+  B_convex_profile : ∀ m, Convex ℝ (beliefAsProfile '' B m)
   B_support_continuous :
     ∀ y : Profile model, Continuous fun m => supportFunction model (B m) y
   B_bayes_optimal :
@@ -8307,9 +8316,199 @@ lemma _root_.Inventory.V9.bayesian_barycenter_in_closed_convex
   have hSrcSupp :
       ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
         (reg.pd.sourceLawγα κ) m {b : Belief model.Ω | b ∉ reg.B m} = 0 := by
-    -- TODO: ae_compProd_iff applied to `reg.pd.sourceLawγα_disintegrates κ`
-    -- followed by transfer of support via `reg.source_in_rowwise_bayes_cone`.
-    sorry
+    -- The proof transports the kernel-support hypothesis through the
+    -- disintegration identity in three steps:
+    --   (i)   Measure the "bad" set `Bad ⊆ M × M` under the explicit
+    --         `MixtureCouplingGammaAlpha = α·diag + (1-α)·(τM ⊗ κ)`.
+    --         The diagonal piece is empty by `reg.message_in_bayes_cone`;
+    --         the kernel piece is null by `ae_compProd_iff` applied to
+    --         `hSupp` + `reg.source_in_rowwise_bayes_cone`.
+    --   (ii)  Push forward by `(s, m) ↦ (m, inclM s)`, obtaining the
+    --         joint measure on `M × Belief Ω` carrying mass on the "good"
+    --         set `Good = {(m, b) | b ∈ reg.B m}`.
+    --   (iii) Apply `ae_compProd_iff` to the disintegration
+    --         `joint = q.compProd (sourceLawγα κ)` to conclude the
+    --         conditional-law-support statement.
+    classical
+    haveI hτM_prob : IsProbabilityMeasure model.τM := model.τM_prob
+    haveI hκ_markov : ProbabilityTheory.IsMarkovKernel κ.kernel := κ.isMarkov
+    haveI hκ_sfin : ProbabilityTheory.IsSFiniteKernel κ.kernel := inferInstance
+    haveI hSLγα_markov :
+        ProbabilityTheory.IsMarkovKernel (reg.pd.sourceLawγα κ) :=
+      reg.pd.sourceLawγα_markov κ
+    haveI hSLγα_sfin :
+        ProbabilityTheory.IsSFiniteKernel (reg.pd.sourceLawγα κ) :=
+      inferInstance
+    -- Measurability of the diagonal map `s ↦ (s, s)`.
+    have hdiag_meas : Measurable (fun s : model.M => (s, s)) :=
+      measurable_id.prod measurable_id
+    -- The "good" set in the disintegration target.
+    have hGood_meas :
+        MeasurableSet {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1} :=
+      reg.B_graph_measurable
+    have hGoodC_meas :
+        MeasurableSet
+          {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1}ᶜ :=
+      hGood_meas.compl
+    -- The pushforward map `f : (s, m) ↦ (m, inclM s)`.
+    have hf_meas :
+        Measurable (fun p : model.M × model.M =>
+          ((p.2, model.inclM p.1) : model.M × Belief model.Ω)) := by
+      refine Measurable.prodMk measurable_snd ?_
+      exact model.inclM_measurable.comp measurable_fst
+    -- The "bad" set in `M × M`: pull back `Goodᶜ` through `f`.
+    have hBad_meas :
+        MeasurableSet
+          {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2} := by
+      have :
+          {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2}
+            = (fun p : model.M × model.M =>
+                ((p.2, model.inclM p.1) : model.M × Belief model.Ω)) ⁻¹'
+              {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1}ᶜ := by
+        ext p; rfl
+      rw [this]; exact hf_meas hGoodC_meas
+    -- Step (i.a): the diagonal piece is null on `Bad`.
+    have hDiagBad :
+        (model.τM.map (fun s : model.M => (s, s)))
+            {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2} = 0 := by
+      rw [MeasureTheory.Measure.map_apply hdiag_meas hBad_meas]
+      have hPre :
+          ((fun s : model.M => (s, s)) ⁻¹'
+              {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2})
+            = (∅ : Set model.M) := by
+        ext s
+        constructor
+        · intro hs
+          exact (hs (reg.message_in_bayes_cone s)).elim
+        · intro hs
+          exact hs.elim
+      rw [hPre]
+      exact MeasureTheory.measure_empty
+    -- Step (i.b): the kernel piece is null on `Bad`.
+    have hKerBadAe :
+        ∀ᵐ x ∂(model.τM.compProd κ.kernel),
+          x ∉ {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2} := by
+      have hP_meas :
+          MeasurableSet
+            {x : model.M × model.M | ¬ x ∈
+              {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2}} := by
+        have :
+            {x : model.M × model.M | ¬ x ∈
+                {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2}}
+              = {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2}ᶜ := by
+          ext x; simp
+        rw [this]; exact hBad_meas.compl
+      rw [MeasureTheory.Measure.ae_compProd_iff (μ := model.τM)
+          (κ := κ.kernel)
+          (p := fun x => x ∉
+            {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2})
+          hP_meas]
+      -- Reduce to `∀ᵐ s, ∀ᵐ m ∂(κ.kernel s), inclM s ∈ reg.B m`.
+      have hSupp' : ∀ᵐ s ∂model.τM,
+          ∀ᵐ m ∂(κ.kernel s), m ∈ reg.G s := hSupp
+      filter_upwards [hSupp'] with s hs
+      filter_upwards [hs] with m hm
+      -- From `m ∈ reg.G s` and `source_in_rowwise_bayes_cone`,
+      -- `model.inclM s ∈ reg.B m`, so `(s, m) ∉ Bad`.
+      intro hbad
+      exact hbad (reg.source_in_rowwise_bayes_cone s m hm)
+    have hKerBad :
+        (model.τM.compProd κ.kernel)
+            {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2} = 0 := by
+      have h := (MeasureTheory.ae_iff (μ := model.τM.compProd κ.kernel)
+                  (p := fun x => x ∉
+                    {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2})).mp
+                  hKerBadAe
+      -- `{x | ¬ ¬ x ∈ Bad} = {x | x ∈ Bad} = Bad`
+      have hSetEq :
+          {a : model.M × model.M |
+            ¬ a ∉ {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2}} =
+            {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2} := by
+        ext a; simp
+      rw [hSetEq] at h
+      exact h
+    -- Step (i): combine, using additivity of `MixtureCouplingGammaAlpha`.
+    have hMixBad :
+        (MixtureCouplingGammaAlpha model κ)
+            {p : model.M × model.M | model.inclM p.1 ∉ reg.B p.2} = 0 := by
+      unfold MixtureCouplingGammaAlpha
+      rw [MeasureTheory.Measure.add_apply,
+          MeasureTheory.Measure.smul_apply,
+          MeasureTheory.Measure.smul_apply,
+          hDiagBad, hKerBad, smul_zero, smul_zero, add_zero]
+    -- Step (ii): push forward by `f`, getting `joint Goodᶜ = 0`.
+    have hJointGoodCompl :
+        ((MixtureCouplingGammaAlpha model κ).map
+            (fun p : model.M × model.M => (p.2, model.inclM p.1)))
+              {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1}ᶜ = 0 := by
+      rw [MeasureTheory.Measure.map_apply hf_meas hGoodC_meas]
+      convert hMixBad using 1
+    -- Convert `joint Goodᶜ = 0` into the ∀ᵐ statement on `joint`.
+    have hJointAe :
+        ∀ᵐ x ∂((MixtureCouplingGammaAlpha model κ).map
+                (fun p : model.M × model.M => (p.2, model.inclM p.1))),
+          x ∈ {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1} := by
+      rw [MeasureTheory.ae_iff]
+      have hSetEq :
+          {a : model.M × Belief model.Ω |
+              a ∉ {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1}} =
+            {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1}ᶜ := by
+        ext a; simp
+      rw [hSetEq]
+      exact hJointGoodCompl
+    -- Step (iii): rewrite via the disintegration identity and unpack
+    -- `ae_compProd_iff` to obtain the conditional support statement.
+    -- The pushforward marginal is itself a probability measure, hence SFinite.
+    haveI hMixProb :
+        IsProbabilityMeasure (MixtureCouplingGammaAlpha model κ) := by
+      unfold MixtureCouplingGammaAlpha
+      haveI : IsProbabilityMeasure (model.τM.compProd κ.kernel) := by
+        refine ⟨?_⟩
+        rw [MeasureTheory.Measure.compProd_apply_univ]
+        exact MeasureTheory.measure_univ
+      haveI : IsProbabilityMeasure
+          (model.τM.map (fun s : model.M => (s, s))) :=
+        MeasureTheory.Measure.isProbabilityMeasure_map hdiag_meas.aemeasurable
+      refine ⟨?_⟩
+      rw [MeasureTheory.Measure.add_apply,
+          MeasureTheory.Measure.smul_apply,
+          MeasureTheory.Measure.smul_apply,
+          MeasureTheory.measure_univ, MeasureTheory.measure_univ,
+          smul_eq_mul, smul_eq_mul, mul_one, mul_one,
+          ← ENNReal.ofReal_add model.α_nonneg
+            (by linarith [model.α_le_one])]
+      simp
+    haveI :
+        IsProbabilityMeasure
+          ((MixtureCouplingGammaAlpha model κ).map Prod.snd) :=
+      MeasureTheory.Measure.isProbabilityMeasure_map (by fun_prop)
+    have hDis := reg.pd.sourceLawγα_disintegrates κ
+    rw [hDis] at hJointAe
+    have hAeCondGood :
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          ∀ᵐ b ∂((reg.pd.sourceLawγα κ) m),
+            (m, b) ∈ {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1} :=
+      (MeasureTheory.Measure.ae_compProd_iff
+        (μ := (MixtureCouplingGammaAlpha model κ).map Prod.snd)
+        (κ := reg.pd.sourceLawγα κ)
+        (p := fun x => x ∈ {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1})
+        hGood_meas).mp hJointAe
+    -- Convert the inner `∀ᵐ` to a measure-zero statement.
+    filter_upwards [hAeCondGood] with m hm
+    have hCondZero := (MeasureTheory.ae_iff
+              (μ := (reg.pd.sourceLawγα κ) m)
+              (p := fun b : Belief model.Ω =>
+                (m, b) ∈
+                  {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1})).mp hm
+    -- `{b | ¬ (m, b) ∈ Good}` = `{b | b ∉ reg.B m}`
+    have hEq :
+        {a : Belief model.Ω |
+            ¬ (m, a) ∈
+              {p : model.M × Belief model.Ω | p.2 ∈ reg.B p.1}} =
+          {b : Belief model.Ω | b ∉ reg.B m} := by
+      ext b; simp
+    rw [hEq] at hCondZero
+    exact hCondZero
   -- Step 3: combine the conditional-barycenter identity with the
   -- support-transfer step and apply the generic Choquet/Bauer axiom.
   -- The application is via the pushforward measure on `Profile model`
@@ -8321,12 +8520,194 @@ lemma _root_.Inventory.V9.bayesian_barycenter_in_closed_convex
   -- axiom yields `beliefAsProfile (Pγα κ m) ∈ S`, hence `Pγα κ m ∈ reg.B m`
   -- (using injectivity of `beliefAsProfile`: it is the underlying-value
   -- coercion of a subtype).
-  --
-  -- TODO: package the pushforward measure on `Profile model`, verify
-  -- closed-convexity of `beliefAsProfile '' reg.B m` from `reg.B_closed`
-  -- and `reg.B_convex_profile`, invoke the generic axiom, and recover
-  -- `Pγα κ m ∈ reg.B m` from the profile-level conclusion.
-  sorry
+  haveI hSLγα_markov :
+      ProbabilityTheory.IsMarkovKernel (reg.pd.sourceLawγα κ) :=
+    reg.pd.sourceLawγα_markov κ
+  -- `beliefAsProfile` is continuous (it is `Subtype.val` on the simplex
+  -- subtype, modulo the eta-rewriting `fun s => s.val`).
+  have hBP_cont :
+      Continuous (beliefAsProfile : Belief model.Ω → Profile model) := by
+    -- `beliefAsProfile s = fun ω => s.val ω`.
+    refine continuous_pi (fun ω => ?_)
+    exact (continuous_apply ω).comp continuous_subtype_val
+  have hBP_meas :
+      Measurable (beliefAsProfile : Belief model.Ω → Profile model) :=
+    hBP_cont.measurable
+  -- `Belief model.Ω` is a compact space (it is the simplex viewed as a
+  -- subtype of finite-dimensional `Profile model`).
+  haveI hBelief_compact : CompactSpace (Belief model.Ω) := by
+    have hSimplex_compact :
+        IsCompact (stdSimplex ℝ model.Ω) := isCompact_stdSimplex _ _
+    -- The range of `Subtype.val : Belief Ω → Profile model` is exactly
+    -- the standard simplex.
+    have hRange :
+        Set.range (Subtype.val : Belief model.Ω → model.Ω → ℝ)
+          = stdSimplex ℝ model.Ω := by
+      ext x
+      refine ⟨fun ⟨b, hb⟩ => ?_, fun hx => ?_⟩
+      · rw [← hb]
+        exact ⟨fun ω => b.property.1 ω, b.property.2⟩
+      · exact ⟨⟨x, hx.1, hx.2⟩, rfl⟩
+    have hImageEq :
+        (Subtype.val : Belief model.Ω → model.Ω → ℝ) '' Set.univ
+          = stdSimplex ℝ model.Ω := by
+      rw [Set.image_univ, hRange]
+    have hEmb : Topology.IsEmbedding
+        (Subtype.val : Belief model.Ω → model.Ω → ℝ) :=
+      Topology.IsEmbedding.subtypeVal
+    have hCompactImg : IsCompact
+        ((Subtype.val : Belief model.Ω → model.Ω → ℝ) '' Set.univ) := by
+      rw [hImageEq]; exact hSimplex_compact
+    have hCompactUniv : IsCompact (Set.univ : Set (Belief model.Ω)) :=
+      hEmb.isCompact_iff.mpr hCompactImg
+    exact ⟨hCompactUniv⟩
+  -- Combine `hBary` and `hSrcSupp` to do the pointwise argument.
+  filter_upwards [hBary, hSrcSupp] with m hBary_m hSrc_m
+  -- Fix m; goal: `reg.pd.Pγα κ m ∈ reg.B m`.
+  -- Set up the pushforward measure `ν := (sourceLawγα κ m).map beliefAsProfile`.
+  set ν : Measure (Profile model) :=
+      (reg.pd.sourceLawγα κ m).map beliefAsProfile with hν_def
+  haveI hν_prob : IsProbabilityMeasure ν :=
+    MeasureTheory.Measure.isProbabilityMeasure_map hBP_meas.aemeasurable
+  -- `S := beliefAsProfile '' reg.B m`.
+  set S : Set (Profile model) := beliefAsProfile '' reg.B m with hS_def
+  -- (a) `S` is convex: from `reg.B_convex_profile`.
+  have hS_convex : Convex ℝ S := reg.B_convex_profile m
+  -- (b) `S` is closed: continuous image of compact (`reg.B m` is closed in
+  -- the compact space `Belief Ω`, hence compact), and compact in a Hausdorff
+  -- (T2) space is closed.
+  have hBm_compact : IsCompact (reg.B m) :=
+    (reg.B_closed m).isCompact
+  have hS_compact : IsCompact S := hBm_compact.image hBP_cont
+  have hS_closed : IsClosed S := hS_compact.isClosed
+  -- (c) `ν Sᶜ = 0`, i.e., the pushforward is supported in `S`.
+  have hS_meas : MeasurableSet S := hS_closed.measurableSet
+  have hSc_meas : MeasurableSet Sᶜ := hS_meas.compl
+  have hBP_inj :
+      Function.Injective (beliefAsProfile : Belief model.Ω → Profile model) := by
+    intro a b hab
+    apply Subtype.ext
+    -- `beliefAsProfile a = beliefAsProfile b` means `a.val = b.val`.
+    funext ω
+    exact congr_fun hab ω
+  have hPreimage :
+      (beliefAsProfile : Belief model.Ω → Profile model) ⁻¹' Sᶜ
+        = {b : Belief model.Ω | b ∉ reg.B m} := by
+    ext b
+    simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_image,
+      Set.mem_setOf_eq]
+    constructor
+    · intro hb hbB
+      exact hb ⟨b, hbB, rfl⟩
+    · rintro hb ⟨b', hb'B, hb'val⟩
+      have : b' = b := hBP_inj hb'val
+      rw [this] at hb'B
+      exact hb hb'B
+  have hν_supp : ν Sᶜ = 0 := by
+    rw [hν_def, MeasureTheory.Measure.map_apply hBP_meas hSc_meas, hPreimage]
+    exact hSrc_m
+  -- (d) Integrability of `id : Profile → Profile` w.r.t. `ν`: bounded
+  -- support is enough since `ν` is a probability measure and the support
+  -- (the simplex) is bounded in finite dimension.
+  have hId_integrable : MeasureTheory.Integrable
+      (id : Profile model → Profile model) ν := by
+    refine MeasureTheory.Integrable.mono'
+      (g := fun _ => (Fintype.card model.Ω : ℝ))
+      (MeasureTheory.integrable_const _) ?_ ?_
+    · exact (measurable_id : Measurable
+          (id : Profile model → Profile model)).aestronglyMeasurable
+    · have hAe :
+          ∀ᵐ x ∂ν, x ∈ S := by
+        rw [MeasureTheory.ae_iff]
+        have :
+            {a : Profile model | ¬ a ∈ S} = Sᶜ := by
+          ext x; simp
+        rw [this]; exact hν_supp
+      filter_upwards [hAe] with x hx
+      obtain ⟨b, _hbB, hbval⟩ := hx
+      rw [← hbval]
+      change ‖beliefAsProfile b‖ ≤ (Fintype.card model.Ω : ℝ)
+      have hCoordBound : ∀ ω : model.Ω, ‖beliefAsProfile b ω‖ ≤ 1 := by
+        intro ω
+        unfold beliefAsProfile
+        rw [Real.norm_eq_abs, abs_of_nonneg (b.property.1 ω)]
+        have hsum : (∑ ω' : model.Ω, b.val ω') = 1 := b.property.2
+        have hother :
+            (0 : ℝ) ≤ ∑ ω' ∈ Finset.univ.erase ω, b.val ω' :=
+          Finset.sum_nonneg (fun ω' _ => b.property.1 ω')
+        have hmem : ω ∈ (Finset.univ : Finset model.Ω) := Finset.mem_univ ω
+        have heq :=
+          Finset.sum_erase_add (Finset.univ : Finset model.Ω)
+            (fun ω' => b.val ω') hmem
+        linarith [hsum, hother, heq]
+      have hPiBound :
+          ‖beliefAsProfile b‖ ≤ 1 := by
+        rw [pi_norm_le_iff_of_nonneg zero_le_one]
+        exact hCoordBound
+      have hone_le_card :
+          (1 : ℝ) ≤ (Fintype.card model.Ω : ℝ) := by
+        haveI := model.Ω_nonempty
+        have : 1 ≤ Fintype.card model.Ω := Fintype.card_pos
+        exact_mod_cast this
+      change ‖id (beliefAsProfile b)‖ ≤ (Fintype.card model.Ω : ℝ)
+      change ‖beliefAsProfile b‖ ≤ (Fintype.card model.Ω : ℝ)
+      linarith
+  -- (e) Invoke the generic Choquet/Bauer barycenter axiom.
+  have hBaryInS :
+      ∫ x : Profile model, x ∂ν ∈ S :=
+    _root_.Inventory.V9.barycenter_of_supported_measure_in_closed_convex_generic
+      ν S hS_closed hS_convex hId_integrable hν_supp
+  -- (f) Identify the Bochner integral with `beliefAsProfile (Pγα κ m)`.
+  have hIntEq :
+      ∫ x : Profile model, x ∂ν = beliefAsProfile (reg.pd.Pγα κ m) := by
+    funext ω
+    have hLHS :
+        (∫ x : Profile model, x ∂ν) ω = ∫ x : Profile model, x ω ∂ν := by
+      classical
+      have hCont : Continuous (fun x : Profile model => x ω) :=
+        continuous_apply ω
+      let L : Profile model →L[ℝ] ℝ :=
+        { toFun := fun x => x ω
+          map_add' := by intro a b; simp
+          map_smul' := by intro c a; simp
+          cont := hCont }
+      have hL_eq : ∀ x : Profile model, L x = x ω := fun _ => rfl
+      have hL_id_comm :
+          (∫ x : Profile model, L x ∂ν) = L (∫ x : Profile model, x ∂ν) := by
+        have := L.integral_comp_comm (φ := id) hId_integrable
+        simpa using this
+      calc (∫ x : Profile model, x ∂ν) ω
+          = L (∫ x : Profile model, x ∂ν) := rfl
+        _ = ∫ x : Profile model, L x ∂ν := hL_id_comm.symm
+        _ = ∫ x : Profile model, x ω ∂ν := by
+              apply MeasureTheory.integral_congr_ae
+              exact ae_of_all _ (fun x => hL_eq x)
+    rw [hLHS]
+    have hmap_int :
+        ∫ x : Profile model, x ω ∂ν
+          = ∫ b : Belief model.Ω,
+              (beliefAsProfile b) ω ∂(reg.pd.sourceLawγα κ m) := by
+      rw [hν_def]
+      rw [MeasureTheory.integral_map hBP_meas.aemeasurable
+            ((continuous_apply ω).measurable).aestronglyMeasurable]
+    rw [hmap_int]
+    have hbeliefω :
+        (fun b : Belief model.Ω => (beliefAsProfile b) ω)
+          = fun b : Belief model.Ω => b.val ω := by
+      funext b; rfl
+    rw [hbeliefω]
+    have hBaryDef :
+        beliefBarycenter ((reg.pd.sourceLawγα κ) m) ω
+          = ∫ b : Belief model.Ω, b.val ω ∂(reg.pd.sourceLawγα κ m) := rfl
+    rw [← hBaryDef]
+    rw [hBary_m]
+  -- (g) Conclude: `beliefAsProfile (Pγα κ m) ∈ S`, so `Pγα κ m ∈ reg.B m`
+  -- via injectivity of `beliefAsProfile`.
+  rw [hIntEq] at hBaryInS
+  obtain ⟨b, hbB, hbval⟩ := hBaryInS
+  have hb_eq : b = reg.pd.Pγα κ m := hBP_inj hbval
+  rw [← hb_eq]
+  exact hbB
 
 /-! ### Corrective round (2026-05-22):
 
