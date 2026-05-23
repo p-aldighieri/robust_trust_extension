@@ -3026,22 +3026,30 @@ disintegration alignment), with paper citations. -/
 /-- **Kantorovich–Rubinstein scalar duality (generic, standard Borel
 space).**
 
-For two finite Borel measures `μ, ν` on a standard Borel space `X`
-and a measurable binary relation `R ⊆ X × X`, given a "vector Hall
-duality" witness `hVectorHall` — an abstract Prop asserting that a
-finite-dimensional vector-test dual functional is nonpositive — for
-every pair `(f, g)` of bounded measurable scalar functions satisfying
-`f s ≤ g m` whenever `(s, m) ∈ R`, the scalar dual marginal inequality
-`∫ f dμ ≤ ∫ g dν` holds.
+For two finite Borel measures `μ, ν` on a measurable space `X`,
+a measurable binary relation `R ⊆ X × X`, a finite test-dimension
+type `V`, a measurable bounded "tangent inclusion" map
+`incl : X → V → ℝ`, and a measurable "support functional"
+`σ : X → (V → ℝ) → ℝ`, given a *vector-Hall hypothesis*
+`hVectorHall` — the *concrete* assertion that for every bounded
+measurable vector-test profile `y : X → V → ℝ`, the
+finite-dimensional dual functional
+
+  `∫_X sInf_{(s,m) ∈ R, second coord m} (⟨incl s, y m⟩_V - σ m (y m))
+       dμ(s)  +  ∫_X (⟨incl m, y m⟩_V - σ m (y m)) dν(m) ≤ 0`
+
+vanishes, the scalar dual marginal inequality `∫ f dμ ≤ ∫ g dν` holds
+for every pair `(f, g)` of bounded measurable scalar functions
+satisfying `f s ≤ g m` whenever `(s, m) ∈ R`.
 
 This is the **scalar extension** half of the Kantorovich–Rubinstein
 duality (vector-Hall functional ≤ 0 ⟹ scalar marginal inequality on
-the relation R) on standard Borel spaces, with the source vector-Hall
-witness left abstract as `hVectorHall : Prop`.  The abstract Prop is
-the natural meeting point between the finite-dimensional Farkas/LP
-form of the dual (where vector nonpositivity is established) and the
-bounded-Borel scalar form needed for `Strassen`-style coupling-to-
-marginal arguments.
+the relation `R`) on standard Borel spaces, with the source vector-Hall
+hypothesis tied to the typed data `(V, incl, σ)` — the
+finite-dimensional tangent-and-support pair that appears in any
+Villani-5.10 application.  The hypothesis is no longer an arbitrary
+`Prop`; it is a concrete inequality between Bochner integrals of
+`incl, σ, y` over `μ, ν, R`.
 
 Source: Kantorovich, L. V. (1942), *Doklady Akademii Nauk SSSR* **37**,
 199–201.  See also Villani, C. (2009), *Optimal Transport: Old and
@@ -3051,12 +3059,39 @@ Polish spaces).
 Mathlib does not currently package this scalar-extension form: the
 Mathlib transport-duality lemmas provide only the dualisation of
 finitely additive set functions, not the bounded-Borel scalar-test
-extension from a finite-dimensional vector-Hall witness. -/
+extension from a finite-dimensional vector-Hall witness.
+
+**Phase 4b fix (2026-05-22):** the previous formulation took an
+arbitrary `Prop` carrier for the vector-Hall hypothesis, which was a
+smuggling trapdoor (instantiating with `True` would manufacture an
+unrelated scalar inequality).  The hypothesis is now tied to the
+explicit typed data `(V, incl, σ)` and stated as a concrete
+inequality between integrals of those terms, removing the trapdoor. -/
 axiom _root_.Inventory.V9.kantorovich_rubinstein_scalar_duality_generic
     {X : Type*} [MeasurableSpace X]
     (μ ν : Measure X) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (R : Set (X × X)) (_hR_meas : MeasurableSet R)
-    (hVectorHall : Prop) (_hVectorHall_proof : hVectorHall)
+    {V : Type*} [Fintype V] [DecidableEq V]
+    (incl : X → V → ℝ)
+    (_hincl_meas : Measurable incl)
+    (_hincl_bdd : ∃ C : ℝ, 0 ≤ C ∧ ∀ x v, |incl x v| ≤ C)
+    (σ : X → (V → ℝ) → ℝ)
+    (_hσ_meas : ∀ y : V → ℝ, Measurable (fun x => σ x y))
+    (α : ℝ) (_hα01 : 0 ≤ α ∧ α ≤ 1)
+    (_hVectorHall :
+      ∀ (y : X → V → ℝ),
+        Measurable y →
+        (∃ C : ℝ, ∀ x v, |y x v| ≤ C) →
+          α *
+              (∫ m : X,
+                ((∑ v : V, incl m v * y m v) - σ m (y m)) ∂ν) +
+            (1 - α) *
+              (∫ s : X,
+                sInf
+                  (((fun m' : X =>
+                      (∑ v : V, incl s v * y m' v) - σ m' (y m')) ''
+                    { m' | (s, m') ∈ R })) ∂μ)
+            ≤ 0)
     (f g : X → ℝ)
     (_hf : Measurable f) (_hg : Measurable g)
     (_hf_int : Integrable f μ) (_hg_int : Integrable g ν)
@@ -3068,8 +3103,12 @@ axiom _root_.Inventory.V9.kantorovich_rubinstein_scalar_duality_generic
 Specialises `Inventory.V9.kantorovich_rubinstein_scalar_duality_generic`
 to the v9 setup: `X = model.M`, `μ = ν = model.τM`,
 `R = {(s, m) | m ∈ reg.G s}` (closed by `reg.G_closedGraph`, hence
-measurable), and the abstract vector-Hall hypothesis is instantiated
-by `PsiNonpos model reg`. -/
+measurable), `V = model.Ω`, `incl s v = (model.inclM s).val v`,
+`σ m y = supportFunction model (reg.B m) y`, `α = model.α`.
+
+The vector-Hall hypothesis required by the generic axiom is then
+exactly the integral inequality `regPsi model reg y ≤ 0` for every
+bounded Borel profile `y`, which is `PsiNonpos model reg`. -/
 lemma _root_.Inventory.V9.kantorovich_rubinstein_scalar_bridge
     {model : RobustTrustModel}
     (reg : RegPackage model)
@@ -3082,14 +3121,107 @@ lemma _root_.Inventory.V9.kantorovich_rubinstein_scalar_bridge
     (∫ s, f s ∂model.τM) ≤ (∫ m, g m ∂model.τM) := by
   classical
   haveI : IsProbabilityMeasure model.τM := model.τM_prob
+  haveI : Fintype model.Ω := model.Ω_fintype
+  haveI : DecidableEq model.Ω := Classical.decEq _
   let R : Set (model.M × model.M) := {p | p.2 ∈ reg.G p.1}
   have hR_closed : IsClosed R := reg.G_closedGraph
   have hR_meas : MeasurableSet R := hR_closed.measurableSet
   have hR_ineq : ∀ s m : model.M, (s, m) ∈ R → f s ≤ g m := by
     intro s m hm; exact hR s m hm
+  -- Tangent inclusion: `incl s v = (model.inclM s).val v`.
+  let incl : model.M → model.Ω → ℝ :=
+    fun s v => (model.inclM s).val v
+  have hincl_meas : Measurable incl := by
+    -- Each coordinate `s ↦ (model.inclM s).val v` is measurable as the composition
+    -- `pi_apply v ∘ subtype_coe ∘ model.inclM`.  Package via `measurable_pi_iff`.
+    refine measurable_pi_iff.mpr ?_
+    intro v
+    exact ((measurable_pi_apply v).comp measurable_subtype_coe).comp
+      model.inclM_measurable
+  have hincl_bdd : ∃ C : ℝ, 0 ≤ C ∧ ∀ x v, |incl x v| ≤ C := by
+    -- Each `(model.inclM s).val` is a belief on the finite Ω, so coordinates lie in [0,1].
+    refine ⟨1, zero_le_one, ?_⟩
+    intro s v
+    have hge : 0 ≤ (model.inclM s).val v := (model.inclM s).property.1 v
+    have hsum : (∑ ω : model.Ω, (model.inclM s).val ω) = 1 :=
+      (model.inclM s).property.2
+    have hle : (model.inclM s).val v ≤ 1 := by
+      have hmem : v ∈ (Finset.univ : Finset model.Ω) := Finset.mem_univ v
+      have hposrest : 0 ≤ ∑ ω ∈ (Finset.univ.erase v), (model.inclM s).val ω :=
+        Finset.sum_nonneg (fun ω _ => (model.inclM s).property.1 ω)
+      have := Finset.sum_erase_add (Finset.univ) (fun ω => (model.inclM s).val ω) hmem
+      -- ∑_{ω ≠ v} val ω + val v = 1
+      linarith [hsum, hposrest, this]
+    have habs : |incl s v| = (model.inclM s).val v := abs_of_nonneg hge
+    rw [habs]; exact hle
+  -- Support functional: `σ m y = supportFunction model (reg.B m) y`.
+  let σ : model.M → (model.Ω → ℝ) → ℝ :=
+    fun m y => supportFunction model (reg.B m) y
+  -- Measurability of `m ↦ σ m y` for each fixed `y`: by `reg.B_support_continuous`.
+  have hσ_meas : ∀ y : model.Ω → ℝ, Measurable (fun m => σ m y) := by
+    intro y
+    exact (reg.B_support_continuous y).measurable
+  -- Vector-Hall hypothesis: for every bounded measurable vector test profile `y`,
+  -- `regPsi model reg ⟨y, …⟩ ≤ 0` — which is `PsiNonpos model reg`.
+  have hVectorHall :
+      ∀ (y : model.M → model.Ω → ℝ),
+        Measurable y →
+        (∃ C : ℝ, ∀ x v, |y x v| ≤ C) →
+          model.α *
+              (∫ m : model.M,
+                ((∑ v : model.Ω, incl m v * y m v) - σ m (y m))
+                  ∂model.τM) +
+            (1 - model.α) *
+              (∫ s : model.M,
+                sInf
+                  (((fun m' : model.M =>
+                      (∑ v : model.Ω, incl s v * y m' v) -
+                        σ m' (y m')) ''
+                    { m' | (s, m') ∈ R })) ∂model.τM)
+            ≤ 0 := by
+    intro y hy_meas hy_bdd
+    obtain ⟨C, hC⟩ := hy_bdd
+    -- Package `y` as a `BoundedBorelProfile`.
+    have hy_bdd' : ∃ C : ℝ, 0 ≤ C ∧ ∀ m ω, |y m ω| ≤ C := by
+      refine ⟨max C 0, le_max_right _ _, ?_⟩
+      intro m ω
+      exact le_trans (hC m ω) (le_max_left _ _)
+    let yBBP : BoundedBorelProfile model :=
+      { toFun := y
+        measurable_toFun := hy_meas
+        bounded_coord := hy_bdd' }
+    have hPsiY : regPsi model reg yBBP ≤ 0 := hPsi yBBP
+    -- `regPsi` unfolds to exactly the integral expression we need, by definitional
+    -- equality of `incl`, `σ`, `beliefDot`, and `{m' | (s,m') ∈ R} = reg.G s`.
+    -- Express the goal expression as `regPsi model reg yBBP`.
+    have hRewrite :
+        model.α *
+            (∫ m : model.M,
+              ((∑ v : model.Ω, incl m v * y m v) - σ m (y m))
+                ∂model.τM) +
+          (1 - model.α) *
+            (∫ s : model.M,
+              sInf
+                (((fun m' : model.M =>
+                    (∑ v : model.Ω, incl s v * y m' v) -
+                      σ m' (y m')) ''
+                  { m' | (s, m') ∈ R })) ∂model.τM)
+          = regPsi model reg yBBP := by
+      unfold regPsi
+      -- The first term matches: `beliefDot (model.inclM m) (y m) = ∑ v, incl m v * y m v`
+      -- by definitional equality (both unfold to `∑ v, (model.inclM m).val v * y m v`).
+      -- The second term matches: `σ m' (y m') = supportFunction model (reg.B m') (y m')`
+      -- by definitional equality, and `{m' | (s,m') ∈ R} = reg.G s` by definitional
+      -- equality of `R`.
+      rfl
+    rw [hRewrite]
+    exact hPsiY
   exact _root_.Inventory.V9.kantorovich_rubinstein_scalar_duality_generic
     (X := model.M) model.τM model.τM R hR_meas
-    (PsiNonpos model reg) hPsi
+    (V := model.Ω) incl hincl_meas hincl_bdd
+    σ hσ_meas
+    model.α ⟨model.α_nonneg, model.α_le_one⟩
+    hVectorHall
     f g hf hg hf_int hg_int hR_ineq
 
 /-- **Bogachev / Choquet–Bauer barycenter-of-supported-measure in
