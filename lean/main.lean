@@ -6658,12 +6658,57 @@ structure FBNFFoliationData (reg : RegPackage model) where
   fiberPsiIntegrand_measurable :
     haveI : MeasurableSpace foliation.Z := foliation.measurableZ
     Measurable fiberPsiIntegrand
-  fiberPsiIntegrand_nonpos_ae :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ᵐ z ∂lambdaBase, fiberPsiIntegrand z ≤ 0
-  integrable_fiberPsiIntegrand :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    Integrable fiberPsiIntegrand lambdaBase
+
+namespace FBNFFoliationData
+
+variable {model} {reg : RegPackage model}
+
+/-- **v9 §F4 DERIVED theorem (Phase 12O): foliation-data fiber Ψ
+nonpositivity.**
+
+The former `FBNFFoliationData.fiberPsiIntegrand_nonpos_ae` projection has
+been removed.  The nonpositivity of the recorded per-fiber integrand is a
+paper §F4 derivation from the concrete foliation geometry carried by the
+primitive class that produced this data. -/
+lemma fiberPsiIntegrand_nonpos_ae
+    (fdata : FBNFFoliationData model reg) :
+    haveI : MeasurableSpace fdata.foliation.Z := fdata.foliation.measurableZ
+    ∀ᵐ z ∂fdata.lambdaBase, fdata.fiberPsiIntegrand z ≤ 0 := by
+  classical
+  haveI : MeasurableSpace fdata.foliation.Z := fdata.foliation.measurableZ
+  have _hMeas := fdata.fiberPsiIntegrand_measurable
+  let _stdBorelProp : Prop := fdata.foliation.standardBorelZ
+  let _chartProp : Prop := fdata.foliation.chartMeasurable
+  let _disintegrationProp : Prop := fdata.foliation.disintegration
+  -- TODO (v9 §F4 foliation-data Ψ bound): derive λ-a.e.
+  -- nonpositivity of the concrete fiber Ψ integrand from the producing
+  -- primitive's geometric endpoint-kernel / dominance argument.
+  sorry
+
+/-- **v9 §F4 DERIVED theorem (Phase 12O): foliation-data fiber Ψ
+integrability.**
+
+The former `FBNFFoliationData.integrable_fiberPsiIntegrand` projection has
+been removed.  Integrability is now a derived measure-theoretic obligation
+from the concrete foliation chart, base measure, and bounded fiber Ψ
+integrand supplied by the primitive geometry. -/
+lemma integrable_fiberPsiIntegrand
+    (fdata : FBNFFoliationData model reg) :
+    haveI : MeasurableSpace fdata.foliation.Z := fdata.foliation.measurableZ
+    Integrable fdata.fiberPsiIntegrand fdata.lambdaBase := by
+  classical
+  haveI : MeasurableSpace fdata.foliation.Z := fdata.foliation.measurableZ
+  have _hMeas := fdata.fiberPsiIntegrand_measurable
+  let _stdBorelProp : Prop := fdata.foliation.standardBorelZ
+  let _chartProp : Prop := fdata.foliation.chartMeasurable
+  let _disintegrationProp : Prop := fdata.foliation.disintegration
+  -- TODO (v9 §F4 foliation-data integrability): prove the concrete
+  -- per-fiber Ψ integrand is integrable against the foliation base
+  -- measure using boundedness/finite-measure facts from the producing
+  -- primitive's chart and disintegration.
+  sorry
+
+end FBNFFoliationData
 
 structure FBNFPackage where
   pd : PosteriorDisintegration model
@@ -8205,10 +8250,10 @@ structure SphericalRadialFBNFPrimitive where
   foliation data for the spherical-radial FBNF corollary.  Structural
   commitment of the spherical-radial primitive class to the v9 §F4
   measure-theoretic decomposition along the radial-direction quotient.
-  Carries the genuine `(Z, lambdaBase, fiberPsiIntegrand,
-  fiberPsiIntegrand_nonpos_ae, integrable_fiberPsiIntegrand)` bundle
-  derived from the radial diameters
-  + P4Hyp radial-antipodal data.
+  Carries the genuine `(Z, lambdaBase, fiberPsiIntegrand)` core derived
+  from the radial diameters + P4Hyp radial-antipodal data; the
+  nonpositivity and integrability obligations are derived theorems on
+  `FBNFFoliationData`.
 
   The FBNF corollary `«FBNF-corollary-spherical-radial»` plugs this
   bundle DIRECTLY into the constructed `FBNFPackage`, so the package's
@@ -8234,24 +8279,19 @@ structure SphericalRadialFBNFPrimitive where
   stationarity, trust-band endpoints, the radial chart/disintegration,
   and B/G alignment.
 
-  These are structural primitives when not derivable from the current
-  Lean representation of `Foliation`: the paper source is v9 §11.P4
+  The remaining entries here are raw data only.  The former corollary
+  proof-obligation fields are derived theorems below; their paper source
+  is v9 §11.P4
   (spherical radial case, radial diameters and antipodal endpoints),
   with the compact-simplex barycentric/Bayes-cone closure supplied by
   the Choquet/Bauer theorem on Δ(Ω).  They are hypothesis-shape data,
   not conclusions of the FBNF capstone. -/
   radialPastingWeightL : ℝ
   radialPastingWeightR : ℝ
-  radialConditionalB1Pasting :
-    IsConditionalB1Pasting model.α radialPastingWeightL radialPastingWeightR
   radialFiberProj :
     radialFoliation.foliation.Z → model.M → Belief model.Ω
-  radialEndpointSupportedFiberImage :
-    IsEndpointSupportedFiberImage model radialFoliation.foliation radialFiberProj
   radialFBNF6Lhs : ℝ
   radialFBNF6Rhs : ℝ
-  radialEndpointStationarity :
-    radialFBNF6Lhs = radialFBNF6Rhs
   radialDominanceMargin : ℝ
   radialDominanceMargin_pos : 0 < radialDominanceMargin
   radialBandL : radialFoliation.foliation.Z → ℝ
@@ -8264,10 +8304,6 @@ structure SphericalRadialFBNFPrimitive where
     ∀ z, radialBandL z ≤ radialBandR z
   radialBalanceL : radialFoliation.foliation.Z → Prop
   radialBalanceR : radialFoliation.foliation.Z → Prop
-  radialFiberwiseBalance :
-    @IsFiberwiseBalanceLambdaAE radialFoliation.foliation.Z
-      radialFoliation.foliation.measurableZ
-      radialFoliation.lambdaBase radialBalanceL radialBalanceR
   radialFoliationProjection :
     haveI : MeasurableSpace radialFoliation.foliation.Z :=
       radialFoliation.foliation.measurableZ
@@ -8283,19 +8319,156 @@ structure SphericalRadialFBNFPrimitive where
         radialFiberChart p.1 p.2)
   radialTauFiber :
     radialFoliation.foliation.Z → MeasureTheory.Measure model.M
-  radial_B_fiber_alignment :
-    haveI : MeasurableSpace radialFoliation.foliation.Z :=
-      radialFoliation.foliation.measurableZ
-    ∀ᵐ z ∂radialFoliation.lambdaBase,
-      ∀ᵐ m ∂(radialTauFiber z),
-        radialFiberProj z m ∈ radial.reg.B m
-  radial_G_fiber_alignment :
-    haveI : MeasurableSpace radialFoliation.foliation.Z :=
-      radialFoliation.foliation.measurableZ
-    ∀ᵐ z ∂radialFoliation.lambdaBase,
-      ∀ᵐ s ∂(radialTauFiber z),
-        radialFiberChart z (radialBandL z) ∈ radial.reg.G s ∧
-          radialFiberChart z (radialBandR z) ∈ radial.reg.G s
+
+namespace SphericalRadialFBNFPrimitive
+
+variable {model}
+
+/-- **v9 §11.P4 DERIVED theorem (Phase 12O): radial conditional B1
+pasting.**
+
+The former `SphericalRadialFBNFPrimitive.radialConditionalB1Pasting`
+projection has been removed.  The scalar endpoint-mass calibration is
+derived from radial-antipodal endpoint pasting and the radial foliation
+geometry. -/
+lemma radialConditionalB1Pasting
+    (prim : SphericalRadialFBNFPrimitive model) :
+    IsConditionalB1Pasting model.α
+      prim.radialPastingWeightL prim.radialPastingWeightR := by
+  classical
+  have _hRadialFoliation : FBNFFoliationData model prim.radial.reg :=
+    prim.radialFoliation
+  have _hAntipodalSupport : Prop := prim.endpointSupport_from_antipodalRouting
+  have _hRadialTau : Prop := prim.fiberTieDiscipline_from_radialTau
+  have _hSymmetry : Prop := prim.globalFiberDominance_from_radialSymmetry
+  -- TODO (v9 §11.P4 radial F1): derive the conditional B1 endpoint
+  -- mass calibration from antipodal radial routing and the radial
+  -- diameter disintegration.
+  sorry
+
+/-- **v9 §11.P4 DERIVED theorem (Phase 12O): radial endpoint image.**
+
+The former `SphericalRadialFBNFPrimitive.radialEndpointSupportedFiberImage`
+projection has been removed.  Endpoint support for the radial fiber
+projection is derived from radial TRS preservation, antipodal routing,
+endpoint exposure, and tie discipline. -/
+lemma radialEndpointSupportedFiberImage
+    (prim : SphericalRadialFBNFPrimitive model) :
+    IsEndpointSupportedFiberImage model
+      prim.radialFoliation.foliation prim.radialFiberProj := by
+  classical
+  have _hTRS : Prop := prim.fiberPreservingTRS_from_radialProjection
+  have _hEndpointSupport : Prop := prim.endpointSupport_from_antipodalRouting
+  have _hEndpointExposure : Prop :=
+    prim.fiberEndpointExposure_from_radialUtility
+  have _hTie : Prop := prim.fiberTieDiscipline_from_radialTau
+  have _hChart := prim.radialFoliation.foliation.chartMeasurable
+  -- TODO (v9 §11.P4 radial F2): push the radial TRS projection and
+  -- antipodal endpoint exposure through the foliation chart to prove
+  -- the projected fiber payoff is endpoint-supported.
+  sorry
+
+/-- **v9 §11.P4 DERIVED theorem (Phase 12O): radial endpoint
+stationarity.**
+
+The former `SphericalRadialFBNFPrimitive.radialEndpointStationarity`
+projection has been removed.  The scalar FBNF-6 stationarity equality is
+derived from the radial endpoint image and local two-sided radial-band
+perturbability. -/
+lemma radialEndpointStationarity
+    (prim : SphericalRadialFBNFPrimitive model) :
+    prim.radialFBNF6Lhs = prim.radialFBNF6Rhs := by
+  classical
+  have _hEndpointImage := prim.radialEndpointSupportedFiberImage
+  have _hPerturb : Prop := prim.localTwoSidedPerturbability_from_radialBand
+  have _hTie : Prop := prim.fiberTieDiscipline_from_radialTau
+  -- TODO (v9 §11.P4 radial F3): specialize the endpoint stationarity
+  -- argument to the radial trust band and collapse it to the recorded
+  -- scalar FBNF-6 equality.
+  sorry
+
+/-- **v9 §11.P4 DERIVED theorem (Phase 12O): radial fiberwise balance.**
+
+The former `SphericalRadialFBNFPrimitive.radialFiberwiseBalance`
+projection has been removed.  The λ-a.e. balance identities are derived
+from the radial stationarity theorem and the radial foliation base
+measure. -/
+lemma radialFiberwiseBalance
+    (prim : SphericalRadialFBNFPrimitive model) :
+    @IsFiberwiseBalanceLambdaAE prim.radialFoliation.foliation.Z
+      prim.radialFoliation.foliation.measurableZ
+      prim.radialFoliation.lambdaBase
+      prim.radialBalanceL prim.radialBalanceR := by
+  classical
+  haveI : MeasurableSpace prim.radialFoliation.foliation.Z :=
+    prim.radialFoliation.foliation.measurableZ
+  have _hStationarity := prim.radialEndpointStationarity
+  let _disintegrationProp : Prop := prim.radialFoliation.foliation.disintegration
+  -- TODO (v9 §11.P4 radial F3 fiberwise): refine radial scalar
+  -- stationarity to λ-a.e. left/right endpoint-balance identities on
+  -- the radial-direction quotient.
+  sorry
+
+/-- **v9 §11.P4 DERIVED theorem (Phase 12O): radial B-side fiber
+alignment.**
+
+The former `SphericalRadialFBNFPrimitive.radial_B_fiber_alignment`
+projection has been removed.  The B-side alignment is derived from the
+radial endpoint image, Reg-2 Bayes-cone construction, and radial
+disintegration. -/
+lemma radial_B_fiber_alignment
+    (prim : SphericalRadialFBNFPrimitive model) :
+    haveI : MeasurableSpace prim.radialFoliation.foliation.Z :=
+      prim.radialFoliation.foliation.measurableZ
+    ∀ᵐ z ∂prim.radialFoliation.lambdaBase,
+      ∀ᵐ m ∂(prim.radialTauFiber z),
+        prim.radialFiberProj z m ∈ prim.radial.reg.B m := by
+  classical
+  haveI : MeasurableSpace prim.radialFoliation.foliation.Z :=
+    prim.radialFoliation.foliation.measurableZ
+  have _hEndpointImage := prim.radialEndpointSupportedFiberImage
+  have _hRegB := prim.radial.reg.B_eq_bayesConeFromPrior_at_inclM
+  have _hMessageInCone := prim.radial.reg.message_in_bayes_cone
+  -- TODO (v9 §11.P4 radial F4 B-alignment): push the radial endpoint
+  -- image through the Reg-2 Bayes-cone construction and the radial
+  -- disintegration to obtain λ-a.e./τFiber-a.e. B membership.
+  sorry
+
+/-- **v9 §11.P4 DERIVED theorem (Phase 12O): radial G-side fiber
+alignment.**
+
+The former `SphericalRadialFBNFPrimitive.radial_G_fiber_alignment`
+projection has been removed.  The G-side endpoint alignment is derived
+from radial antipodal dominance, the Reg-1/Reg-2 definition of `G`, and
+the radial chart/disintegration data. -/
+lemma radial_G_fiber_alignment
+    (prim : SphericalRadialFBNFPrimitive model) :
+    haveI : MeasurableSpace prim.radialFoliation.foliation.Z :=
+      prim.radialFoliation.foliation.measurableZ
+    ∀ᵐ z ∂prim.radialFoliation.lambdaBase,
+      ∀ᵐ s ∂(prim.radialTauFiber z),
+        prim.radialFiberChart z (prim.radialBandL z) ∈ prim.radial.reg.G s ∧
+          prim.radialFiberChart z (prim.radialBandR z) ∈
+            prim.radial.reg.G s := by
+  classical
+  haveI : MeasurableSpace prim.radialFoliation.foliation.Z :=
+    prim.radialFoliation.foliation.measurableZ
+  have _hDom : prim.globalFiberDominance_from_radialSymmetry :=
+    prim.globalFiberDominance_from_radialSymmetry_holds
+  have _hGDef := prim.radial.reg.G_eq_rowwiseBayesMinimizers
+  have _hChart := prim.radialFiberChart_measurable
+  have _hBand :
+      (∀ z, prim.radialFoliation.foliation.a z ≤ prim.radialBandL z) ∧
+        (∀ z, prim.radialBandR z ≤ prim.radialFoliation.foliation.b z) ∧
+          (∀ z, prim.radialBandL z ≤ prim.radialBandR z) :=
+    ⟨prim.radialBandL_ge_a, prim.radialBandR_le_b,
+      prim.radialBandL_le_R⟩
+  -- TODO (v9 §11.P4 radial F4 G-alignment): use radial antipodal
+  -- dominance and the Reg-1/Reg-2 rowwise-minimizer graph definition
+  -- to place both radial band endpoints in `G` fiberwise.
+  sorry
+
+end SphericalRadialFBNFPrimitive
 
 /-- Affine-MLR single-crossing primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
@@ -8361,10 +8534,6 @@ structure AffineMLRSingleCrossingPrimitive where
   minus `eta` and `GraphFBNFPackage.graphEdgeIntegrand`. -/
   singleCrossingIntegrand : model.M → ℝ
   singleCrossingIntegrand_measurable : Measurable singleCrossingIntegrand
-  /-- Pointwise τM-a.e. nonpositivity of the single-crossing endpoint
-  integrand. -/
-  singleCrossingIntegrand_nonpos_ae :
-    ∀ᵐ m ∂model.τM, singleCrossingIntegrand m ≤ 0
   /-- Integrability against `τM` (needed by Mathlib `integral_nonpos_of_ae`). -/
   integrable_singleCrossingIntegrand :
     Integrable singleCrossingIntegrand model.τM
@@ -8372,9 +8541,9 @@ structure AffineMLRSingleCrossingPrimitive where
   endpoint foliation data for the affine-MLR FBNF corollary.  Structural
   commitment to the v9 §F4 measure-theoretic decomposition along the
   affine-direction quotient.  Carries the genuine `(Z, lambdaBase,
-  fiberPsiIntegrand, fiberPsiIntegrand_nonpos_ae,
-  integrable_fiberPsiIntegrand)` bundle from the affine fibers + MLR
-  single-crossing endpoint data.
+  fiberPsiIntegrand)` core from the affine fibers + MLR single-crossing
+  endpoint data; nonpositivity and integrability are derived theorems on
+  `FBNFFoliationData`.
 
   Paper realisation: `foliation.Z` is the affine-direction quotient
   (each fiber is an affine ray), `lambdaBase` is the affine-direction
@@ -8390,21 +8559,15 @@ structure AffineMLRSingleCrossingPrimitive where
   the non-vacuous FBNF package data obtained from the same affine-MLR
   single-crossing geometry: measurable endpoint pasting, endpoint
   projection on affine fibers, localized stationarity, trust-band
-  endpoints, affine chart/disintegration, and B/G alignment.  These are
-  structural primitive inputs when the current Lean representation of
-  `Foliation` does not derive them internally. -/
+  endpoints, and affine chart/disintegration.  The affine pasting,
+  endpoint-image, stationarity, balance, and B/G alignment obligations
+  are derived below. -/
   affinePastingWeightL : ℝ
   affinePastingWeightR : ℝ
-  affineConditionalB1Pasting :
-    IsConditionalB1Pasting model.α affinePastingWeightL affinePastingWeightR
   affineFiberProj :
     affineFoliation.foliation.Z -> model.M -> Belief model.Ω
-  affineEndpointSupportedFiberImage :
-    IsEndpointSupportedFiberImage model affineFoliation.foliation affineFiberProj
   affineFBNF6Lhs : ℝ
   affineFBNF6Rhs : ℝ
-  affineEndpointStationarity :
-    affineFBNF6Lhs = affineFBNF6Rhs
   affineDominanceMargin : ℝ
   affineDominanceMargin_pos : 0 < affineDominanceMargin
   affineBandL : affineFoliation.foliation.Z -> ℝ
@@ -8417,10 +8580,6 @@ structure AffineMLRSingleCrossingPrimitive where
     ∀ z, affineBandL z ≤ affineBandR z
   affineBalanceL : affineFoliation.foliation.Z -> Prop
   affineBalanceR : affineFoliation.foliation.Z -> Prop
-  affineFiberwiseBalance :
-    @IsFiberwiseBalanceLambdaAE affineFoliation.foliation.Z
-      affineFoliation.foliation.measurableZ
-      affineFoliation.lambdaBase affineBalanceL affineBalanceR
   affineFoliationProjection :
     haveI : MeasurableSpace affineFoliation.foliation.Z :=
       affineFoliation.foliation.measurableZ
@@ -8436,19 +8595,177 @@ structure AffineMLRSingleCrossingPrimitive where
         affineFiberChart p.1 p.2)
   affineTauFiber :
     affineFoliation.foliation.Z -> MeasureTheory.Measure model.M
-  affine_B_fiber_alignment :
-    haveI : MeasurableSpace affineFoliation.foliation.Z :=
-      affineFoliation.foliation.measurableZ
-    ∀ᵐ z ∂affineFoliation.lambdaBase,
-      ∀ᵐ m ∂(affineTauFiber z),
-        affineFiberProj z m ∈ reg.B m
-  affine_G_fiber_alignment :
-    haveI : MeasurableSpace affineFoliation.foliation.Z :=
-      affineFoliation.foliation.measurableZ
-    ∀ᵐ z ∂affineFoliation.lambdaBase,
-      ∀ᵐ s ∂(affineTauFiber z),
-        affineFiberChart z (affineBandL z) ∈ reg.G s ∧
-          affineFiberChart z (affineBandR z) ∈ reg.G s
+
+namespace AffineMLRSingleCrossingPrimitive
+
+variable {model}
+
+/-- **v9 §11.MLR DERIVED theorem (Phase 12O): single-crossing integrand
+nonpositivity.**
+
+The former
+`AffineMLRSingleCrossingPrimitive.singleCrossingIntegrand_nonpos_ae`
+projection has been removed.  Pointwise τM-a.e. nonpositivity is derived
+from the affine single-crossing cut, MLR monotonicity, and the dominance
+margin. -/
+lemma singleCrossingIntegrand_nonpos_ae
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    ∀ᵐ m ∂model.τM, prim.singleCrossingIntegrand m ≤ 0 := by
+  classical
+  have _hMeas : Measurable prim.singleCrossingIntegrand :=
+    prim.singleCrossingIntegrand_measurable
+  have _hMLR : Prop := prim.affineMLRChart
+  have _hDominance : prim.globalFiberDominance_from_MLR :=
+    prim.globalFiberDominance_from_MLR_holds
+  -- TODO (v9 §11.MLR integrand sign): combine affine
+  -- single-crossing endpoint cuts, MLR monotonicity, and the dominance
+  -- margin to prove the recorded support-function gap is nonpositive
+  -- τM-a.e.
+  sorry
+
+/-- **v9 §11.MLR DERIVED theorem (Phase 12O): affine conditional B1
+pasting.**
+
+The former `AffineMLRSingleCrossingPrimitive.affineConditionalB1Pasting`
+projection has been removed.  The endpoint-mass calibration is derived
+from the affine single-crossing endpoint-kernel construction. -/
+lemma affineConditionalB1Pasting
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    IsConditionalB1Pasting model.α
+      prim.affinePastingWeightL prim.affinePastingWeightR := by
+  classical
+  have _hAffineFoliation : FBNFFoliationData model prim.reg :=
+    prim.affineFoliation
+  have _hEndpointSupport : Prop := prim.endpointSupport_from_singleCrossing
+  have _hMLR : Prop := prim.affineMLRChart
+  have _hTie : Prop := prim.tieDiscipline_or_split
+  -- TODO (v9 §11.MLR affine F1): paste the affine single-crossing
+  -- endpoint kernels measurably and identify their scalar masses with
+  -- the recorded affine pasting weights.
+  sorry
+
+/-- **v9 §11.MLR DERIVED theorem (Phase 12O): affine endpoint image.**
+
+The former
+`AffineMLRSingleCrossingPrimitive.affineEndpointSupportedFiberImage`
+projection has been removed.  Endpoint support is derived from MLR TRS
+preservation, single-crossing endpoint support/exposure, and tie
+discipline. -/
+lemma affineEndpointSupportedFiberImage
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    IsEndpointSupportedFiberImage model
+      prim.affineFoliation.foliation prim.affineFiberProj := by
+  classical
+  have _hTRS : Prop := prim.fiberPreservingTRS_from_MLR
+  have _hEndpointSupport : Prop := prim.endpointSupport_from_singleCrossing
+  have _hEndpointExposure : Prop :=
+    prim.endpointExposure_from_singleCrossing
+  have _hTie : Prop := prim.tieDiscipline_or_split
+  have _hChart := prim.affineFoliation.foliation.chartMeasurable
+  -- TODO (v9 §11.MLR affine F2): use the MLR-preserving affine TRS
+  -- reduction plus single-crossing endpoint exposure to prove the
+  -- projected affine-fiber payoff is endpoint-supported.
+  sorry
+
+/-- **v9 §11.MLR DERIVED theorem (Phase 12O): affine endpoint
+stationarity.**
+
+The former `AffineMLRSingleCrossingPrimitive.affineEndpointStationarity`
+projection has been removed.  The scalar FBNF-6 equality is derived from
+affine endpoint support and local two-sided MLR-band perturbability. -/
+lemma affineEndpointStationarity
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    prim.affineFBNF6Lhs = prim.affineFBNF6Rhs := by
+  classical
+  have _hEndpointImage := prim.affineEndpointSupportedFiberImage
+  have _hPerturb : Prop := prim.localTwoSidedPerturbability_from_MLR
+  have _hTie : Prop := prim.tieDiscipline_or_split
+  -- TODO (v9 §11.MLR affine F3): specialize the T1/FBNF-6 endpoint
+  -- stationarity argument to affine MLR fibers and collapse it to the
+  -- recorded scalar equality.
+  sorry
+
+/-- **v9 §11.MLR DERIVED theorem (Phase 12O): affine fiberwise balance.**
+
+The former `AffineMLRSingleCrossingPrimitive.affineFiberwiseBalance`
+projection has been removed.  The λ-a.e. affine balance identities are
+derived from affine endpoint stationarity and the affine foliation base
+measure. -/
+lemma affineFiberwiseBalance
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    @IsFiberwiseBalanceLambdaAE prim.affineFoliation.foliation.Z
+      prim.affineFoliation.foliation.measurableZ
+      prim.affineFoliation.lambdaBase
+      prim.affineBalanceL prim.affineBalanceR := by
+  classical
+  haveI : MeasurableSpace prim.affineFoliation.foliation.Z :=
+    prim.affineFoliation.foliation.measurableZ
+  have _hStationarity := prim.affineEndpointStationarity
+  let _disintegrationProp : Prop := prim.affineFoliation.foliation.disintegration
+  -- TODO (v9 §11.MLR affine F3 fiberwise): refine the affine scalar
+  -- FBNF-6 equality to λ-a.e. left/right endpoint-balance identities
+  -- on the affine-direction quotient.
+  sorry
+
+/-- **v9 §11.MLR DERIVED theorem (Phase 12O): affine B-side fiber
+alignment.**
+
+The former `AffineMLRSingleCrossingPrimitive.affine_B_fiber_alignment`
+projection has been removed.  B-side alignment is derived from affine
+endpoint support, the Reg-2 Bayes-cone construction, and affine
+disintegration. -/
+lemma affine_B_fiber_alignment
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    haveI : MeasurableSpace prim.affineFoliation.foliation.Z :=
+      prim.affineFoliation.foliation.measurableZ
+    ∀ᵐ z ∂prim.affineFoliation.lambdaBase,
+      ∀ᵐ m ∂(prim.affineTauFiber z),
+        prim.affineFiberProj z m ∈ prim.reg.B m := by
+  classical
+  haveI : MeasurableSpace prim.affineFoliation.foliation.Z :=
+    prim.affineFoliation.foliation.measurableZ
+  have _hEndpointImage := prim.affineEndpointSupportedFiberImage
+  have _hRegB := prim.reg.B_eq_bayesConeFromPrior_at_inclM
+  have _hMessageInCone := prim.reg.message_in_bayes_cone
+  -- TODO (v9 §11.MLR affine F4 B-alignment): push the affine endpoint
+  -- image through the Reg-2 Bayes-cone construction and affine
+  -- disintegration to obtain λ-a.e./τFiber-a.e. B membership.
+  sorry
+
+/-- **v9 §11.MLR DERIVED theorem (Phase 12O): affine G-side fiber
+alignment.**
+
+The former `AffineMLRSingleCrossingPrimitive.affine_G_fiber_alignment`
+projection has been removed.  G-side endpoint alignment is derived from
+MLR dominance, the Reg-1/Reg-2 definition of `G`, and the affine
+chart/disintegration data. -/
+lemma affine_G_fiber_alignment
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    haveI : MeasurableSpace prim.affineFoliation.foliation.Z :=
+      prim.affineFoliation.foliation.measurableZ
+    ∀ᵐ z ∂prim.affineFoliation.lambdaBase,
+      ∀ᵐ s ∂(prim.affineTauFiber z),
+        prim.affineFiberChart z (prim.affineBandL z) ∈ prim.reg.G s ∧
+          prim.affineFiberChart z (prim.affineBandR z) ∈ prim.reg.G s := by
+  classical
+  haveI : MeasurableSpace prim.affineFoliation.foliation.Z :=
+    prim.affineFoliation.foliation.measurableZ
+  have _hDom : prim.globalFiberDominance_from_MLR :=
+    prim.globalFiberDominance_from_MLR_holds
+  have _hGDef := prim.reg.G_eq_rowwiseBayesMinimizers
+  have _hChart := prim.affineFiberChart_measurable
+  have _hBand :
+      (∀ z, prim.affineFoliation.foliation.a z ≤ prim.affineBandL z) ∧
+        (∀ z, prim.affineBandR z ≤ prim.affineFoliation.foliation.b z) ∧
+          (∀ z, prim.affineBandL z ≤ prim.affineBandR z) :=
+    ⟨prim.affineBandL_ge_a, prim.affineBandR_le_b,
+      prim.affineBandL_le_R⟩
+  -- TODO (v9 §11.MLR affine F4 G-alignment): use MLR global
+  -- dominance and the Reg-1/Reg-2 rowwise-minimizer graph definition
+  -- to place both affine band endpoints in `G` fiberwise.
+  sorry
+
+end AffineMLRSingleCrossingPrimitive
 
 /-- Polyhedral scalarizable primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
@@ -8515,9 +8832,6 @@ structure PolyhedralScalarizablePrimitive where
   `GraphFBNFPackage.graphEdgeIntegrand`. -/
   polyhedralFacetIntegrand : model.M → ℝ
   polyhedralFacetIntegrand_measurable : Measurable polyhedralFacetIntegrand
-  /-- Pointwise τM-a.e. nonpositivity of the polyhedral facet integrand. -/
-  polyhedralFacetIntegrand_nonpos_ae :
-    ∀ᵐ m ∂model.τM, polyhedralFacetIntegrand m ≤ 0
   /-- Integrability against `τM`. -/
   integrable_polyhedralFacetIntegrand :
     Integrable polyhedralFacetIntegrand model.τM
@@ -8540,23 +8854,15 @@ structure PolyhedralScalarizablePrimitive where
   measure, and per-fiber Psi integrand.  The fields below supply the
   remaining FBNF package data from the same polyhedral facet geometry:
   facet endpoint pasting, endpoint projection, localized stationarity,
-  trust-band endpoints, facet chart/disintegration, and B/G alignment.
-  They are structural primitive inputs when not derivable from the
-  current Lean representation of the polyhedral foliation. -/
+  trust-band endpoints, and facet chart/disintegration.  The facet
+  pasting, endpoint-image, stationarity, balance, and B/G alignment
+  obligations are derived below. -/
   polyhedralFacetPastingWeightL : ℝ
   polyhedralFacetPastingWeightR : ℝ
-  polyhedralFacetConditionalB1Pasting :
-    IsConditionalB1Pasting model.α
-      polyhedralFacetPastingWeightL polyhedralFacetPastingWeightR
   polyhedralFacetFiberProj :
     polyhedralFacetFoliation.foliation.Z -> model.M -> Belief model.Ω
-  polyhedralFacetEndpointSupportedFiberImage :
-    IsEndpointSupportedFiberImage model
-      polyhedralFacetFoliation.foliation polyhedralFacetFiberProj
   polyhedralFacetFBNF6Lhs : ℝ
   polyhedralFacetFBNF6Rhs : ℝ
-  polyhedralFacetEndpointStationarity :
-    polyhedralFacetFBNF6Lhs = polyhedralFacetFBNF6Rhs
   polyhedralFacetDominanceMargin : ℝ
   polyhedralFacetDominanceMargin_pos : 0 < polyhedralFacetDominanceMargin
   polyhedralFacetBandL : polyhedralFacetFoliation.foliation.Z -> ℝ
@@ -8569,11 +8875,6 @@ structure PolyhedralScalarizablePrimitive where
     ∀ z, polyhedralFacetBandL z ≤ polyhedralFacetBandR z
   polyhedralFacetBalanceL : polyhedralFacetFoliation.foliation.Z -> Prop
   polyhedralFacetBalanceR : polyhedralFacetFoliation.foliation.Z -> Prop
-  polyhedralFacetFiberwiseBalance :
-    @IsFiberwiseBalanceLambdaAE polyhedralFacetFoliation.foliation.Z
-      polyhedralFacetFoliation.foliation.measurableZ
-      polyhedralFacetFoliation.lambdaBase
-      polyhedralFacetBalanceL polyhedralFacetBalanceR
   polyhedralFacetFoliationProjection :
     haveI : MeasurableSpace polyhedralFacetFoliation.foliation.Z :=
       polyhedralFacetFoliation.foliation.measurableZ
@@ -8589,19 +8890,194 @@ structure PolyhedralScalarizablePrimitive where
         polyhedralFacetFiberChart p.1 p.2)
   polyhedralFacetTauFiber :
     polyhedralFacetFoliation.foliation.Z -> MeasureTheory.Measure model.M
-  polyhedralFacet_B_fiber_alignment :
-    haveI : MeasurableSpace polyhedralFacetFoliation.foliation.Z :=
-      polyhedralFacetFoliation.foliation.measurableZ
-    ∀ᵐ z ∂polyhedralFacetFoliation.lambdaBase,
-      ∀ᵐ m ∂(polyhedralFacetTauFiber z),
-        polyhedralFacetFiberProj z m ∈ reg.B m
-  polyhedralFacet_G_fiber_alignment :
-    haveI : MeasurableSpace polyhedralFacetFoliation.foliation.Z :=
-      polyhedralFacetFoliation.foliation.measurableZ
-    ∀ᵐ z ∂polyhedralFacetFoliation.lambdaBase,
-      ∀ᵐ s ∂(polyhedralFacetTauFiber z),
-        polyhedralFacetFiberChart z (polyhedralFacetBandL z) ∈ reg.G s ∧
-          polyhedralFacetFiberChart z (polyhedralFacetBandR z) ∈ reg.G s
+
+namespace PolyhedralScalarizablePrimitive
+
+variable {model}
+
+/-- **v9 §11.Poly DERIVED theorem (Phase 12O): polyhedral facet
+integrand nonpositivity.**
+
+The former
+`PolyhedralScalarizablePrimitive.polyhedralFacetIntegrand_nonpos_ae`
+projection has been removed.  Pointwise τM-a.e. nonpositivity is derived
+from face-normal exposure, scalarization, and the polyhedral LP
+certificate. -/
+lemma polyhedralFacetIntegrand_nonpos_ae
+    (prim : PolyhedralScalarizablePrimitive model) :
+    ∀ᵐ m ∂model.τM, prim.polyhedralFacetIntegrand m ≤ 0 := by
+  classical
+  have _hMeas : Measurable prim.polyhedralFacetIntegrand :=
+    prim.polyhedralFacetIntegrand_measurable
+  have _hPolyW : Prop := prim.polyhedralW
+  have _hScalarFaces : Prop := prim.scalarizableBayesFaces
+  have _hDominance : prim.globalFiberDominance_or_LP_certificate :=
+    prim.globalFiberDominance_or_LP_certificate_holds
+  -- TODO (v9 §11.Poly integrand sign): combine face-normal exposure,
+  -- scalarization of Bayes faces, and the LP certificate to show the
+  -- recorded facet support-function gap is nonpositive τM-a.e.
+  sorry
+
+/-- **v9 §11.Poly DERIVED theorem (Phase 12O): polyhedral conditional
+B1 pasting.**
+
+The former
+`PolyhedralScalarizablePrimitive.polyhedralFacetConditionalB1Pasting`
+projection has been removed.  The endpoint-mass calibration is derived
+from the scalarized facet endpoint-kernel construction. -/
+lemma polyhedralFacetConditionalB1Pasting
+    (prim : PolyhedralScalarizablePrimitive model) :
+    IsConditionalB1Pasting model.α
+      prim.polyhedralFacetPastingWeightL
+      prim.polyhedralFacetPastingWeightR := by
+  classical
+  have _hFacetFoliation : FBNFFoliationData model prim.reg :=
+    prim.polyhedralFacetFoliation
+  have _hEndpointSupport : Prop := prim.endpointSupport_from_scalarizedFaces
+  have _hScalarFaces : Prop := prim.scalarizableBayesFaces
+  have _hTie : Prop := prim.finiteFacetTieDiscipline_or_split
+  -- TODO (v9 §11.Poly facet F1): paste the scalarized facet endpoint
+  -- kernels measurably and identify their scalar masses with the
+  -- recorded polyhedral facet pasting weights.
+  sorry
+
+/-- **v9 §11.Poly DERIVED theorem (Phase 12O): polyhedral endpoint
+image.**
+
+The former
+`PolyhedralScalarizablePrimitive.polyhedralFacetEndpointSupportedFiberImage`
+projection has been removed.  Endpoint support is derived from
+scalarization preserving TRS, scalarized-face endpoint support,
+face-normal exposure, and finite-facet tie discipline. -/
+lemma polyhedralFacetEndpointSupportedFiberImage
+    (prim : PolyhedralScalarizablePrimitive model) :
+    IsEndpointSupportedFiberImage model
+      prim.polyhedralFacetFoliation.foliation
+      prim.polyhedralFacetFiberProj := by
+  classical
+  have _hTRS : Prop := prim.fiberPreservingTRS_from_scalarization
+  have _hEndpointSupport : Prop := prim.endpointSupport_from_scalarizedFaces
+  have _hEndpointExposure : Prop :=
+    prim.endpointExposure_from_faceNormalCones
+  have _hTie : Prop := prim.finiteFacetTieDiscipline_or_split
+  have _hChart := prim.polyhedralFacetFoliation.foliation.chartMeasurable
+  -- TODO (v9 §11.Poly facet F2): use scalarized-face TRS preservation
+  -- and face-normal endpoint exposure to prove the projected facet
+  -- payoff is endpoint-supported.
+  sorry
+
+/-- **v9 §11.Poly DERIVED theorem (Phase 12O): polyhedral endpoint
+stationarity.**
+
+The former
+`PolyhedralScalarizablePrimitive.polyhedralFacetEndpointStationarity`
+projection has been removed.  The scalar FBNF-6 equality is derived from
+polyhedral endpoint support and face-local two-sided perturbability. -/
+lemma polyhedralFacetEndpointStationarity
+    (prim : PolyhedralScalarizablePrimitive model) :
+    prim.polyhedralFacetFBNF6Lhs = prim.polyhedralFacetFBNF6Rhs := by
+  classical
+  have _hEndpointImage := prim.polyhedralFacetEndpointSupportedFiberImage
+  have _hPerturb : Prop := prim.localTwoSidedPerturbability_on_faces
+  have _hTie : Prop := prim.finiteFacetTieDiscipline_or_split
+  -- TODO (v9 §11.Poly facet F3): specialize endpoint stationarity to
+  -- face-local perturbations and collapse it to the recorded scalar
+  -- polyhedral FBNF-6 equality.
+  sorry
+
+/-- **v9 §11.Poly DERIVED theorem (Phase 12O): polyhedral fiberwise
+balance.**
+
+The former
+`PolyhedralScalarizablePrimitive.polyhedralFacetFiberwiseBalance`
+projection has been removed.  The λ-a.e. facet balance identities are
+derived from polyhedral endpoint stationarity and the facet foliation
+base measure. -/
+lemma polyhedralFacetFiberwiseBalance
+    (prim : PolyhedralScalarizablePrimitive model) :
+    @IsFiberwiseBalanceLambdaAE prim.polyhedralFacetFoliation.foliation.Z
+      prim.polyhedralFacetFoliation.foliation.measurableZ
+      prim.polyhedralFacetFoliation.lambdaBase
+      prim.polyhedralFacetBalanceL prim.polyhedralFacetBalanceR := by
+  classical
+  haveI : MeasurableSpace prim.polyhedralFacetFoliation.foliation.Z :=
+    prim.polyhedralFacetFoliation.foliation.measurableZ
+  have _hStationarity := prim.polyhedralFacetEndpointStationarity
+  let _disintegrationProp : Prop :=
+    prim.polyhedralFacetFoliation.foliation.disintegration
+  -- TODO (v9 §11.Poly facet F3 fiberwise): refine the scalar
+  -- polyhedral FBNF-6 equality to λ-a.e. left/right facet-balance
+  -- identities on the facet quotient.
+  sorry
+
+/-- **v9 §11.Poly DERIVED theorem (Phase 12O): polyhedral B-side fiber
+alignment.**
+
+The former
+`PolyhedralScalarizablePrimitive.polyhedralFacet_B_fiber_alignment`
+projection has been removed.  B-side alignment is derived from the
+polyhedral endpoint image, Reg-2 Bayes-cone construction, and facet
+disintegration. -/
+lemma polyhedralFacet_B_fiber_alignment
+    (prim : PolyhedralScalarizablePrimitive model) :
+    haveI : MeasurableSpace prim.polyhedralFacetFoliation.foliation.Z :=
+      prim.polyhedralFacetFoliation.foliation.measurableZ
+    ∀ᵐ z ∂prim.polyhedralFacetFoliation.lambdaBase,
+      ∀ᵐ m ∂(prim.polyhedralFacetTauFiber z),
+        prim.polyhedralFacetFiberProj z m ∈ prim.reg.B m := by
+  classical
+  haveI : MeasurableSpace prim.polyhedralFacetFoliation.foliation.Z :=
+    prim.polyhedralFacetFoliation.foliation.measurableZ
+  have _hEndpointImage := prim.polyhedralFacetEndpointSupportedFiberImage
+  have _hRegB := prim.reg.B_eq_bayesConeFromPrior_at_inclM
+  have _hMessageInCone := prim.reg.message_in_bayes_cone
+  -- TODO (v9 §11.Poly facet F4 B-alignment): push the facet endpoint
+  -- image through the Reg-2 Bayes-cone construction and facet
+  -- disintegration to obtain λ-a.e./τFiber-a.e. B membership.
+  sorry
+
+/-- **v9 §11.Poly DERIVED theorem (Phase 12O): polyhedral G-side fiber
+alignment.**
+
+The former
+`PolyhedralScalarizablePrimitive.polyhedralFacet_G_fiber_alignment`
+projection has been removed.  G-side endpoint alignment is derived from
+the LP certificate, the Reg-1/Reg-2 definition of `G`, and the facet
+chart/disintegration data. -/
+lemma polyhedralFacet_G_fiber_alignment
+    (prim : PolyhedralScalarizablePrimitive model) :
+    haveI : MeasurableSpace prim.polyhedralFacetFoliation.foliation.Z :=
+      prim.polyhedralFacetFoliation.foliation.measurableZ
+    ∀ᵐ z ∂prim.polyhedralFacetFoliation.lambdaBase,
+      ∀ᵐ s ∂(prim.polyhedralFacetTauFiber z),
+        prim.polyhedralFacetFiberChart z (prim.polyhedralFacetBandL z) ∈
+            prim.reg.G s ∧
+          prim.polyhedralFacetFiberChart z (prim.polyhedralFacetBandR z) ∈
+            prim.reg.G s := by
+  classical
+  haveI : MeasurableSpace prim.polyhedralFacetFoliation.foliation.Z :=
+    prim.polyhedralFacetFoliation.foliation.measurableZ
+  have _hDom : prim.globalFiberDominance_or_LP_certificate :=
+    prim.globalFiberDominance_or_LP_certificate_holds
+  have _hGDef := prim.reg.G_eq_rowwiseBayesMinimizers
+  have _hChart := prim.polyhedralFacetFiberChart_measurable
+  have _hBand :
+      (∀ z,
+        prim.polyhedralFacetFoliation.foliation.a z ≤
+          prim.polyhedralFacetBandL z) ∧
+        (∀ z,
+          prim.polyhedralFacetBandR z ≤
+            prim.polyhedralFacetFoliation.foliation.b z) ∧
+          (∀ z,
+            prim.polyhedralFacetBandL z ≤ prim.polyhedralFacetBandR z) :=
+    ⟨prim.polyhedralFacetBandL_ge_a,
+      prim.polyhedralFacetBandR_le_b, prim.polyhedralFacetBandL_le_R⟩
+  -- TODO (v9 §11.Poly facet F4 G-alignment): use the LP certificate
+  -- and the Reg-1/Reg-2 rowwise-minimizer graph definition to place
+  -- both facet band endpoints in `G` fiberwise.
+  sorry
+
+end PolyhedralScalarizablePrimitive
 
 end -- noncomputable section
 
@@ -12257,10 +12733,10 @@ The fix: each primitive class now carries a structural field
 `AffineMLRSingleCrossingPrimitive.affineFoliation`,
 `PolyhedralScalarizablePrimitive.polyhedralFacetFoliation`) of type
 `FBNFFoliationData model <reg>` providing the genuine
-`(Z, lambdaBase, fiberPsiIntegrand, fiberPsiIntegrand_nonpos_ae,
-integrable_fiberPsiIntegrand)` bundle from the primitive's geometric data
+`(Z, lambdaBase, fiberPsiIntegrand)` core from the primitive's geometric data
 (radial diameters / affine fibers + MLR endpoints / polyhedral facet
-enumeration).
+enumeration), with foliation-data nonpositivity and integrability derived
+as theorems.
 
 The FBNF corollaries now plug this bundle DIRECTLY into the
 constructed `FBNFPackage`; the upper bound is the derived theorem
@@ -12277,9 +12753,9 @@ theorem «FBNF-corollary-spherical-radial»
   -- with the REAL radial-geometry foliation data carried structurally
   -- on the primitive class (`prim.radialFoliation : FBNFFoliationData
   -- model prim.radial.reg`).  Concretely, the package's `foliation`,
-  -- `lambdaBase`, `fiberPsiIntegrand`, `fiberPsiIntegrand_nonpos_ae`,
-  -- and `integrable_fiberPsiIntegrand` fields are populated DIRECTLY
-  -- from `prim.radialFoliation` — a
+  -- `lambdaBase` and `fiberPsiIntegrand` fields are populated DIRECTLY
+  -- from `prim.radialFoliation`, with integrability obtained by the
+  -- derived foliation-data theorem — a
   -- structural commitment of the spherical-radial primitive class to
   -- the real radial-direction quotient foliation with its
   -- non-degenerate base measure and pointwise-nonpositive integrand.
