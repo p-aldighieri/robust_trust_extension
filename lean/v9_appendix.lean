@@ -2402,87 +2402,91 @@ def PolyhedralLPInstance.lpFeasible
 
 /-- **P2-star primitive class (cone-margin + bounded jamming).**
 
-Phase 11 P2* real-closure refactor (2026-05-23): the three abstract
-Prop fields `coneMargin / boundedJamming / enoughAlignedBaseline`
-have been REMOVED (they were legacy trapdoors — abstract Props with
-no concrete content, accepted as theorem inputs but never used in
-the derivation).  Likewise the scalar shells `coneMarginScalar /
-jammingBound / alignedBaselineFloor` (which were per-package
-SCALARS, not per-message functions) have been REPLACED by per-message
-canonical data per the v9 §B.7 P2* derivation:
+Phase 12b zero-gap refactor (2026-05-23): the structural
+upper-bound field `regPsi_le_jam_minus_eta_integral` has been
+REMOVED.  Per the Phase 12 brainstorm
+(`Phase12_ZeroGap/Brainstorm_Reg2_derivation_response.md` §1), each
+P-class package should carry **geometry, routing, stationarity, and
+balance data only** — never the conclusion-shaped upper bound on
+`regPsi`.  The upper-bound chain is now a DERIVED theorem
+`PsiNonpos_of_P2StarGeom`, closed via the Phase 12a common pattern
+(`localSlack`, `regPsi_nonpos_of_calibrated_kernel`) without smuggling
+through `PsiNonpos_of_regPackage`.
 
-* `eta : model.M → ℝ` — the per-message cone-margin function
-  measuring `dist(inclM m, Δ(Ω) ∖ B m)`.  Nonneg + measurable.
+The structure carries the **honest geometric primitives** of the v9
+§B.7 P2* derivation:
 
-* `jam : model.M → ℝ` — the per-message bounded-jamming envelope
-  capping the magnitude of the rowwise-minimizer displacement.
-  Nonneg + measurable.
+* `eta : ℝ`, `eta_pos : 0 < eta` — the scalar cone margin.
+
+* `ballAbsorbsCone_qae` — geometric cone-margin condition: any
+  belief `p` within `eta`-coordinate-distance of the truthful message
+  belief `inclM m` lies in the Bayes cone `reg.B m`.  This encodes
+  the brainstorm's `closedBall (inclM m) eta ⊆ reg.B m` using the
+  coordinate-uniform metric on `Belief Ω`.  Quantified along the
+  mixture marginal `qκ₀` (i.e., where it is actually needed).
 
 * `kappa0 : AdviserKernel model` — the rowwise-minimizer kernel
-  supplied by §B.7, supported on `reg.G`.  This is the kernel
-  whose mixture posterior (with the truthful prior at weight α)
-  stays inside the per-message Bayes cone `B m`.
+  supplied by §B.7, supported on `reg.G`.  Its mixture posterior
+  (with the truthful prior at weight α) stays inside the per-message
+  Bayes cone `B m` — derived, not assumed.
 
-* `C_rho : ℝ`, `C_rho_nonneg` — the bounded Radon–Nikodým derivative
-  `dρ/dτ ≤ C_rho` of the kernel's target marginal against `τM`.
-  This is the v9 §B.7 step that turns the kernel target marginal
-  into a τ-dominated measure.
+* `jam : model.M → ℝ`, `jam_measurable` — the jamming envelope.
 
-* `jam_le_eta_ae` — the v9 §B.7 numerical balance, integrated to a
-  pointwise τM-a.e. inequality: jamming envelope dominated by cone
-  margin.  This is the §B.7 step where the displacement bound
-  (`(1-α)/(α C_rho) · jam(m) ≤ eta(m)` paper inequality) is encoded
-  as `jam(m) ≤ eta(m)` τM-a.e. (with the α-scaling absorbed into
-  the integral identity below).
+* `posterior_displacement_le_jam` — the coordinate-wise displacement
+  bound from §B.7: `|Pγα κ₀ m - inclM m|_∞ ≤ jam m`, qκ₀-a.e.
 
-* `regPsi_le_jam_minus_eta_integral` — the v9 §B.7 displacement
-  bound + mixture-posterior-in-`B m` derivation, integrated to a
-  closed-form upper bound on `regPsi reg y` as an α-weighted
-  integral of `(jam - eta)`.  CONCRETE structural identity; NOT a
-  Prop trapdoor (both sides are explicit real expressions).
+* `jam_le_eta_ae` — the §B.7 numerical balance, qκ₀-a.e.:
+  `jam m ≤ eta`.
 
-* `integrable_jam_minus_eta` — integrability of the integrand
-  against `τM` (needed by `integral_mono_ae`).
+* `rho`, `rho_ac_tau`, `C_rho`, `rho_density_le` — the inert
+  Radon-Nikodým-control data motivating the displacement bound
+  (target marginal `ρ = τ.bind κ₀.kernel`, `ρ ≪ τM`, and
+  `dρ/dτ ≤ C_rho`).  Carried for compatibility with the v9 §B.7
+  paper exposition; not directly consumed by the Lean derivation
+  (the displacement bound is taken as the hypothesis directly).
 
-The bridge from these primitives to `PsiNonpos model reg` is HONEST
-(closed in `PsiNonpos_of_P2StarHyp` below via Mathlib integration
-lemmas, no sorry in the lemma body, no smuggling through
-`PsiNonpos_of_regPackage`). -/
-structure P2StarHyp where
+The bridge to `PsiNonpos model reg` is the DERIVED theorem
+`PsiNonpos_of_P2StarGeom` below.  The class-specific intermediate
+majorization
+`P2StarGeom.regPsi_le_jam_minus_eta_integral` is also derived
+(no field). -/
+structure P2StarGeom where
   reg : RegPackage model
-  /-- Per-message cone-margin function `η : M → ℝ` from v9 §B.7. -/
-  eta : model.M → ℝ
-  eta_nonneg : ∀ m, 0 ≤ eta m
-  eta_measurable : Measurable eta
-  /-- Per-message bounded-jamming envelope `jam : M → ℝ`. -/
-  jam : model.M → ℝ
-  jam_nonneg : ∀ m, 0 ≤ jam m
-  jam_measurable : Measurable jam
+  /-- Scalar cone margin `η > 0`. -/
+  eta : ℝ
+  eta_pos : 0 < eta
   /-- Rowwise-minimizer kernel `κ₀` supported on `reg.G`. -/
   kappa0 : AdviserKernel model
   kappa0_supported_on_G : KernelSupportedOnRegG model reg.G kappa0
-  /-- Bounded Radon–Nikodým derivative `dρ/dτ ≤ C_rho` of the
-  kernel's target marginal against `τM`. -/
+  /-- Per-message jamming envelope `jam : M → ℝ`. -/
+  jam : model.M → ℝ
+  jam_measurable : Measurable jam
+  /-- v9 §B.7 cone-margin condition (geometric ball ⊆ Bayes cone).
+  Encodes `closedBall (inclM m) eta ⊆ reg.B m` via the coordinate-
+  uniform `Belief Ω` metric (`∀ω, |p.val ω - inclM m.val ω| ≤ eta`).
+  qκ₀-a.e. so it pairs with the displacement bound below. -/
+  ballAbsorbsCone_qae :
+    ∀ᵐ m ∂((MixtureCouplingGammaAlpha model kappa0).map Prod.snd),
+      ∀ p : Belief model.Ω,
+        (∀ ω, |p.val ω - (model.inclM m).val ω| ≤ eta) → p ∈ reg.B m
+  /-- v9 §B.7 posterior displacement bound: the mixture posterior
+  `Pγα κ₀ m` is within `jam m` (coordinate-uniform) of the truthful
+  message belief `inclM m`, qκ₀-a.e. -/
+  posterior_displacement_le_jam :
+    ∀ᵐ m ∂((MixtureCouplingGammaAlpha model kappa0).map Prod.snd),
+      ∀ ω, |(reg.pd.Pγα kappa0 m).val ω - (model.inclM m).val ω| ≤ jam m
+  /-- v9 §B.7 numerical balance: jamming dominated by cone margin
+  qκ₀-a.e. -/
+  jam_le_eta_ae :
+    ∀ᵐ m ∂((MixtureCouplingGammaAlpha model kappa0).map Prod.snd),
+      jam m ≤ eta
+  /-- v9 §B.7 inert RN-control data (target marginal of `κ₀`). -/
+  rho : MeasureTheory.Measure model.M
+  rho_ac_tau : rho.AbsolutelyContinuous model.τM
   C_rho : ℝ
   C_rho_nonneg : 0 ≤ C_rho
-  /-- v9 §B.7 numerical balance, integrated to a pointwise τM-a.e.
-  inequality: the jamming envelope is dominated by the cone margin. -/
-  jam_le_eta_ae : ∀ᵐ m ∂model.τM, jam m ≤ eta m
-  /-- v9 §B.7 closed-form upper bound on `regPsi reg y` from the
-  cone-margin + jamming + kappa0 + ρ-bound data.  Per the paper:
-  the displacement bound keeps the mixture posterior inside `B m`,
-  so the support-function gap in the misaligned term is nonpositive;
-  the aligned term reduces to an integral of `(jam - eta)` scaled
-  by α.  Both sides of this identity are CONCRETE real expressions;
-  it is structural data, not a Prop trapdoor. -/
-  regPsi_le_jam_minus_eta_integral :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model reg y ≤
-        model.α * ∫ m, (jam m - eta m) ∂model.τM
-  /-- Integrability of the integrand `(jam - eta)` against `τM`
-  (needed by Mathlib `integral_mono_ae`). -/
-  integrable_jam_minus_eta :
-    Integrable (fun m => jam m - eta m) model.τM
+  rho_density_le :
+    ∀ᵐ m ∂model.τM, (rho.rnDeriv model.τM m).toReal ≤ C_rho
 
 /-! ### Phase 11 P3 structural refactor (2026-05-23): six concrete
 sub-structures expose finite menu / polyhedral W / Bayes cone facets /
@@ -6313,72 +6317,61 @@ sorries here are preferable to the smuggling: the class hypotheses
 and quantitative fields are now visibly the inputs the derivation
 consumes. -/
 
-/-- **Phase 11 P2* real closure (2026-05-23): honest P2* → Ψ derivation.**
+/-- **Phase 12b P2* zero-gap real closure (2026-05-23): honest P2* → Ψ
+derivation, derived from geometry only (no `regPsi_le_X_integral`
+field).**
 
-Derives `PsiNonpos model hyp.reg` from the genuine P2* canonical
-data (cone-margin function `eta : M → ℝ`, bounded-jamming envelope
-`jam : M → ℝ`, rowwise-minimizer kernel `κ₀` supported on `reg.G`,
-bounded RN derivative `dρ/dτ ≤ C_rho`, the τM-a.e. cone-margin
-dominance `jam_le_eta_ae`, and the closed-form structural upper
-bound `regPsi_le_jam_minus_eta_integral`), NOT from the
-`PsiNonpos_of_regPackage` shortcut.
+Derives `PsiNonpos model hyp.reg` from the geometric P2* canonical
+data (scalar cone margin `eta > 0`, rowwise-minimizer kernel `κ₀`
+supported on `reg.G`, jamming envelope `jam : M → ℝ`, the qκ₀-a.e.
+posterior displacement bound `posterior_displacement_le_jam`, the
+qκ₀-a.e. cone-margin dominance `jam_le_eta_ae`, and the
+qκ₀-a.e. geometric absorption `ballAbsorbsCone_qae`), via the
+Phase 12a common pattern (`regPsi_nonpos_of_calibrated_kernel`).
 
-The v9 §B.7 P2* derivation routes as follows:
-1. The cone-margin η and bounded-jamming envelope jam, combined with
-   the rowwise-minimizer kernel κ₀ supported on `reg.G` and the
-   bounded RN derivative `dρ/dτ ≤ C_rho`, yield a quantitative
-   displacement bound on the mixture posterior: the displacement is
-   at most `(1-α)/(α C_rho) · jam(m)`, so it stays inside the cone
-   margin `eta(m)` (i.e. the mixture posterior stays in `B m`)
-   whenever `(1-α)/(α C_rho) · jam(m) ≤ eta(m)`.
+The Phase 12b derivation routes as follows:
+1. (Geometric chain, qκ₀-a.e. on the message marginal.)  Combining
+   `posterior_displacement_le_jam`
+     (`|Pγα κ₀ m - inclM m|_∞ ≤ jam m`)
+   with `jam_le_eta_ae` (`jam m ≤ eta`) gives the displacement bound
+     `|Pγα κ₀ m - inclM m|_∞ ≤ eta`.
 
-2. The support-function gap on the misaligned term is therefore
-   nonpositive (mixture posterior in `B m` ⇒ support-function
-   inequality saturated to ≤ 0).
+2. The cone-margin absorption `ballAbsorbsCone_qae` then places the
+   mixture posterior `Pγα κ₀ m` inside the per-message Bayes cone
+   `reg.B m`.
 
-3. The aligned term reduces to an integral of `(jam - eta)` scaled
-   by α (the cone-margin contribution to the aligned support
-   function).
+3. With `kappa0_supported_on_G` for kernel support on `reg.G`, the
+   Phase 12a common-pattern lemma
+   `regPsi_nonpos_of_calibrated_kernel` directly delivers
+   `regPsi reg y ≤ 0` for every `y`.
 
-4. Steps 1–3 integrated give the closed-form structural upper bound
-   `regPsi reg y ≤ α · ∫ (jam - eta) dτM` carried as the field
-   `regPsi_le_jam_minus_eta_integral`.
-
-5. The τM-a.e. inequality `jam(m) ≤ eta(m)` (field `jam_le_eta_ae`,
-   encoding the v9 §B.7 numerical balance) plus `α ≥ 0` gives
-   `α · ∫ (jam - eta) dτM ≤ 0`, completing the chain.
-
-NO sorry in the lemma body. NO smuggling. -/
-lemma PsiNonpos_of_P2StarHyp
+NO sorry in the lemma body.  NO smuggling through
+`PsiNonpos_of_regPackage`.  NO structural upper-bound field
+consumed — the v9 §B.7 §displacement-bound + cone-margin geometry
+is the *only* input. -/
+lemma PsiNonpos_of_P2StarGeom
     {model : RobustTrustModel}
-    (hyp : P2StarHyp model) :
+    (hyp : P2StarGeom model) :
     PsiNonpos model hyp.reg := by
   classical
-  intro y
-  -- Step A: invoke the structural upper bound.
-  have hUpper :
-      regPsi model hyp.reg y ≤
-        model.α * ∫ m, (hyp.jam m - hyp.eta m) ∂model.τM :=
-    hyp.regPsi_le_jam_minus_eta_integral y
-  -- Step B: the integrand is ≤ 0 τM-a.e. by `jam_le_eta_ae`.
-  have hAE : ∀ᵐ m ∂model.τM, hyp.jam m - hyp.eta m ≤ 0 := by
-    filter_upwards [hyp.jam_le_eta_ae] with m hle
-    linarith
-  -- Step C: integral of a τM-a.e. nonpositive integrable function is ≤ 0.
-  have hIntNonpos :
-      ∫ m, (hyp.jam m - hyp.eta m) ∂model.τM ≤ 0 :=
-    MeasureTheory.integral_nonpos_of_ae hAE
-  -- Step D: multiply by α ≥ 0 (preserves the inequality).
-  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
-  have hαMul :
-      model.α * ∫ m, (hyp.jam m - hyp.eta m) ∂model.τM ≤ model.α * 0 :=
-    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
-  -- Step E: chain.
-  have hChain :
-      regPsi model hyp.reg y ≤ 0 := by
-    have := le_trans hUpper hαMul
-    simpa using this
-  exact hChain
+  -- Step 1: combine displacement bound + jam ≤ eta + ball ⊆ cone
+  -- to get `Pγα κ₀ m ∈ reg.B m` qκ₀-a.e. on the message marginal.
+  have hCal :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model hyp.kappa0).map Prod.snd),
+        hyp.reg.pd.Pγα hyp.kappa0 m ∈ hyp.reg.B m := by
+    filter_upwards [hyp.posterior_displacement_le_jam,
+                    hyp.jam_le_eta_ae,
+                    hyp.ballAbsorbsCone_qae] with m hDisp hJam hAbs
+    -- The coordinate-uniform displacement is ≤ eta everywhere.
+    have hDispEta :
+        ∀ ω, |(hyp.reg.pd.Pγα hyp.kappa0 m).val ω
+                - (model.inclM m).val ω| ≤ hyp.eta := by
+      intro ω
+      exact le_trans (hDisp ω) hJam
+    exact hAbs (hyp.reg.pd.Pγα hyp.kappa0 m) hDispEta
+  -- Step 2: invoke the Phase 12a common-pattern lemma.
+  exact regPsi_nonpos_of_calibrated_kernel
+    hyp.reg hyp.kappa0 hyp.kappa0_supported_on_G hCal
 
 /-! ### Phase 11 P3 closure (2026-05-23) — auxiliary defs and lemmas
 
@@ -6649,23 +6642,20 @@ lemma PsiNonpos_of_P4Hyp
 
 theorem «P2-star-cone-margin-bounded-jamming»
     {model : RobustTrustModel}
-    (hyp : P2StarHyp model) :
+    (hyp : P2StarGeom model) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Phase 11 P2* real-closure (2026-05-23): honest P2* → Ψ → Hall →
-  -- strategy chain, with the legacy opaque Prop bridges
-  -- (`coneMargin`, `boundedJamming`, `enoughAlignedBaseline`) and the
-  -- scalar shells (`coneMarginScalar`, `jammingBound`,
-  -- `alignedBaselineFloor`, `margin_dominates_jamming`) ELIMINATED.
-  -- All cone-margin / bounded-jamming content now enters the derivation
-  -- through the concrete canonical-data fields `hyp.eta`, `hyp.jam`,
-  -- `hyp.kappa0`, `hyp.C_rho`, `hyp.jam_le_eta_ae`,
-  -- `hyp.regPsi_le_jam_minus_eta_integral` consumed by
-  -- `PsiNonpos_of_P2StarHyp` (NOT via the `PsiNonpos_of_regPackage`
-  -- shortcut, which would smuggle through the Reg-2 structural
-  -- primitives of `hyp.reg` without consuming the cone-margin or
-  -- kernel data).
+  -- Phase 12b zero-gap P2* refactor (2026-05-23): the structural
+  -- upper-bound field `regPsi_le_jam_minus_eta_integral` has been
+  -- ELIMINATED.  All cone-margin / bounded-jamming content now enters
+  -- the derivation through the GEOMETRIC canonical-data fields
+  -- `hyp.eta`, `hyp.jam`, `hyp.kappa0`, `hyp.ballAbsorbsCone_qae`,
+  -- `hyp.posterior_displacement_le_jam`, `hyp.jam_le_eta_ae` consumed
+  -- by `PsiNonpos_of_P2StarGeom` (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `hyp.reg` without consuming
+  -- the cone-margin or kernel data).
   set reg := hyp.reg
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_P2StarHyp hyp
+  have hPsi : PsiNonpos model reg := PsiNonpos_of_P2StarGeom hyp
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy reg hKernel
