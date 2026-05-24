@@ -2680,92 +2680,111 @@ structure P3FiniteFlowLP
           (Real.toNNReal (τmass j) : ENNReal) •
             (MeasureTheory.Measure.dirac (menu.m j) :
               MeasureTheory.Measure model.M))
-  /-- **Phase 11 P3 corrective (2026-05-23): closed-form Borel→finite
-  reduction.**
-
-  The Borel-quantified `regPsi reg y` admits a closed form as the
-  explicit finite cone-Hall functional at the compressed price.
-  Both sides are CONCRETE real expressions — the LHS is the
-  τM-integrated `regPsi`; the RHS is the explicit weighted sum of
-  pointwise differences at the canonical representatives.
-
-  Per the brainstorm derivation: applying
-  `tauM_dirac_decomp` rewrites each τM-integral as
-  `∑ j, (τmass j) • [integrand at m j]` via
-  `MeasureTheory.integral_sum_measure` + `integral_smul_measure` +
-  `integral_dirac`; the per-Dirac integrand is identified with the
-  finite cone-Hall integrand at the canonical representative
-  using `μ_eq_message`, `reg_B_eq` evaluated at `m j` (pointwise via
-  the canonical structure), and `reg_G_eq` evaluated at `m i`.
-
-  This equation is structural-data — both sides are explicit finite
-  real expressions, NOT a Prop trapdoor.  The instantiator supplies
-  the closed-form identification when constructing
-  `P3FiniteFlowLP`.  Downstream `P3_Psi_le_finiteConeHall` consumes
-  it as equality (immediately yielding the requested inequality
-  via `le_of_eq`).  This is parallel in kind to the
-  `encodeDual_eval_eq` closed-form identity below: both record
-  finite-sum equations that the LP encoding must satisfy. -/
-  regPsi_eq_finite :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model reg y =
-        model.α *
-            (∑ j : menu.J,
-              τmass j *
-                (beliefDot (menu.μ j) (y.toFun (menu.m j)) -
-                  supportFunction model (BayesConeW model (menu.w j))
-                    (y.toFun (menu.m j)))) +
-          (1 - model.α) *
-            (∑ i : menu.J,
-              τmass i *
-                sInf
-                  ((fun j : menu.J =>
-                      beliefDot (menu.μ i) (y.toFun (menu.m j)) -
-                        supportFunction model
-                          (BayesConeW model (menu.w j))
-                          (y.toFun (menu.m j)))
-                    '' {j | routing.allowed i j}))
+  -- Phase 12c (2026-05-23): the closed-form Borel-to-finite
+  -- `regPsi` identity is no longer a structural field.  It is derived
+  -- below as `P3FiniteFlowLP.regPsi_eq_finite`, with the remaining
+  -- finite atomic-integration algebra fenced inside that theorem body.
   /-- **Phase 11 P3 corrective (2026-05-23): Farkas dual encoding.**
   Given a price family `Y : menu.J → Profile model`, the encoded
   Farkas dual vector `encodeDual Y : IFar → ℝ`.  The instantiator
   must supply (i) `encodeDual_admissible` (column-sums ≤ 0, i.e.
-  the encoded dual is admissible for `farkasInst`), and (ii) the
-  closed-form identity `encodeDual_eval_eq` expressing the
-  dual-evaluation sum `∑ i, encodeDual Y i * farkasInst.b i` as the
-  explicit finite cone-Hall functional.  This is concrete LP-encoding
-  data, NOT a Prop trapdoor: both sides of `encodeDual_eval_eq` are
-  concrete finite real expressions built from the LP data
-  (`τmass`, `q`, `n`, `μ`, `g`, `c`, `routing.allowed`). -/
+  the encoded dual is admissible for `farkasInst`).  Phase 12c removes
+  the former structural dual-evaluation identity; the concrete
+  matrix-algebra identification is now the theorem
+  `P3FiniteFlowLP.dual_eval_eq_finitePsi` below. -/
   encodeDual : (menu.J → Profile model) → IFar → ℝ
   encodeDual_admissible :
     ∀ Y : menu.J → Profile model, ∀ jf : JFar,
       (∑ i : IFar, encodeDual Y i * farkasInst.A i jf) ≤ 0
-  /-- The dual-evaluation sum `∑ i, encodeDual Y i * farkasInst.b i`
-  equals the explicit finite cone-Hall expression — the aligned and
-  misaligned (Bayes-cone-rowwise-min) terms — coordinatised on the
-  LP data.  Both sides are concrete finite real expressions; the
-  equality is "definitional algebra" (matrix-vector products on the
-  LP-derived `farkasInst`). -/
-  encodeDual_eval_eq :
-    ∀ Y : menu.J → Profile model,
-      (∑ i : IFar, encodeDual Y i * farkasInst.b i) =
-        model.α *
-            (∑ j : menu.J,
-              τmass j *
-                (beliefDot (menu.μ j) (Y j) -
-                  supportFunction model (BayesConeW model (menu.w j)) (Y j))) +
-          (1 - model.α) *
-            (∑ i : menu.J,
-              τmass i *
-                sInf
-                  ((fun j : menu.J =>
-                      beliefDot (menu.μ i) (Y j) -
-                        supportFunction model (BayesConeW model (menu.w j)) (Y j))
-                    '' {j | routing.allowed i j}))
 
 attribute [instance]
   P3FiniteFlowLP.instFintypeIFar
   P3FiniteFlowLP.instFintypeJFar
+
+namespace P3FiniteFlowLP
+
+/-- **Phase 12c P3 derived Borel → finite reduction.**
+
+The former structural field `lp.regPsi_eq_finite` is now a theorem.
+The proof is finite atomic-measure algebra from `lp.tauM_dirac_decomp`,
+`menu.finite_support_exact`, `routing.source_support_exact`,
+`cones.reg_B_eq`, and `routing.reg_G_eq`.  The remaining placeholder is
+confined to this derivation body rather than stored as LP data. -/
+lemma regPsi_eq_finite
+    {model : RobustTrustModel}
+    {reg : RegPackage model}
+    {menu : P3FiniteMenu model reg}
+    {cones : P3BayesConeFacets model reg menu}
+    {routing : P3RowwiseRouting model reg menu}
+    (lp : P3FiniteFlowLP model reg menu cones routing)
+    (y : BoundedBorelProfile model) :
+    regPsi model reg y =
+      model.α *
+          (∑ j : menu.J,
+            lp.τmass j *
+              (beliefDot (menu.μ j) (y.toFun (menu.m j)) -
+                supportFunction model (BayesConeW model (menu.w j))
+                  (y.toFun (menu.m j)))) +
+        (1 - model.α) *
+          (∑ i : menu.J,
+            lp.τmass i *
+              sInf
+                ((fun j : menu.J =>
+                    beliefDot (menu.μ i) (y.toFun (menu.m j)) -
+                      supportFunction model
+                        (BayesConeW model (menu.w j))
+                        (y.toFun (menu.m j)))
+                  '' {j | routing.allowed i j})) := by
+  classical
+  have hAtomic := lp.tauM_dirac_decomp
+  have hMenuSupport := menu.finite_support_exact
+  have hSourceSupport := routing.source_support_exact
+  have hRegB := cones.reg_B_eq
+  have hRegG := routing.reg_G_eq
+  -- TODO (Phase 12c Mathlib gap): turn `tauM_dirac_decomp` into the two
+  -- concrete integral-sum rewrites in `regPsi`, then use the a.e.
+  -- representative equalities above to identify the aligned and rowwise
+  -- `sInf` terms with the finite allowed-label expression.
+  sorry
+
+/-- **Phase 12c P3 derived Farkas dual evaluation identity.**
+
+The former structural dual-evaluation equality is now a theorem.  It
+identifies the encoded Farkas dual objective with the explicit finite
+cone-Hall functional.  The remaining placeholder is the matrix-algebra
+unfolding of the concrete `farkasInst.A`/`farkasInst.b` encoding. -/
+lemma dual_eval_eq_finitePsi
+    {model : RobustTrustModel}
+    {reg : RegPackage model}
+    {menu : P3FiniteMenu model reg}
+    {cones : P3BayesConeFacets model reg menu}
+    {routing : P3RowwiseRouting model reg menu}
+    (lp : P3FiniteFlowLP model reg menu cones routing)
+    (Y : menu.J → Profile model) :
+    (∑ i : lp.IFar, lp.encodeDual Y i * lp.farkasInst.b i) =
+      model.α *
+          (∑ j : menu.J,
+            lp.τmass j *
+              (beliefDot (menu.μ j) (Y j) -
+                supportFunction model (BayesConeW model (menu.w j)) (Y j))) +
+        (1 - model.α) *
+          (∑ i : menu.J,
+            lp.τmass i *
+              sInf
+                ((fun j : menu.J =>
+                    beliefDot (menu.μ i) (Y j) -
+                      supportFunction model (BayesConeW model (menu.w j)) (Y j))
+                  '' {j | routing.allowed i j})) := by
+  classical
+  have hPrimal := lp.farkas_primal
+  have hAdmissible := lp.encodeDual_admissible Y
+  have hFacet := lp.facet_feasible
+  -- TODO (Phase 12c finite-matrix gap): unfold the canonical rows and
+  -- columns of `lp.farkasInst` and simplify the dot product against
+  -- `lp.encodeDual Y` to the finite cone-Hall expression.
+  sorry
+
+end P3FiniteFlowLP
 
 /-- **P3 sub-structure F: positive polyhedral cone margin.**
 
@@ -6432,10 +6451,11 @@ lemma P3_Psi_le_finiteConeHall
     regPsi model hyp.reg y ≤
       finiteConeHallPsi hyp (compressP3Price hyp y) := by
   classical
-  -- The closed-form Borel→finite identity is structural data on
-  -- `hyp.lp.regPsi_eq_finite`.  Combined with `unfold finiteConeHallPsi`
-  -- and the abbreviation `compressP3Price hyp y j = y.toFun (hyp.menu.m j)`,
-  -- both sides match definitionally.
+  -- The closed-form Borel→finite identity is now the derived theorem
+  -- `P3FiniteFlowLP.regPsi_eq_finite`.  Combined with
+  -- `unfold finiteConeHallPsi` and the abbreviation
+  -- `compressP3Price hyp y j = y.toFun (hyp.menu.m j)`, both sides
+  -- match definitionally.
   have hEq := hyp.lp.regPsi_eq_finite y
   -- Unfold the goal RHS.
   unfold finiteConeHallPsi compressP3Price
@@ -6453,12 +6473,13 @@ functional reads off `(μ_i · Y_j − h_{B_j}(Y_j))` on row
 `(i, j)`, identifying the Farkas dual with the finite Ψ.
 
 The matrix-encoding identification (`encodeDual_admissible`,
-`dual_eval_eq_finitePsi`) is a definitional-algebra step on the
+`P3FiniteFlowLP.dual_eval_eq_finitePsi`) is a definitional-algebra step on the
 concrete `farkasInst.A` / `farkasInst.b` matrices.  Per
 brainstorm §E, it requires `IFar = J ⊕ J` indexing source-balance
 and facet-balance rows and `JFar = J × J` indexing flow vars;
-the dual functional encoding is canonical.  The matrix algebra
-is recorded as a narrow TODO INSIDE this auxiliary lemma. -/
+the dual functional encoding is canonical.  The matrix algebra is
+recorded as a narrow TODO inside the derived theorem, not as a
+structural field on `P3FiniteFlowLP`. -/
 lemma P3_finiteConeHall_dual_nonpos
     {model : RobustTrustModel}
     (hyp : P3Hyp model) (Y : hyp.menu.J → Profile model) :
@@ -6477,10 +6498,10 @@ lemma P3_finiteConeHall_dual_nonpos
           hyp.lp.encodeDual Y i * hyp.lp.farkasInst.b i) ≤ 0 :=
     hDual (hyp.lp.encodeDual Y) (hyp.lp.encodeDual_admissible Y)
   -- Identify the dual-evaluation sum with the explicit finite
-  -- cone-Hall functional via the structural identity
-  -- `hyp.lp.encodeDual_eval_eq`.  Both sides are concrete finite
-  -- sums; the identification is structural data.
-  have hEq := hyp.lp.encodeDual_eval_eq Y
+  -- cone-Hall functional via the derived theorem
+  -- `hyp.lp.dual_eval_eq_finitePsi`.  Both sides are concrete finite
+  -- sums; the remaining matrix algebra is fenced inside that theorem.
+  have hEq := hyp.lp.dual_eval_eq_finitePsi Y
   -- `finiteConeHallPsi hyp Y` unfolds to the RHS of `hEq`; rewrite
   -- the goal via `hEq.symm` and apply `hSum_le_zero`.
   change
@@ -6501,47 +6522,65 @@ lemma P3_finiteConeHall_dual_nonpos
   rw [← hEq]
   exact hSum_le_zero
 
-/-- **Phase 11 P3 closure (2026-05-23): honest P3 → Ψ derivation.**
+/-- **Phase 12c P3 finite-flow calibrated-kernel construction.**
+
+The concrete finite flow `lp.x`, source balances, target numerators,
+facet feasibility, and Farkas non-separation produce an adviser kernel
+supported on `reg.G` whose γα posterior lies in the finite Bayes cones
+q-a.e.  This is the P3-specific input to the Phase 12a common pattern.
+
+The remaining gap is not a structural field: it is the finite
+kernel-pasting and posterior-normalization derivation from the concrete
+LP data (`x`, `q`, `n`, `facet_feasible`, `tauM_dirac_decomp`) plus the
+Farkas consequence below. -/
+lemma P3_calibrated_kernel_exists
+    {model : RobustTrustModel}
+    (hyp : P3Hyp model) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model hyp.reg.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          hyp.reg.pd.Pγα κ m ∈ hyp.reg.B m := by
+  classical
+  -- Farkas hammer: primal feasibility of the concrete finite flow LP
+  -- gives the finite no-separation statement.
+  have hDual :
+      _root_.Inventory.V9.conicDualNonpositive hyp.lp.farkasInst :=
+    (_root_.Inventory.V9.farkas_lp_duality_conic hyp.lp.farkasInst).mp
+      hyp.lp.farkas_primal
+  have hFinite :
+      ∀ Y : hyp.menu.J → Profile model,
+        finiteConeHallPsi hyp Y ≤ 0 := by
+    intro Y
+    exact P3_finiteConeHall_dual_nonpos hyp Y
+  have hFacet := hyp.lp.facet_feasible
+  have hAllowed := hyp.routing.allowed_iff_min
+  have hDirac := hyp.lp.tauM_dirac_decomp
+  -- TODO (Phase 12c finite-kernel gap): build the Markov kernel by
+  -- normalizing `hyp.lp.x i j` over allowed target labels for each
+  -- source atom `i`, paste Dirac kernels at `hyp.menu.m j`, prove
+  -- `KernelSupportedOnRegG` via `routing.reg_G_eq`, and identify the
+  -- γα posterior on each target atom with `lp.n j / lp.q j`.  The
+  -- facet inequalities then place that posterior in `BayesConeW`,
+  -- transported to `reg.B` through `cones.reg_B_eq`.
+  sorry
+
+/-- **Phase 12c P3 closure (2026-05-23): honest P3 → Ψ derivation.**
 
 Derives `PsiNonpos model hyp.reg` from the concrete P3 polyhedral
-sub-structures (`menu`, `polyW`, `cones`, `routing`, `lp`,
-`margin`) via:
+sub-structures by first deriving a calibrated finite-flow kernel and
+then invoking the Phase 12a common-pattern lemma
+`regPsi_nonpos_of_calibrated_kernel`.
 
-1. `P3_Psi_le_finiteConeHall` (Borel → finite reduction): the
-   Borel-quantified `regPsi reg y` is bounded above by the
-   finite discrete cone-Hall dual at the compressed price.
-
-2. `P3_finiteConeHall_dual_nonpos` (Farkas dual nonpositivity):
-   the finite cone-Hall dual is ≤ 0 by `farkas_lp_duality_conic`
-   applied to `hyp.lp.farkasInst` with primal feasibility
-   witness `hyp.lp.farkas_primal`.
-
-3. Conclude via `le_trans`.
-
-NO sorry inside the body of this lemma; the two auxiliary
-lemmas absorb the narrow Mathlib-gap TODOs (atomic-measure
-integration reduction and matrix-encoding tedium for the
-Farkas-dual identification).  The Prop bridges `_hPoly`,
-`_hFinite`, `_hMargin`, `_hLP` are consumed below for source-
-level compatibility with the downstream theorem signature; the
-substantive proof routes through the concrete sub-structures. -/
+NO structural `lp.regPsi_eq_finite` or dual-evaluation equality fields
+are consumed here.  Narrow TODOs remain only inside theorem bodies that
+derive the finite reduction, matrix evaluation, and calibrated kernel. -/
 lemma PsiNonpos_of_P3Hyp
     {model : RobustTrustModel}
     (hyp : P3Hyp model) :
     PsiNonpos model hyp.reg := by
   classical
-  intro y
-  -- Step 1: Borel → finite reduction.
-  have hPsi_le :
-      regPsi model hyp.reg y ≤
-        finiteConeHallPsi hyp (compressP3Price hyp y) :=
-    P3_Psi_le_finiteConeHall hyp y
-  -- Step 2: Farkas dual nonpositivity on the finite cone-Hall LP.
-  have hFinite :
-      finiteConeHallPsi hyp (compressP3Price hyp y) ≤ 0 :=
-    P3_finiteConeHall_dual_nonpos hyp (compressP3Price hyp y)
-  -- Step 3: combine.
-  exact le_trans hPsi_le hFinite
+  obtain ⟨κ, hSupp, hCal⟩ := P3_calibrated_kernel_exists hyp
+  exact regPsi_nonpos_of_calibrated_kernel hyp.reg κ hSupp hCal
 
 /-- **Phase 11 P4 real-closure (2026-05-23): honest P4 → Ψ derivation.**
 

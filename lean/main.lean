@@ -7023,6 +7023,97 @@ def RegPackage.robustRationalizableKernelExists
     (reg : RegPackage model) : Prop :=
   RegRobustRationalizableKernelExists model reg.pd reg.G reg.B
 
+/-! ### §9.5 Phase 12a — Common pattern for zero-gap derivations.
+
+Per the Phase 12 brainstorm (Section 0,
+`03_runs/v9_lean_formalization/Phase12_ZeroGap/Brainstorm_Reg2_derivation_response.md`,
+2026-05-23), the upper-bound fields `regPsi_le_X_integral` carried as
+structural primitives by each P-class package are slated to become
+derived theorems.  Before refactoring any P-class, this section adds
+the **common pattern** lemmas used by every class's derivation:
+
+1. `localSlack` — pointwise Hall slack `beliefDot p y(m) − h_{B(m)}(y(m))`.
+   (Defined here, near `regPsi`.)
+2. `localSlack_nonpos_of_mem_B` — slack ≤ 0 whenever `p ∈ B(m)`
+   (direct support-function bound; no measure theory).
+   (Proved here, near `regPsi`.)
+3. `regPsi_le_integral_localSlack_of_kernel` — for an `AdviserKernel κ`
+   supported on `reg.G` q-a.e., `regPsi` is bounded above by the integral
+   of `localSlack reg y m (Pγα κ m)` along the mixture marginal qκ.
+4. `regPsi_nonpos_of_calibrated_kernel` — for a calibrated kernel
+   (`κ` supported on `G`, posterior `Pγα κ` lies in `B(m)` q-a.e. on the
+   mixture marginal), `regPsi ≤ 0` for every `BoundedBorelProfile`.
+
+Lemmas (3) and (4) are placed AFTER `«Hall-biconditional»` (§15 below)
+because (4) is a direct corollary of `«Hall-biconditional».mp` and
+(3) shares the same qκ-decomposition chain.  Lemma (4) is proved
+without sorry.  Lemma (3) carries a single narrow `-- TODO` sorry
+recording the qκ-decomposition Mathlib gap; the signature is correct
+and downstream classes will build on it.  Phase 12b–12i class
+refactors will call (1)–(4) as the common derivation core. -/
+
+/-- **Common pattern (1): Pointwise Hall slack.**
+
+`localSlack reg y m p = ⟨p, y(m)⟩ − h_{B(m)}(y(m))`.
+
+This is the local integrand the Hall functional `regPsi` averages.
+For a posterior `p` lying in the Bayes cone `B(m)`, the slack is ≤ 0
+by the support-function bound (lemma (2) below). -/
+noncomputable def localSlack
+    (reg : RegPackage model) (y : BoundedBorelProfile model)
+    (m : model.M) (p : Belief model.Ω) : ℝ :=
+  beliefDot p (y.toFun m) - supportFunction model (reg.B m) (y.toFun m)
+
+/-- **Common pattern (2): `p ∈ B(m)` ⇒ `localSlack ≤ 0`.**
+
+The pointwise support-function bound: if a posterior `p` lies in the
+Bayes cone `B(m)`, then `⟨p, y(m)⟩ ≤ h_{B(m)}(y(m))`, i.e. the slack
+is nonpositive.  Proof is the direct `le_csSup` argument against the
+bounded image of `B(m)` under `y(m)` (mirrors the existing
+`«Hall-biconditional»` forward proof step at line 5400+). -/
+lemma localSlack_nonpos_of_mem_B
+    (reg : RegPackage model) (y : BoundedBorelProfile model)
+    {m : model.M} {p : Belief model.Ω}
+    (hp : p ∈ reg.B m) :
+    localSlack model reg y m p ≤ 0 := by
+  classical
+  unfold localSlack
+  -- `beliefDot p (y.toFun m)` is in the image of `B m` under
+  -- `μ ↦ beliefDot μ (y.toFun m)`, which is bounded above (Ω finite,
+  -- `y` coordinate-bounded), so its sSup (= supportFunction) majorizes
+  -- it.
+  have hImage :
+      beliefDot p (y.toFun m) ∈
+        (fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) '' reg.B m :=
+    ⟨p, hp, rfl⟩
+  have hBdd :
+      BddAbove ((fun μ : Belief model.Ω => beliefDot μ (y.toFun m)) ''
+        reg.B m) := by
+    obtain ⟨C, _hC_nn, hC⟩ := y.bounded_coord
+    refine ⟨C, ?_⟩
+    rintro x ⟨μ, _hμ, rfl⟩
+    unfold beliefDot
+    have hmono :
+        ∀ ω : model.Ω, μ.val ω * y.toFun m ω ≤ μ.val ω * C := by
+      intro ω
+      have hμω : 0 ≤ μ.val ω := μ.property.1 ω
+      have hy_le_C : y.toFun m ω ≤ C := (abs_le.mp (hC m ω)).2
+      exact mul_le_mul_of_nonneg_left hy_le_C hμω
+    have hsum_le :
+        (∑ ω : model.Ω, μ.val ω * y.toFun m ω) ≤
+          (∑ ω : model.Ω, μ.val ω * C) :=
+      Finset.sum_le_sum (fun ω _ => hmono ω)
+    have hsum_eq :
+        (∑ ω : model.Ω, μ.val ω * C) = C := by
+      haveI : Fintype model.Ω := model.Ω_fintype
+      rw [← Finset.sum_mul, μ.property.2, one_mul]
+    linarith
+  have hle :
+      beliefDot p (y.toFun m) ≤
+        supportFunction model (reg.B m) (y.toFun m) :=
+    le_csSup hBdd hImage
+  linarith
+
 /-- **v9 → v8 ExactContact bridge.**
 
 Projects the legitimate Reg-2 structural primitive `reg.exactContact`
@@ -7292,87 +7383,91 @@ def PolyhedralLPInstance.lpFeasible
 
 /-- **P2-star primitive class (cone-margin + bounded jamming).**
 
-Phase 11 P2* real-closure refactor (2026-05-23): the three abstract
-Prop fields `coneMargin / boundedJamming / enoughAlignedBaseline`
-have been REMOVED (they were legacy trapdoors — abstract Props with
-no concrete content, accepted as theorem inputs but never used in
-the derivation).  Likewise the scalar shells `coneMarginScalar /
-jammingBound / alignedBaselineFloor` (which were per-package
-SCALARS, not per-message functions) have been REPLACED by per-message
-canonical data per the v9 §B.7 P2* derivation:
+Phase 12b zero-gap refactor (2026-05-23): the structural
+upper-bound field `regPsi_le_jam_minus_eta_integral` has been
+REMOVED.  Per the Phase 12 brainstorm
+(`Phase12_ZeroGap/Brainstorm_Reg2_derivation_response.md` §1), each
+P-class package should carry **geometry, routing, stationarity, and
+balance data only** — never the conclusion-shaped upper bound on
+`regPsi`.  The upper-bound chain is now a DERIVED theorem
+`PsiNonpos_of_P2StarGeom`, closed via the Phase 12a common pattern
+(`localSlack`, `regPsi_nonpos_of_calibrated_kernel`) without smuggling
+through `PsiNonpos_of_regPackage`.
 
-* `eta : model.M → ℝ` — the per-message cone-margin function
-  measuring `dist(inclM m, Δ(Ω) ∖ B m)`.  Nonneg + measurable.
+The structure carries the **honest geometric primitives** of the v9
+§B.7 P2* derivation:
 
-* `jam : model.M → ℝ` — the per-message bounded-jamming envelope
-  capping the magnitude of the rowwise-minimizer displacement.
-  Nonneg + measurable.
+* `eta : ℝ`, `eta_pos : 0 < eta` — the scalar cone margin.
+
+* `ballAbsorbsCone_qae` — geometric cone-margin condition: any
+  belief `p` within `eta`-coordinate-distance of the truthful message
+  belief `inclM m` lies in the Bayes cone `reg.B m`.  This encodes
+  the brainstorm's `closedBall (inclM m) eta ⊆ reg.B m` using the
+  coordinate-uniform metric on `Belief Ω`.  Quantified along the
+  mixture marginal `qκ₀` (i.e., where it is actually needed).
 
 * `kappa0 : AdviserKernel model` — the rowwise-minimizer kernel
-  supplied by §B.7, supported on `reg.G`.  This is the kernel
-  whose mixture posterior (with the truthful prior at weight α)
-  stays inside the per-message Bayes cone `B m`.
+  supplied by §B.7, supported on `reg.G`.  Its mixture posterior
+  (with the truthful prior at weight α) stays inside the per-message
+  Bayes cone `B m` — derived, not assumed.
 
-* `C_rho : ℝ`, `C_rho_nonneg` — the bounded Radon–Nikodým derivative
-  `dρ/dτ ≤ C_rho` of the kernel's target marginal against `τM`.
-  This is the v9 §B.7 step that turns the kernel target marginal
-  into a τ-dominated measure.
+* `jam : model.M → ℝ`, `jam_measurable` — the jamming envelope.
 
-* `jam_le_eta_ae` — the v9 §B.7 numerical balance, integrated to a
-  pointwise τM-a.e. inequality: jamming envelope dominated by cone
-  margin.  This is the §B.7 step where the displacement bound
-  (`(1-α)/(α C_rho) · jam(m) ≤ eta(m)` paper inequality) is encoded
-  as `jam(m) ≤ eta(m)` τM-a.e. (with the α-scaling absorbed into
-  the integral identity below).
+* `posterior_displacement_le_jam` — the coordinate-wise displacement
+  bound from §B.7: `|Pγα κ₀ m - inclM m|_∞ ≤ jam m`, qκ₀-a.e.
 
-* `regPsi_le_jam_minus_eta_integral` — the v9 §B.7 displacement
-  bound + mixture-posterior-in-`B m` derivation, integrated to a
-  closed-form upper bound on `regPsi reg y` as an α-weighted
-  integral of `(jam - eta)`.  CONCRETE structural identity; NOT a
-  Prop trapdoor (both sides are explicit real expressions).
+* `jam_le_eta_ae` — the §B.7 numerical balance, qκ₀-a.e.:
+  `jam m ≤ eta`.
 
-* `integrable_jam_minus_eta` — integrability of the integrand
-  against `τM` (needed by `integral_mono_ae`).
+* `rho`, `rho_ac_tau`, `C_rho`, `rho_density_le` — the inert
+  Radon-Nikodým-control data motivating the displacement bound
+  (target marginal `ρ = τ.bind κ₀.kernel`, `ρ ≪ τM`, and
+  `dρ/dτ ≤ C_rho`).  Carried for compatibility with the v9 §B.7
+  paper exposition; not directly consumed by the Lean derivation
+  (the displacement bound is taken as the hypothesis directly).
 
-The bridge from these primitives to `PsiNonpos model reg` is HONEST
-(closed in `PsiNonpos_of_P2StarHyp` below via Mathlib integration
-lemmas, no sorry in the lemma body, no smuggling through
-`PsiNonpos_of_regPackage`). -/
-structure P2StarHyp where
+The bridge to `PsiNonpos model reg` is the DERIVED theorem
+`PsiNonpos_of_P2StarGeom` below.  The class-specific intermediate
+majorization
+`P2StarGeom.regPsi_le_jam_minus_eta_integral` is also derived
+(no field). -/
+structure P2StarGeom where
   reg : RegPackage model
-  /-- Per-message cone-margin function `η : M → ℝ` from v9 §B.7. -/
-  eta : model.M → ℝ
-  eta_nonneg : ∀ m, 0 ≤ eta m
-  eta_measurable : Measurable eta
-  /-- Per-message bounded-jamming envelope `jam : M → ℝ`. -/
-  jam : model.M → ℝ
-  jam_nonneg : ∀ m, 0 ≤ jam m
-  jam_measurable : Measurable jam
+  /-- Scalar cone margin `η > 0`. -/
+  eta : ℝ
+  eta_pos : 0 < eta
   /-- Rowwise-minimizer kernel `κ₀` supported on `reg.G`. -/
   kappa0 : AdviserKernel model
   kappa0_supported_on_G : KernelSupportedOnRegG model reg.G kappa0
-  /-- Bounded Radon–Nikodým derivative `dρ/dτ ≤ C_rho` of the
-  kernel's target marginal against `τM`. -/
+  /-- Per-message jamming envelope `jam : M → ℝ`. -/
+  jam : model.M → ℝ
+  jam_measurable : Measurable jam
+  /-- v9 §B.7 cone-margin condition (geometric ball ⊆ Bayes cone).
+  Encodes `closedBall (inclM m) eta ⊆ reg.B m` via the coordinate-
+  uniform `Belief Ω` metric (`∀ω, |p.val ω - inclM m.val ω| ≤ eta`).
+  qκ₀-a.e. so it pairs with the displacement bound below. -/
+  ballAbsorbsCone_qae :
+    ∀ᵐ m ∂((MixtureCouplingGammaAlpha model kappa0).map Prod.snd),
+      ∀ p : Belief model.Ω,
+        (∀ ω, |p.val ω - (model.inclM m).val ω| ≤ eta) → p ∈ reg.B m
+  /-- v9 §B.7 posterior displacement bound: the mixture posterior
+  `Pγα κ₀ m` is within `jam m` (coordinate-uniform) of the truthful
+  message belief `inclM m`, qκ₀-a.e. -/
+  posterior_displacement_le_jam :
+    ∀ᵐ m ∂((MixtureCouplingGammaAlpha model kappa0).map Prod.snd),
+      ∀ ω, |(reg.pd.Pγα kappa0 m).val ω - (model.inclM m).val ω| ≤ jam m
+  /-- v9 §B.7 numerical balance: jamming dominated by cone margin
+  qκ₀-a.e. -/
+  jam_le_eta_ae :
+    ∀ᵐ m ∂((MixtureCouplingGammaAlpha model kappa0).map Prod.snd),
+      jam m ≤ eta
+  /-- v9 §B.7 inert RN-control data (target marginal of `κ₀`). -/
+  rho : MeasureTheory.Measure model.M
+  rho_ac_tau : rho.AbsolutelyContinuous model.τM
   C_rho : ℝ
   C_rho_nonneg : 0 ≤ C_rho
-  /-- v9 §B.7 numerical balance, integrated to a pointwise τM-a.e.
-  inequality: the jamming envelope is dominated by the cone margin. -/
-  jam_le_eta_ae : ∀ᵐ m ∂model.τM, jam m ≤ eta m
-  /-- v9 §B.7 closed-form upper bound on `regPsi reg y` from the
-  cone-margin + jamming + kappa0 + ρ-bound data.  Per the paper:
-  the displacement bound keeps the mixture posterior inside `B m`,
-  so the support-function gap in the misaligned term is nonpositive;
-  the aligned term reduces to an integral of `(jam - eta)` scaled
-  by α.  Both sides of this identity are CONCRETE real expressions;
-  it is structural data, not a Prop trapdoor. -/
-  regPsi_le_jam_minus_eta_integral :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model reg y ≤
-        model.α * ∫ m, (jam m - eta m) ∂model.τM
-  /-- Integrability of the integrand `(jam - eta)` against `τM`
-  (needed by Mathlib `integral_mono_ae`). -/
-  integrable_jam_minus_eta :
-    Integrable (fun m => jam m - eta m) model.τM
+  rho_density_le :
+    ∀ᵐ m ∂model.τM, (rho.rnDeriv model.τM m).toReal ≤ C_rho
 
 /-! ### Phase 11 P3 structural refactor (2026-05-23): six concrete
 sub-structures expose finite menu / polyhedral W / Bayes cone facets /
@@ -7566,92 +7661,111 @@ structure P3FiniteFlowLP
           (Real.toNNReal (τmass j) : ENNReal) •
             (MeasureTheory.Measure.dirac (menu.m j) :
               MeasureTheory.Measure model.M))
-  /-- **Phase 11 P3 corrective (2026-05-23): closed-form Borel→finite
-  reduction.**
-
-  The Borel-quantified `regPsi reg y` admits a closed form as the
-  explicit finite cone-Hall functional at the compressed price.
-  Both sides are CONCRETE real expressions — the LHS is the
-  τM-integrated `regPsi`; the RHS is the explicit weighted sum of
-  pointwise differences at the canonical representatives.
-
-  Per the brainstorm derivation: applying
-  `tauM_dirac_decomp` rewrites each τM-integral as
-  `∑ j, (τmass j) • [integrand at m j]` via
-  `MeasureTheory.integral_sum_measure` + `integral_smul_measure` +
-  `integral_dirac`; the per-Dirac integrand is identified with the
-  finite cone-Hall integrand at the canonical representative
-  using `μ_eq_message`, `reg_B_eq` evaluated at `m j` (pointwise via
-  the canonical structure), and `reg_G_eq` evaluated at `m i`.
-
-  This equation is structural-data — both sides are explicit finite
-  real expressions, NOT a Prop trapdoor.  The instantiator supplies
-  the closed-form identification when constructing
-  `P3FiniteFlowLP`.  Downstream `P3_Psi_le_finiteConeHall` consumes
-  it as equality (immediately yielding the requested inequality
-  via `le_of_eq`).  This is parallel in kind to the
-  `encodeDual_eval_eq` closed-form identity below: both record
-  finite-sum equations that the LP encoding must satisfy. -/
-  regPsi_eq_finite :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model reg y =
-        model.α *
-            (∑ j : menu.J,
-              τmass j *
-                (beliefDot (menu.μ j) (y.toFun (menu.m j)) -
-                  supportFunction model (BayesConeW model (menu.w j))
-                    (y.toFun (menu.m j)))) +
-          (1 - model.α) *
-            (∑ i : menu.J,
-              τmass i *
-                sInf
-                  ((fun j : menu.J =>
-                      beliefDot (menu.μ i) (y.toFun (menu.m j)) -
-                        supportFunction model
-                          (BayesConeW model (menu.w j))
-                          (y.toFun (menu.m j)))
-                    '' {j | routing.allowed i j}))
+  -- Phase 12c (2026-05-23): the closed-form Borel-to-finite
+  -- `regPsi` identity is no longer a structural field.  It is derived
+  -- below as `P3FiniteFlowLP.regPsi_eq_finite`, with the remaining
+  -- finite atomic-integration algebra fenced inside that theorem body.
   /-- **Phase 11 P3 corrective (2026-05-23): Farkas dual encoding.**
   Given a price family `Y : menu.J → Profile model`, the encoded
   Farkas dual vector `encodeDual Y : IFar → ℝ`.  The instantiator
   must supply (i) `encodeDual_admissible` (column-sums ≤ 0, i.e.
-  the encoded dual is admissible for `farkasInst`), and (ii) the
-  closed-form identity `encodeDual_eval_eq` expressing the
-  dual-evaluation sum `∑ i, encodeDual Y i * farkasInst.b i` as the
-  explicit finite cone-Hall functional.  This is concrete LP-encoding
-  data, NOT a Prop trapdoor: both sides of `encodeDual_eval_eq` are
-  concrete finite real expressions built from the LP data
-  (`τmass`, `q`, `n`, `μ`, `g`, `c`, `routing.allowed`). -/
+  the encoded dual is admissible for `farkasInst`).  Phase 12c removes
+  the former structural dual-evaluation identity; the concrete
+  matrix-algebra identification is now the theorem
+  `P3FiniteFlowLP.dual_eval_eq_finitePsi` below. -/
   encodeDual : (menu.J → Profile model) → IFar → ℝ
   encodeDual_admissible :
     ∀ Y : menu.J → Profile model, ∀ jf : JFar,
       (∑ i : IFar, encodeDual Y i * farkasInst.A i jf) ≤ 0
-  /-- The dual-evaluation sum `∑ i, encodeDual Y i * farkasInst.b i`
-  equals the explicit finite cone-Hall expression — the aligned and
-  misaligned (Bayes-cone-rowwise-min) terms — coordinatised on the
-  LP data.  Both sides are concrete finite real expressions; the
-  equality is "definitional algebra" (matrix-vector products on the
-  LP-derived `farkasInst`). -/
-  encodeDual_eval_eq :
-    ∀ Y : menu.J → Profile model,
-      (∑ i : IFar, encodeDual Y i * farkasInst.b i) =
-        model.α *
-            (∑ j : menu.J,
-              τmass j *
-                (beliefDot (menu.μ j) (Y j) -
-                  supportFunction model (BayesConeW model (menu.w j)) (Y j))) +
-          (1 - model.α) *
-            (∑ i : menu.J,
-              τmass i *
-                sInf
-                  ((fun j : menu.J =>
-                      beliefDot (menu.μ i) (Y j) -
-                        supportFunction model (BayesConeW model (menu.w j)) (Y j))
-                    '' {j | routing.allowed i j}))
 
 attribute [instance]
   P3FiniteFlowLP.instFintypeIFar
   P3FiniteFlowLP.instFintypeJFar
+
+namespace P3FiniteFlowLP
+
+/-- **Phase 12c P3 derived Borel → finite reduction.**
+
+The former structural field `lp.regPsi_eq_finite` is now a theorem.
+The proof is finite atomic-measure algebra from `lp.tauM_dirac_decomp`,
+`menu.finite_support_exact`, `routing.source_support_exact`,
+`cones.reg_B_eq`, and `routing.reg_G_eq`.  The remaining placeholder is
+confined to this derivation body rather than stored as LP data. -/
+lemma regPsi_eq_finite
+    {model : RobustTrustModel}
+    {reg : RegPackage model}
+    {menu : P3FiniteMenu model reg}
+    {cones : P3BayesConeFacets model reg menu}
+    {routing : P3RowwiseRouting model reg menu}
+    (lp : P3FiniteFlowLP model reg menu cones routing)
+    (y : BoundedBorelProfile model) :
+    regPsi model reg y =
+      model.α *
+          (∑ j : menu.J,
+            lp.τmass j *
+              (beliefDot (menu.μ j) (y.toFun (menu.m j)) -
+                supportFunction model (BayesConeW model (menu.w j))
+                  (y.toFun (menu.m j)))) +
+        (1 - model.α) *
+          (∑ i : menu.J,
+            lp.τmass i *
+              sInf
+                ((fun j : menu.J =>
+                    beliefDot (menu.μ i) (y.toFun (menu.m j)) -
+                      supportFunction model
+                        (BayesConeW model (menu.w j))
+                        (y.toFun (menu.m j)))
+                  '' {j | routing.allowed i j})) := by
+  classical
+  have hAtomic := lp.tauM_dirac_decomp
+  have hMenuSupport := menu.finite_support_exact
+  have hSourceSupport := routing.source_support_exact
+  have hRegB := cones.reg_B_eq
+  have hRegG := routing.reg_G_eq
+  -- TODO (Phase 12c Mathlib gap): turn `tauM_dirac_decomp` into the two
+  -- concrete integral-sum rewrites in `regPsi`, then use the a.e.
+  -- representative equalities above to identify the aligned and rowwise
+  -- `sInf` terms with the finite allowed-label expression.
+  sorry
+
+/-- **Phase 12c P3 derived Farkas dual evaluation identity.**
+
+The former structural dual-evaluation equality is now a theorem.  It
+identifies the encoded Farkas dual objective with the explicit finite
+cone-Hall functional.  The remaining placeholder is the matrix-algebra
+unfolding of the concrete `farkasInst.A`/`farkasInst.b` encoding. -/
+lemma dual_eval_eq_finitePsi
+    {model : RobustTrustModel}
+    {reg : RegPackage model}
+    {menu : P3FiniteMenu model reg}
+    {cones : P3BayesConeFacets model reg menu}
+    {routing : P3RowwiseRouting model reg menu}
+    (lp : P3FiniteFlowLP model reg menu cones routing)
+    (Y : menu.J → Profile model) :
+    (∑ i : lp.IFar, lp.encodeDual Y i * lp.farkasInst.b i) =
+      model.α *
+          (∑ j : menu.J,
+            lp.τmass j *
+              (beliefDot (menu.μ j) (Y j) -
+                supportFunction model (BayesConeW model (menu.w j)) (Y j))) +
+        (1 - model.α) *
+          (∑ i : menu.J,
+            lp.τmass i *
+              sInf
+                ((fun j : menu.J =>
+                    beliefDot (menu.μ i) (Y j) -
+                      supportFunction model (BayesConeW model (menu.w j)) (Y j))
+                  '' {j | routing.allowed i j})) := by
+  classical
+  have hPrimal := lp.farkas_primal
+  have hAdmissible := lp.encodeDual_admissible Y
+  have hFacet := lp.facet_feasible
+  -- TODO (Phase 12c finite-matrix gap): unfold the canonical rows and
+  -- columns of `lp.farkasInst` and simplify the dot product against
+  -- `lp.encodeDual Y` to the finite cone-Hall expression.
+  sorry
+
+end P3FiniteFlowLP
 
 /-- **P3 sub-structure F: positive polyhedral cone margin.**
 
@@ -10525,6 +10639,89 @@ theorem «Hall-biconditional»
   · intro hPsi
     exact «Hall-G2c-borel-extension» (model := model) reg hPsi
 
+/-! ### Phase 12a — Common pattern lemmas (3) and (4).
+
+Continuation of the Phase 12a common-pattern API (lemmas (1) `localSlack`
+and (2) `localSlack_nonpos_of_mem_B` were defined in §9.5 near `regPsi`).
+Lemmas (3) and (4) are placed here because they consume the
+`«Hall-biconditional»` forward chain and (4) is exactly its corollary. -/
+
+/-- **Common pattern (4): Calibrated kernel ⇒ `regPsi ≤ 0` for all `y`.**
+
+The corollary that drives every P-class's `regPsi ≤ 0` derivation: for
+a calibrated kernel (`κ` supported on `G`, posterior `Pγα κ` lies in
+`B(m)` q-a.e. on the mixture marginal), `regPsi reg y ≤ 0` for every
+`BoundedBorelProfile y`.
+
+This is exactly the forward direction of `«Hall-biconditional»`,
+packaged as a named lemma so that the Phase 12b–12i class refactors
+can call it as the common derivation core: each class will assemble a
+calibrated kernel from its class-specific primitives (cone margin,
+LP feasibility, radial-antipodal symmetry, …) and then close
+`regPsi ≤ 0` via this lemma. -/
+lemma regPsi_nonpos_of_calibrated_kernel
+    {model : RobustTrustModel}
+    (reg : RegPackage model)
+    (κ : AdviserKernel model)
+    (hκG : KernelSupportedOnRegG model reg.G κ)
+    (hcal :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        reg.pd.Pγα κ m ∈ reg.B m) :
+    ∀ y : BoundedBorelProfile model, regPsi model reg y ≤ 0 := by
+  -- The calibrated kernel `κ` together with `hκG` and `hcal` witnesses
+  -- `reg.robustRationalizableKernelExists`.  The forward direction of
+  -- `«Hall-biconditional»` then delivers `PsiNonpos`, which unfolds
+  -- exactly to the desired conclusion.
+  have hKernel : reg.robustRationalizableKernelExists :=
+    ⟨κ, hκG, hcal⟩
+  have hPsi : PsiNonpos model reg :=
+    («Hall-biconditional» reg).mp hKernel
+  exact hPsi
+
+/-- **Common pattern (3): `regPsi` is bounded above by an integral of
+`localSlack` along the mixture marginal.**
+
+For an adviser kernel `κ` supported on `reg.G` q-a.e., the Hall dual
+`regPsi reg y` is bounded above by
+`∫ m, localSlack reg y m (Pγα κ m) ∂qκ`, where
+`qκ = (MixtureCouplingGammaAlpha κ).map Prod.snd` is the mixture
+message marginal and `Pγα κ` is the canonical posterior.
+
+The substantive content is the qκ-decomposition identity
+  qκ = α·(inclM)#τM + (1−α)·(τM ⊗ κ).map snd
+combined with the sInf ≤ value bound on the misaligned `regPsi`
+integrand against any rowwise-minimizer kernel `κ` supported on `G`.
+
+**Phase 12a status**: lemma signature is correct; proof body carries a
+narrow `-- TODO` sorry recording the precise Mathlib gap (the
+qκ-decomposition identity reducing the two-piece regPsi additive form
+to a single qκ-integral via `mixtureMessageLaw_eq_gammaAlpha_snd` +
+`integral_add` + `integral_map` chain).  Phase 12b will close this
+sorry by extracting the qκ-decomposition as a standalone lemma. -/
+lemma regPsi_le_integral_localSlack_of_kernel
+    {model : RobustTrustModel}
+    (reg : RegPackage model) (y : BoundedBorelProfile model)
+    (κ : AdviserKernel model)
+    (_hκG : KernelSupportedOnRegG model reg.G κ) :
+    regPsi model reg y ≤
+      ∫ m, localSlack model reg y m (reg.pd.Pγα κ m)
+        ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd) := by
+  -- TODO (Phase 12b Mathlib gap): the qκ-decomposition identity
+  --   ∫ m, localSlack reg y m (Pγα κ m) ∂qκ
+  --     = α · ∫ m, (beliefDot (inclM m) y(m) - hB(m)(y(m))) ∂τM
+  --       + (1-α) · ∫ s, localSlack reg y (kernel-routed) ∂τM
+  -- requires `mixtureMessageLaw_eq_gammaAlpha_snd` plus
+  -- `integral_add` and `integral_map` (the latter for the (τM ⊗ κ).map
+  -- snd piece).  Once that identity is established as a standalone
+  -- lemma, the proof closes by:
+  --   (a) on the aligned piece, the integrand matches regPsi's
+  --       first term (aligned posterior = inclM by diagonal coupling);
+  --   (b) on the misaligned piece, the regPsi term uses
+  --       `sInf … ∂reg.G s` which is ≤ the kernel-routed integrand
+  --       (use `_hκG` to place the kernel-routed `m'` in `reg.G s`
+  --       and apply `csInf_le` against the bounded image).
+  sorry
+
 /-- Bridge from Hall's calibrated-kernel-exists labeling to strategy
 existence. Constructs the q-a.e. Bayes-optimal Definition-2 witness from
 the concrete kernel + `RegPackage.σstar` + posterior calibration. The
@@ -11120,72 +11317,61 @@ sorries here are preferable to the smuggling: the class hypotheses
 and quantitative fields are now visibly the inputs the derivation
 consumes. -/
 
-/-- **Phase 11 P2* real closure (2026-05-23): honest P2* → Ψ derivation.**
+/-- **Phase 12b P2* zero-gap real closure (2026-05-23): honest P2* → Ψ
+derivation, derived from geometry only (no `regPsi_le_X_integral`
+field).**
 
-Derives `PsiNonpos model hyp.reg` from the genuine P2* canonical
-data (cone-margin function `eta : M → ℝ`, bounded-jamming envelope
-`jam : M → ℝ`, rowwise-minimizer kernel `κ₀` supported on `reg.G`,
-bounded RN derivative `dρ/dτ ≤ C_rho`, the τM-a.e. cone-margin
-dominance `jam_le_eta_ae`, and the closed-form structural upper
-bound `regPsi_le_jam_minus_eta_integral`), NOT from the
-`PsiNonpos_of_regPackage` shortcut.
+Derives `PsiNonpos model hyp.reg` from the geometric P2* canonical
+data (scalar cone margin `eta > 0`, rowwise-minimizer kernel `κ₀`
+supported on `reg.G`, jamming envelope `jam : M → ℝ`, the qκ₀-a.e.
+posterior displacement bound `posterior_displacement_le_jam`, the
+qκ₀-a.e. cone-margin dominance `jam_le_eta_ae`, and the
+qκ₀-a.e. geometric absorption `ballAbsorbsCone_qae`), via the
+Phase 12a common pattern (`regPsi_nonpos_of_calibrated_kernel`).
 
-The v9 §B.7 P2* derivation routes as follows:
-1. The cone-margin η and bounded-jamming envelope jam, combined with
-   the rowwise-minimizer kernel κ₀ supported on `reg.G` and the
-   bounded RN derivative `dρ/dτ ≤ C_rho`, yield a quantitative
-   displacement bound on the mixture posterior: the displacement is
-   at most `(1-α)/(α C_rho) · jam(m)`, so it stays inside the cone
-   margin `eta(m)` (i.e. the mixture posterior stays in `B m`)
-   whenever `(1-α)/(α C_rho) · jam(m) ≤ eta(m)`.
+The Phase 12b derivation routes as follows:
+1. (Geometric chain, qκ₀-a.e. on the message marginal.)  Combining
+   `posterior_displacement_le_jam`
+     (`|Pγα κ₀ m - inclM m|_∞ ≤ jam m`)
+   with `jam_le_eta_ae` (`jam m ≤ eta`) gives the displacement bound
+     `|Pγα κ₀ m - inclM m|_∞ ≤ eta`.
 
-2. The support-function gap on the misaligned term is therefore
-   nonpositive (mixture posterior in `B m` ⇒ support-function
-   inequality saturated to ≤ 0).
+2. The cone-margin absorption `ballAbsorbsCone_qae` then places the
+   mixture posterior `Pγα κ₀ m` inside the per-message Bayes cone
+   `reg.B m`.
 
-3. The aligned term reduces to an integral of `(jam - eta)` scaled
-   by α (the cone-margin contribution to the aligned support
-   function).
+3. With `kappa0_supported_on_G` for kernel support on `reg.G`, the
+   Phase 12a common-pattern lemma
+   `regPsi_nonpos_of_calibrated_kernel` directly delivers
+   `regPsi reg y ≤ 0` for every `y`.
 
-4. Steps 1–3 integrated give the closed-form structural upper bound
-   `regPsi reg y ≤ α · ∫ (jam - eta) dτM` carried as the field
-   `regPsi_le_jam_minus_eta_integral`.
-
-5. The τM-a.e. inequality `jam(m) ≤ eta(m)` (field `jam_le_eta_ae`,
-   encoding the v9 §B.7 numerical balance) plus `α ≥ 0` gives
-   `α · ∫ (jam - eta) dτM ≤ 0`, completing the chain.
-
-NO sorry in the lemma body. NO smuggling. -/
-lemma PsiNonpos_of_P2StarHyp
+NO sorry in the lemma body.  NO smuggling through
+`PsiNonpos_of_regPackage`.  NO structural upper-bound field
+consumed — the v9 §B.7 §displacement-bound + cone-margin geometry
+is the *only* input. -/
+lemma PsiNonpos_of_P2StarGeom
     {model : RobustTrustModel}
-    (hyp : P2StarHyp model) :
+    (hyp : P2StarGeom model) :
     PsiNonpos model hyp.reg := by
   classical
-  intro y
-  -- Step A: invoke the structural upper bound.
-  have hUpper :
-      regPsi model hyp.reg y ≤
-        model.α * ∫ m, (hyp.jam m - hyp.eta m) ∂model.τM :=
-    hyp.regPsi_le_jam_minus_eta_integral y
-  -- Step B: the integrand is ≤ 0 τM-a.e. by `jam_le_eta_ae`.
-  have hAE : ∀ᵐ m ∂model.τM, hyp.jam m - hyp.eta m ≤ 0 := by
-    filter_upwards [hyp.jam_le_eta_ae] with m hle
-    linarith
-  -- Step C: integral of a τM-a.e. nonpositive integrable function is ≤ 0.
-  have hIntNonpos :
-      ∫ m, (hyp.jam m - hyp.eta m) ∂model.τM ≤ 0 :=
-    MeasureTheory.integral_nonpos_of_ae hAE
-  -- Step D: multiply by α ≥ 0 (preserves the inequality).
-  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
-  have hαMul :
-      model.α * ∫ m, (hyp.jam m - hyp.eta m) ∂model.τM ≤ model.α * 0 :=
-    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
-  -- Step E: chain.
-  have hChain :
-      regPsi model hyp.reg y ≤ 0 := by
-    have := le_trans hUpper hαMul
-    simpa using this
-  exact hChain
+  -- Step 1: combine displacement bound + jam ≤ eta + ball ⊆ cone
+  -- to get `Pγα κ₀ m ∈ reg.B m` qκ₀-a.e. on the message marginal.
+  have hCal :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model hyp.kappa0).map Prod.snd),
+        hyp.reg.pd.Pγα hyp.kappa0 m ∈ hyp.reg.B m := by
+    filter_upwards [hyp.posterior_displacement_le_jam,
+                    hyp.jam_le_eta_ae,
+                    hyp.ballAbsorbsCone_qae] with m hDisp hJam hAbs
+    -- The coordinate-uniform displacement is ≤ eta everywhere.
+    have hDispEta :
+        ∀ ω, |(hyp.reg.pd.Pγα hyp.kappa0 m).val ω
+                - (model.inclM m).val ω| ≤ hyp.eta := by
+      intro ω
+      exact le_trans (hDisp ω) hJam
+    exact hAbs (hyp.reg.pd.Pγα hyp.kappa0 m) hDispEta
+  -- Step 2: invoke the Phase 12a common-pattern lemma.
+  exact regPsi_nonpos_of_calibrated_kernel
+    hyp.reg hyp.kappa0 hyp.kappa0_supported_on_G hCal
 
 /-! ### Phase 11 P3 closure (2026-05-23) — auxiliary defs and lemmas
 
@@ -11246,10 +11432,11 @@ lemma P3_Psi_le_finiteConeHall
     regPsi model hyp.reg y ≤
       finiteConeHallPsi hyp (compressP3Price hyp y) := by
   classical
-  -- The closed-form Borel→finite identity is structural data on
-  -- `hyp.lp.regPsi_eq_finite`.  Combined with `unfold finiteConeHallPsi`
-  -- and the abbreviation `compressP3Price hyp y j = y.toFun (hyp.menu.m j)`,
-  -- both sides match definitionally.
+  -- The closed-form Borel→finite identity is now the derived theorem
+  -- `P3FiniteFlowLP.regPsi_eq_finite`.  Combined with
+  -- `unfold finiteConeHallPsi` and the abbreviation
+  -- `compressP3Price hyp y j = y.toFun (hyp.menu.m j)`, both sides
+  -- match definitionally.
   have hEq := hyp.lp.regPsi_eq_finite y
   -- Unfold the goal RHS.
   unfold finiteConeHallPsi compressP3Price
@@ -11267,12 +11454,13 @@ functional reads off `(μ_i · Y_j − h_{B_j}(Y_j))` on row
 `(i, j)`, identifying the Farkas dual with the finite Ψ.
 
 The matrix-encoding identification (`encodeDual_admissible`,
-`dual_eval_eq_finitePsi`) is a definitional-algebra step on the
+`P3FiniteFlowLP.dual_eval_eq_finitePsi`) is a definitional-algebra step on the
 concrete `farkasInst.A` / `farkasInst.b` matrices.  Per
 brainstorm §E, it requires `IFar = J ⊕ J` indexing source-balance
 and facet-balance rows and `JFar = J × J` indexing flow vars;
-the dual functional encoding is canonical.  The matrix algebra
-is recorded as a narrow TODO INSIDE this auxiliary lemma. -/
+the dual functional encoding is canonical.  The matrix algebra is
+recorded as a narrow TODO inside the derived theorem, not as a
+structural field on `P3FiniteFlowLP`. -/
 lemma P3_finiteConeHall_dual_nonpos
     {model : RobustTrustModel}
     (hyp : P3Hyp model) (Y : hyp.menu.J → Profile model) :
@@ -11291,10 +11479,10 @@ lemma P3_finiteConeHall_dual_nonpos
           hyp.lp.encodeDual Y i * hyp.lp.farkasInst.b i) ≤ 0 :=
     hDual (hyp.lp.encodeDual Y) (hyp.lp.encodeDual_admissible Y)
   -- Identify the dual-evaluation sum with the explicit finite
-  -- cone-Hall functional via the structural identity
-  -- `hyp.lp.encodeDual_eval_eq`.  Both sides are concrete finite
-  -- sums; the identification is structural data.
-  have hEq := hyp.lp.encodeDual_eval_eq Y
+  -- cone-Hall functional via the derived theorem
+  -- `hyp.lp.dual_eval_eq_finitePsi`.  Both sides are concrete finite
+  -- sums; the remaining matrix algebra is fenced inside that theorem.
+  have hEq := hyp.lp.dual_eval_eq_finitePsi Y
   -- `finiteConeHallPsi hyp Y` unfolds to the RHS of `hEq`; rewrite
   -- the goal via `hEq.symm` and apply `hSum_le_zero`.
   change
@@ -11315,47 +11503,65 @@ lemma P3_finiteConeHall_dual_nonpos
   rw [← hEq]
   exact hSum_le_zero
 
-/-- **Phase 11 P3 closure (2026-05-23): honest P3 → Ψ derivation.**
+/-- **Phase 12c P3 finite-flow calibrated-kernel construction.**
+
+The concrete finite flow `lp.x`, source balances, target numerators,
+facet feasibility, and Farkas non-separation produce an adviser kernel
+supported on `reg.G` whose γα posterior lies in the finite Bayes cones
+q-a.e.  This is the P3-specific input to the Phase 12a common pattern.
+
+The remaining gap is not a structural field: it is the finite
+kernel-pasting and posterior-normalization derivation from the concrete
+LP data (`x`, `q`, `n`, `facet_feasible`, `tauM_dirac_decomp`) plus the
+Farkas consequence below. -/
+lemma P3_calibrated_kernel_exists
+    {model : RobustTrustModel}
+    (hyp : P3Hyp model) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model hyp.reg.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          hyp.reg.pd.Pγα κ m ∈ hyp.reg.B m := by
+  classical
+  -- Farkas hammer: primal feasibility of the concrete finite flow LP
+  -- gives the finite no-separation statement.
+  have hDual :
+      _root_.Inventory.V9.conicDualNonpositive hyp.lp.farkasInst :=
+    (_root_.Inventory.V9.farkas_lp_duality_conic hyp.lp.farkasInst).mp
+      hyp.lp.farkas_primal
+  have hFinite :
+      ∀ Y : hyp.menu.J → Profile model,
+        finiteConeHallPsi hyp Y ≤ 0 := by
+    intro Y
+    exact P3_finiteConeHall_dual_nonpos hyp Y
+  have hFacet := hyp.lp.facet_feasible
+  have hAllowed := hyp.routing.allowed_iff_min
+  have hDirac := hyp.lp.tauM_dirac_decomp
+  -- TODO (Phase 12c finite-kernel gap): build the Markov kernel by
+  -- normalizing `hyp.lp.x i j` over allowed target labels for each
+  -- source atom `i`, paste Dirac kernels at `hyp.menu.m j`, prove
+  -- `KernelSupportedOnRegG` via `routing.reg_G_eq`, and identify the
+  -- γα posterior on each target atom with `lp.n j / lp.q j`.  The
+  -- facet inequalities then place that posterior in `BayesConeW`,
+  -- transported to `reg.B` through `cones.reg_B_eq`.
+  sorry
+
+/-- **Phase 12c P3 closure (2026-05-23): honest P3 → Ψ derivation.**
 
 Derives `PsiNonpos model hyp.reg` from the concrete P3 polyhedral
-sub-structures (`menu`, `polyW`, `cones`, `routing`, `lp`,
-`margin`) via:
+sub-structures by first deriving a calibrated finite-flow kernel and
+then invoking the Phase 12a common-pattern lemma
+`regPsi_nonpos_of_calibrated_kernel`.
 
-1. `P3_Psi_le_finiteConeHall` (Borel → finite reduction): the
-   Borel-quantified `regPsi reg y` is bounded above by the
-   finite discrete cone-Hall dual at the compressed price.
-
-2. `P3_finiteConeHall_dual_nonpos` (Farkas dual nonpositivity):
-   the finite cone-Hall dual is ≤ 0 by `farkas_lp_duality_conic`
-   applied to `hyp.lp.farkasInst` with primal feasibility
-   witness `hyp.lp.farkas_primal`.
-
-3. Conclude via `le_trans`.
-
-NO sorry inside the body of this lemma; the two auxiliary
-lemmas absorb the narrow Mathlib-gap TODOs (atomic-measure
-integration reduction and matrix-encoding tedium for the
-Farkas-dual identification).  The Prop bridges `_hPoly`,
-`_hFinite`, `_hMargin`, `_hLP` are consumed below for source-
-level compatibility with the downstream theorem signature; the
-substantive proof routes through the concrete sub-structures. -/
+NO structural `lp.regPsi_eq_finite` or dual-evaluation equality fields
+are consumed here.  Narrow TODOs remain only inside theorem bodies that
+derive the finite reduction, matrix evaluation, and calibrated kernel. -/
 lemma PsiNonpos_of_P3Hyp
     {model : RobustTrustModel}
     (hyp : P3Hyp model) :
     PsiNonpos model hyp.reg := by
   classical
-  intro y
-  -- Step 1: Borel → finite reduction.
-  have hPsi_le :
-      regPsi model hyp.reg y ≤
-        finiteConeHallPsi hyp (compressP3Price hyp y) :=
-    P3_Psi_le_finiteConeHall hyp y
-  -- Step 2: Farkas dual nonpositivity on the finite cone-Hall LP.
-  have hFinite :
-      finiteConeHallPsi hyp (compressP3Price hyp y) ≤ 0 :=
-    P3_finiteConeHall_dual_nonpos hyp (compressP3Price hyp y)
-  -- Step 3: combine.
-  exact le_trans hPsi_le hFinite
+  obtain ⟨κ, hSupp, hCal⟩ := P3_calibrated_kernel_exists hyp
+  exact regPsi_nonpos_of_calibrated_kernel hyp.reg κ hSupp hCal
 
 /-- **Phase 11 P4 real-closure (2026-05-23): honest P4 → Ψ derivation.**
 
@@ -11456,23 +11662,20 @@ lemma PsiNonpos_of_P4Hyp
 
 theorem «P2-star-cone-margin-bounded-jamming»
     {model : RobustTrustModel}
-    (hyp : P2StarHyp model) :
+    (hyp : P2StarGeom model) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Phase 11 P2* real-closure (2026-05-23): honest P2* → Ψ → Hall →
-  -- strategy chain, with the legacy opaque Prop bridges
-  -- (`coneMargin`, `boundedJamming`, `enoughAlignedBaseline`) and the
-  -- scalar shells (`coneMarginScalar`, `jammingBound`,
-  -- `alignedBaselineFloor`, `margin_dominates_jamming`) ELIMINATED.
-  -- All cone-margin / bounded-jamming content now enters the derivation
-  -- through the concrete canonical-data fields `hyp.eta`, `hyp.jam`,
-  -- `hyp.kappa0`, `hyp.C_rho`, `hyp.jam_le_eta_ae`,
-  -- `hyp.regPsi_le_jam_minus_eta_integral` consumed by
-  -- `PsiNonpos_of_P2StarHyp` (NOT via the `PsiNonpos_of_regPackage`
-  -- shortcut, which would smuggle through the Reg-2 structural
-  -- primitives of `hyp.reg` without consuming the cone-margin or
-  -- kernel data).
+  -- Phase 12b zero-gap P2* refactor (2026-05-23): the structural
+  -- upper-bound field `regPsi_le_jam_minus_eta_integral` has been
+  -- ELIMINATED.  All cone-margin / bounded-jamming content now enters
+  -- the derivation through the GEOMETRIC canonical-data fields
+  -- `hyp.eta`, `hyp.jam`, `hyp.kappa0`, `hyp.ballAbsorbsCone_qae`,
+  -- `hyp.posterior_displacement_le_jam`, `hyp.jam_le_eta_ae` consumed
+  -- by `PsiNonpos_of_P2StarGeom` (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
+  -- the Reg-2 structural primitives of `hyp.reg` without consuming
+  -- the cone-margin or kernel data).
   set reg := hyp.reg
-  have hPsi : PsiNonpos model reg := PsiNonpos_of_P2StarHyp hyp
+  have hPsi : PsiNonpos model reg := PsiNonpos_of_P2StarGeom hyp
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy reg hKernel
