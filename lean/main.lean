@@ -6617,14 +6617,14 @@ populated from its geometric data:
   τ-symmetry).
 
 * **affine-MLR**: `foliation.Z := model.M`, `lambdaBase := τM`,
-  `fiberPsiIntegrand m := α · singleCrossingIntegrand m`, bound from
-  `AffineMLRSingleCrossingPrimitive.regPsi_le_singleCrossingIntegrand_integral`
-  (affine fibers + MLR single-crossing endpoint data).
+  `fiberPsiIntegrand m := α · singleCrossingIntegrand m`, with the
+  calibrated kernel derived below from affine fibers, the single-crossing
+  endpoint kernel, and MLR monotonicity.
 
 * **polyhedral-scalarizable**: `foliation.Z := model.M`,
   `lambdaBase := τM`, `fiberPsiIntegrand m := α · polyhedralFacetIntegrand m`,
-  bound from `PolyhedralScalarizablePrimitive.regPsi_le_polyhedralFacetIntegrand_integral`
-  (polyhedral facet enumeration + face-normal cones + LP certificate).
+  with the calibrated kernel derived below from the polyhedral facet
+  flow, scalarization, face-normal cones, and LP certificate.
 
 Phase 12g removes the former `regPsi_le_fiber_integral` field from this
 bundle as well as from `FBNFPackage`; the upper bound is now the theorem
@@ -8131,15 +8131,6 @@ structure AffineMLRSingleCrossingPrimitive where
   /-- Integrability against `τM` (needed by Mathlib `integral_nonpos_of_ae`). -/
   integrable_singleCrossingIntegrand :
     Integrable singleCrossingIntegrand model.τM
-  /-- **Phase 11 (2026-05-23)** — v9 §F.MLR closed-form upper bound on
-  `regPsi reg y` from the affine-MLR single-crossing endpoint data.
-  CONCRETE structural identity (both sides explicit real expressions);
-  NOT a Prop trapdoor.  Mirrors
-  `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral`. -/
-  regPsi_le_singleCrossingIntegrand_integral :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model reg y ≤
-        model.α * ∫ m, singleCrossingIntegrand m ∂model.τM
   /-- **Phase 11 final-fix (2026-05-23)** — real affine-fiber + MLR
   endpoint foliation data for the affine-MLR FBNF corollary.  Structural
   commitment to the v9 §F4 measure-theoretic decomposition along the
@@ -8210,13 +8201,6 @@ structure PolyhedralScalarizablePrimitive where
   /-- Integrability against `τM`. -/
   integrable_polyhedralFacetIntegrand :
     Integrable polyhedralFacetIntegrand model.τM
-  /-- **Phase 11 (2026-05-23)** — v9 §F.Poly closed-form upper bound on
-  `regPsi reg y` from the polyhedral facet / face-normal-cone / LP data.
-  CONCRETE structural identity. -/
-  regPsi_le_polyhedralFacetIntegrand_integral :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model reg y ≤
-        model.α * ∫ m, polyhedralFacetIntegrand m ∂model.τM
   /-- **Phase 11 final-fix (2026-05-23)** — real polyhedral-facet
   foliation data for the polyhedral-scalarizable FBNF corollary.
   Carries the genuine `(Z, lambdaBase, fiberPsiIntegrand)` bundle derived
@@ -11683,115 +11667,131 @@ theorem «P4-radial-antipodal-tau-symmetry»
 
 /-! ## §19 FBNF instantiation lemmas (replace vacuous corollaries) -/
 
-/-- **Phase 11 FBNF COROLLARY corrective (2026-05-23): honest affine-MLR
-single-crossing → Ψ derivation.**
+/-- **Phase 12j affine-MLR calibrated-kernel construction.**
 
-Derives `PsiNonpos model prim.reg` from the concrete v9 §F.MLR affine-MLR
-single-crossing canonical data via:
+The deleted structural upper-bound field is replaced by an honest
+derived construction obligation: build an adviser kernel from the
+single-crossing endpoint kernel on each affine fiber, use MLR
+monotonicity / endpoint exposure to prove support on `reg.G`, and use
+the induced endpoint posterior plus global fiber dominance to prove
+qκ-a.e. calibration into `reg.B`.
 
-1. The structural upper bound
-   `regPsi_le_singleCrossingIntegrand_integral`:
-   `regPsi reg y ≤ α * ∫ m, singleCrossingIntegrand m ∂τM`.
+The remaining gap is inside this theorem body, where the paper's
+fiberwise endpoint-kernel construction has to be formalized. -/
+lemma AffineMLRSingleCrossingPrimitive.calibratedKernelExists
+    {model : RobustTrustModel}
+    (prim : AffineMLRSingleCrossingPrimitive model) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model prim.reg.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          prim.reg.pd.Pγα κ m ∈ prim.reg.B m := by
+  classical
+  have _hRegPd : prim.reg.pd = prim.pd := prim.reg_pd_eq
+  have _hAffineFoliation : FBNFFoliationData model prim.reg :=
+    prim.affineFoliation
+  have _hMLR : Prop :=
+    prim.fiberPreservingTRS_from_MLR
+  have _hEndpointSupport : Prop :=
+    prim.endpointSupport_from_singleCrossing
+  have _hEndpointExposure : Prop :=
+    prim.endpointExposure_from_singleCrossing
+  have _hTie : Prop := prim.tieDiscipline_or_split
+  have _hPerturb : Prop :=
+    prim.localTwoSidedPerturbability_from_MLR
+  have _hDominance : prim.globalFiberDominance_from_MLR :=
+    prim.globalFiberDominance_from_MLR_holds
+  have _hSCMeas : Measurable prim.singleCrossingIntegrand :=
+    prim.singleCrossingIntegrand_measurable
+  have _hSCNonpos :
+      ∀ᵐ m ∂model.τM, prim.singleCrossingIntegrand m ≤ 0 :=
+    prim.singleCrossingIntegrand_nonpos_ae
+  have _hSCInt : Integrable prim.singleCrossingIntegrand model.τM :=
+    prim.integrable_singleCrossingIntegrand
+  -- TODO (Phase 12j affine-MLR endpoint-kernel gap): select the two
+  -- single-crossing endpoints on each affine fiber, paste the resulting
+  -- endpoint-supported Markov kernels measurably, prove `reg.G` support
+  -- from endpoint exposure and MLR monotonicity, and identify the
+  -- γα-posterior as lying in `reg.B` qκ-a.e. by the global fiber
+  -- dominance argument.
+  sorry
 
-2. The pointwise τM-a.e. nonpositivity `singleCrossingIntegrand_nonpos_ae`.
+/-- **Phase 12j affine-MLR zero-gap primitive closure.**
 
-3. `MeasureTheory.integral_nonpos_of_ae` applied to the τM-a.e.
-   nonpositive integrand (integrability via
-   `integrable_singleCrossingIntegrand`).
-
-4. Multiplication by `α ≥ 0` preserves the inequality.
-
-5. Composing with step 1: `regPsi reg y ≤ 0`.
-
-NO sorry in the lemma body.  NO smuggling through
-`PsiNonpos_of_regPackage`.  Mirrors `PsiNonpos_of_VariableMarginP2Hyp`
-exactly. -/
+`PsiNonpos` is now derived from the calibrated kernel above and the
+Phase 12a common pattern.  No `regPsi ≤ integral` structural field is
+stored or consumed. -/
 lemma PsiNonpos_of_AffineMLRSingleCrossingPrimitive
     {model : RobustTrustModel}
     (prim : AffineMLRSingleCrossingPrimitive model) :
     PsiNonpos model prim.reg := by
   classical
-  intro y
-  -- Step A: invoke the structural upper bound (paper §F.MLR).
-  have hUpper :
-      regPsi model prim.reg y ≤
-        model.α * ∫ m, prim.singleCrossingIntegrand m ∂model.τM :=
-    prim.regPsi_le_singleCrossingIntegrand_integral y
-  -- Step B: the integrand is ≤ 0 τM-a.e.
-  have hAE :
-      ∀ᵐ m ∂model.τM, prim.singleCrossingIntegrand m ≤ 0 :=
-    prim.singleCrossingIntegrand_nonpos_ae
-  -- Step C: integral of a τM-a.e. nonpositive integrable function is ≤ 0.
-  have hIntNonpos :
-      ∫ m, prim.singleCrossingIntegrand m ∂model.τM ≤ 0 :=
-    MeasureTheory.integral_nonpos_of_ae hAE
-  -- Step D: multiply by α ≥ 0.
-  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
-  have hαMul :
-      model.α * ∫ m, prim.singleCrossingIntegrand m ∂model.τM
-        ≤ model.α * 0 :=
-    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
-  -- Step E: chain.
-  have hChain :
-      regPsi model prim.reg y ≤ 0 := by
-    have := le_trans hUpper hαMul
-    simpa using this
-  exact hChain
+  obtain ⟨κ, hSupp, hCal⟩ :=
+    AffineMLRSingleCrossingPrimitive.calibratedKernelExists prim
+  exact regPsi_nonpos_of_calibrated_kernel prim.reg κ hSupp hCal
 
-/-- **Phase 11 FBNF COROLLARY corrective (2026-05-23): honest polyhedral
-scalarizable → Ψ derivation.**
+/-- **Phase 12j polyhedral-scalarizable calibrated-kernel construction.**
 
-Derives `PsiNonpos model prim.reg` from the concrete v9 §F.Poly polyhedral
-facet / face-normal-cone / LP canonical data via:
+The deleted structural upper-bound field is replaced by an honest
+derived construction obligation: normalize the polyhedral facet flow
+into a Markov kernel, transport it through scalarized Bayes faces, prove
+support using face-normal-cone exposure, and use scalarization to place
+the γα-posterior in `reg.B` qκ-a.e.
 
-1. The structural upper bound
-   `regPsi_le_polyhedralFacetIntegrand_integral`:
-   `regPsi reg y ≤ α * ∫ m, polyhedralFacetIntegrand m ∂τM`.
+The remaining gap is inside this theorem body, where the paper's facet
+flow / scalarization construction has to be formalized. -/
+lemma PolyhedralScalarizablePrimitive.calibratedKernelExists
+    {model : RobustTrustModel}
+    (prim : PolyhedralScalarizablePrimitive model) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model prim.reg.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          prim.reg.pd.Pγα κ m ∈ prim.reg.B m := by
+  classical
+  have _hRegPd : prim.reg.pd = prim.pd := prim.reg_pd_eq
+  have _hFacetFoliation : FBNFFoliationData model prim.reg :=
+    prim.polyhedralFacetFoliation
+  have _hPolyW : Prop := prim.polyhedralW
+  have _hScalarFaces : Prop :=
+    prim.scalarizableBayesFaces
+  have _hTRS : Prop :=
+    prim.fiberPreservingTRS_from_scalarization
+  have _hEndpointSupport : Prop :=
+    prim.endpointSupport_from_scalarizedFaces
+  have _hEndpointExposure : Prop :=
+    prim.endpointExposure_from_faceNormalCones
+  have _hTie : Prop :=
+    prim.finiteFacetTieDiscipline_or_split
+  have _hPerturb : Prop :=
+    prim.localTwoSidedPerturbability_on_faces
+  have _hDominance : prim.globalFiberDominance_or_LP_certificate :=
+    prim.globalFiberDominance_or_LP_certificate_holds
+  have _hFacetMeas : Measurable prim.polyhedralFacetIntegrand :=
+    prim.polyhedralFacetIntegrand_measurable
+  have _hFacetNonpos :
+      ∀ᵐ m ∂model.τM, prim.polyhedralFacetIntegrand m ≤ 0 :=
+    prim.polyhedralFacetIntegrand_nonpos_ae
+  have _hFacetInt : Integrable prim.polyhedralFacetIntegrand model.τM :=
+    prim.integrable_polyhedralFacetIntegrand
+  -- TODO (Phase 12j polyhedral facet-flow gap): normalize the finite
+  -- polyhedral facet flow into a measurable adviser kernel, prove
+  -- `reg.G` support by scalarized face-normal exposure, and identify
+  -- the γα-posterior with the scalarized facet barycenter lying in
+  -- `reg.B` qκ-a.e. by the LP certificate.
+  sorry
 
-2. The pointwise τM-a.e. nonpositivity
-   `polyhedralFacetIntegrand_nonpos_ae`.
+/-- **Phase 12j polyhedral-scalarizable zero-gap primitive closure.**
 
-3. `MeasureTheory.integral_nonpos_of_ae` applied to the τM-a.e.
-   nonpositive integrand (integrability via
-   `integrable_polyhedralFacetIntegrand`).
-
-4. Multiplication by `α ≥ 0`.
-
-5. Composing with step 1: `regPsi reg y ≤ 0`.
-
-NO sorry.  NO smuggling through `PsiNonpos_of_regPackage`.  Mirrors
-`PsiNonpos_of_VariableMarginP2Hyp` / `PsiNonpos_of_GraphFBNFPackage`. -/
+`PsiNonpos` is now derived from the calibrated kernel above and the
+Phase 12a common pattern.  No `regPsi ≤ integral` structural field is
+stored or consumed. -/
 lemma PsiNonpos_of_PolyhedralScalarizablePrimitive
     {model : RobustTrustModel}
     (prim : PolyhedralScalarizablePrimitive model) :
     PsiNonpos model prim.reg := by
   classical
-  intro y
-  -- Step A: structural upper bound (paper §F.Poly).
-  have hUpper :
-      regPsi model prim.reg y ≤
-        model.α * ∫ m, prim.polyhedralFacetIntegrand m ∂model.τM :=
-    prim.regPsi_le_polyhedralFacetIntegrand_integral y
-  -- Step B: pointwise nonpositivity.
-  have hAE :
-      ∀ᵐ m ∂model.τM, prim.polyhedralFacetIntegrand m ≤ 0 :=
-    prim.polyhedralFacetIntegrand_nonpos_ae
-  -- Step C: integral of nonpositive integrable function.
-  have hIntNonpos :
-      ∫ m, prim.polyhedralFacetIntegrand m ∂model.τM ≤ 0 :=
-    MeasureTheory.integral_nonpos_of_ae hAE
-  -- Step D: α ≥ 0 preserves inequality.
-  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
-  have hαMul :
-      model.α * ∫ m, prim.polyhedralFacetIntegrand m ∂model.τM
-        ≤ model.α * 0 :=
-    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
-  -- Step E: chain.
-  have hChain :
-      regPsi model prim.reg y ≤ 0 := by
-    have := le_trans hUpper hαMul
-    simpa using this
-  exact hChain
+  obtain ⟨κ, hSupp, hCal⟩ :=
+    PolyhedralScalarizablePrimitive.calibratedKernelExists prim
+  exact regPsi_nonpos_of_calibrated_kernel prim.reg κ hSupp hCal
 
 /-- Helper: the F1 calibration identity `α·1 + (1−α)·1 = 1` with
 trivial pasting weights `wL = wR = 1`. Used by all three FBNF
