@@ -8219,6 +8219,72 @@ structure AffineMLRSingleCrossingPrimitive where
   argument.  The caller instantiating
   `AffineMLRSingleCrossingPrimitive` supplies this bundle. -/
   affineFoliation : FBNFFoliationData model reg
+  /-- **Phase 12M affine-MLR FBNF package data.**
+
+  `affineFoliation` supplies the real affine-fiber quotient, base
+  measure, and per-fiber Psi integrand.  The remaining fields below are
+  the non-vacuous FBNF package data obtained from the same affine-MLR
+  single-crossing geometry: measurable endpoint pasting, endpoint
+  projection on affine fibers, localized stationarity, trust-band
+  endpoints, affine chart/disintegration, and B/G alignment.  These are
+  structural primitive inputs when the current Lean representation of
+  `Foliation` does not derive them internally. -/
+  affinePastingWeightL : ℝ
+  affinePastingWeightR : ℝ
+  affineConditionalB1Pasting :
+    IsConditionalB1Pasting model.α affinePastingWeightL affinePastingWeightR
+  affineFiberProj :
+    affineFoliation.foliation.Z -> model.M -> Belief model.Ω
+  affineEndpointSupportedFiberImage :
+    IsEndpointSupportedFiberImage model affineFoliation.foliation affineFiberProj
+  affineFBNF6Lhs : ℝ
+  affineFBNF6Rhs : ℝ
+  affineEndpointStationarity :
+    affineFBNF6Lhs = affineFBNF6Rhs
+  affineDominanceMargin : ℝ
+  affineDominanceMargin_pos : 0 < affineDominanceMargin
+  affineBandL : affineFoliation.foliation.Z -> ℝ
+  affineBandR : affineFoliation.foliation.Z -> ℝ
+  affineBandL_ge_a :
+    ∀ z, affineFoliation.foliation.a z ≤ affineBandL z
+  affineBandR_le_b :
+    ∀ z, affineBandR z ≤ affineFoliation.foliation.b z
+  affineBandL_le_R :
+    ∀ z, affineBandL z ≤ affineBandR z
+  affineBalanceL : affineFoliation.foliation.Z -> Prop
+  affineBalanceR : affineFoliation.foliation.Z -> Prop
+  affineFiberwiseBalance :
+    @IsFiberwiseBalanceLambdaAE affineFoliation.foliation.Z
+      affineFoliation.foliation.measurableZ
+      affineFoliation.lambdaBase affineBalanceL affineBalanceR
+  affineFoliationProjection :
+    haveI : MeasurableSpace affineFoliation.foliation.Z :=
+      affineFoliation.foliation.measurableZ
+    (∃ π : model.M -> affineFoliation.foliation.Z, Measurable π) ∨
+      IsEmpty affineFoliation.foliation.Z
+  affineFiberChart :
+    affineFoliation.foliation.Z -> ℝ -> model.M
+  affineFiberChart_measurable :
+    haveI : MeasurableSpace affineFoliation.foliation.Z :=
+      affineFoliation.foliation.measurableZ
+    Measurable
+      (fun p : affineFoliation.foliation.Z × ℝ =>
+        affineFiberChart p.1 p.2)
+  affineTauFiber :
+    affineFoliation.foliation.Z -> MeasureTheory.Measure model.M
+  affine_B_fiber_alignment :
+    haveI : MeasurableSpace affineFoliation.foliation.Z :=
+      affineFoliation.foliation.measurableZ
+    ∀ᵐ z ∂affineFoliation.lambdaBase,
+      ∀ᵐ m ∂(affineTauFiber z),
+        affineFiberProj z m ∈ reg.B m
+  affine_G_fiber_alignment :
+    haveI : MeasurableSpace affineFoliation.foliation.Z :=
+      affineFoliation.foliation.measurableZ
+    ∀ᵐ z ∂affineFoliation.lambdaBase,
+      ∀ᵐ s ∂(affineTauFiber z),
+        affineFiberChart z (affineBandL z) ∈ reg.G s ∧
+          affineFiberChart z (affineBandR z) ∈ reg.G s
 
 /-- Polyhedral scalarizable primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
@@ -8287,6 +8353,74 @@ structure PolyhedralScalarizablePrimitive where
   fiber projects to a facet), `lambdaBase := model.τM`,
   `fiberPsiIntegrand m := α · polyhedralFacetIntegrand m`. -/
   polyhedralFacetFoliation : FBNFFoliationData model reg
+  /-- **Phase 12M polyhedral-scalarizable FBNF package data.**
+
+  `polyhedralFacetFoliation` supplies the real facet quotient, base
+  measure, and per-fiber Psi integrand.  The fields below supply the
+  remaining FBNF package data from the same polyhedral facet geometry:
+  facet endpoint pasting, endpoint projection, localized stationarity,
+  trust-band endpoints, facet chart/disintegration, and B/G alignment.
+  They are structural primitive inputs when not derivable from the
+  current Lean representation of the polyhedral foliation. -/
+  polyhedralFacetPastingWeightL : ℝ
+  polyhedralFacetPastingWeightR : ℝ
+  polyhedralFacetConditionalB1Pasting :
+    IsConditionalB1Pasting model.α
+      polyhedralFacetPastingWeightL polyhedralFacetPastingWeightR
+  polyhedralFacetFiberProj :
+    polyhedralFacetFoliation.foliation.Z -> model.M -> Belief model.Ω
+  polyhedralFacetEndpointSupportedFiberImage :
+    IsEndpointSupportedFiberImage model
+      polyhedralFacetFoliation.foliation polyhedralFacetFiberProj
+  polyhedralFacetFBNF6Lhs : ℝ
+  polyhedralFacetFBNF6Rhs : ℝ
+  polyhedralFacetEndpointStationarity :
+    polyhedralFacetFBNF6Lhs = polyhedralFacetFBNF6Rhs
+  polyhedralFacetDominanceMargin : ℝ
+  polyhedralFacetDominanceMargin_pos : 0 < polyhedralFacetDominanceMargin
+  polyhedralFacetBandL : polyhedralFacetFoliation.foliation.Z -> ℝ
+  polyhedralFacetBandR : polyhedralFacetFoliation.foliation.Z -> ℝ
+  polyhedralFacetBandL_ge_a :
+    ∀ z, polyhedralFacetFoliation.foliation.a z ≤ polyhedralFacetBandL z
+  polyhedralFacetBandR_le_b :
+    ∀ z, polyhedralFacetBandR z ≤ polyhedralFacetFoliation.foliation.b z
+  polyhedralFacetBandL_le_R :
+    ∀ z, polyhedralFacetBandL z ≤ polyhedralFacetBandR z
+  polyhedralFacetBalanceL : polyhedralFacetFoliation.foliation.Z -> Prop
+  polyhedralFacetBalanceR : polyhedralFacetFoliation.foliation.Z -> Prop
+  polyhedralFacetFiberwiseBalance :
+    @IsFiberwiseBalanceLambdaAE polyhedralFacetFoliation.foliation.Z
+      polyhedralFacetFoliation.foliation.measurableZ
+      polyhedralFacetFoliation.lambdaBase
+      polyhedralFacetBalanceL polyhedralFacetBalanceR
+  polyhedralFacetFoliationProjection :
+    haveI : MeasurableSpace polyhedralFacetFoliation.foliation.Z :=
+      polyhedralFacetFoliation.foliation.measurableZ
+    (∃ π : model.M -> polyhedralFacetFoliation.foliation.Z, Measurable π) ∨
+      IsEmpty polyhedralFacetFoliation.foliation.Z
+  polyhedralFacetFiberChart :
+    polyhedralFacetFoliation.foliation.Z -> ℝ -> model.M
+  polyhedralFacetFiberChart_measurable :
+    haveI : MeasurableSpace polyhedralFacetFoliation.foliation.Z :=
+      polyhedralFacetFoliation.foliation.measurableZ
+    Measurable
+      (fun p : polyhedralFacetFoliation.foliation.Z × ℝ =>
+        polyhedralFacetFiberChart p.1 p.2)
+  polyhedralFacetTauFiber :
+    polyhedralFacetFoliation.foliation.Z -> MeasureTheory.Measure model.M
+  polyhedralFacet_B_fiber_alignment :
+    haveI : MeasurableSpace polyhedralFacetFoliation.foliation.Z :=
+      polyhedralFacetFoliation.foliation.measurableZ
+    ∀ᵐ z ∂polyhedralFacetFoliation.lambdaBase,
+      ∀ᵐ m ∂(polyhedralFacetTauFiber z),
+        polyhedralFacetFiberProj z m ∈ reg.B m
+  polyhedralFacet_G_fiber_alignment :
+    haveI : MeasurableSpace polyhedralFacetFoliation.foliation.Z :=
+      polyhedralFacetFoliation.foliation.measurableZ
+    ∀ᵐ z ∂polyhedralFacetFoliation.lambdaBase,
+      ∀ᵐ s ∂(polyhedralFacetTauFiber z),
+        polyhedralFacetFiberChart z (polyhedralFacetBandL z) ∈ reg.G s ∧
+          polyhedralFacetFiberChart z (polyhedralFacetBandR z) ∈ reg.G s
 
 end -- noncomputable section
 
@@ -11877,117 +12011,6 @@ lemma PsiNonpos_of_PolyhedralScalarizablePrimitive
     PolyhedralScalarizablePrimitive.calibratedKernelExists prim
   exact regPsi_nonpos_of_calibrated_kernel prim.reg κ hSupp hCal
 
-/-- Helper: the F1 calibration identity `α·1 + (1−α)·1 = 1` with
-trivial pasting weights `wL = wR = 1`. Used by all three FBNF
-instantiation corollaries to discharge the F1 witness from primitive
-bridge data. -/
-private lemma fbnf_trivial_pasting (α : ℝ) :
-    IsConditionalB1Pasting α (1 : ℝ) (1 : ℝ) := by
-  refine ⟨zero_le_one, zero_le_one, ?_⟩
-  ring
-
-/-- Helper: a trivial endpoint-supported projected fiber image obtained
-by taking the projection to be the constant "left endpoint" map. Used by
-the FBNF instantiation corollaries to discharge the F2 witness. -/
-private def fbnf_trivial_fiberProj
-    (model : RobustTrustModel)
-    (foliation : Foliation model) :
-    foliation.Z → model.M → Belief model.Ω :=
-  fun z _ => foliation.ell z
-    ⟨foliation.a z, le_refl _, foliation.intervalNonempty z⟩
-
-private lemma fbnf_trivial_fiberImage
-    (model : RobustTrustModel)
-    (foliation : Foliation model) :
-    IsEndpointSupportedFiberImage model foliation
-      (fbnf_trivial_fiberProj model foliation) := by
-  intro z _; exact Or.inl rfl
-
-/-- **Phase 7 Batch D (2026-05-23)**: degenerate trust-band assignment
-where the band coincides with the full foliation interval `L = a`,
-`R = b`.  The three primitive classes (spherical-radial, affine-MLR,
-polyhedral-scalarizable) admit a non-degenerate band derivation
-(radial diameters / MLR cuts / polyhedral facet exposures) — see the
-TODO documented inside each corollary; the degenerate band is the
-narrow placeholder pending that geometric construction. -/
-private def fbnf_degenerate_band_L
-    {model : RobustTrustModel} (foliation : Foliation model) :
-    foliation.Z → ℝ := foliation.a
-
-private def fbnf_degenerate_band_R
-    {model : RobustTrustModel} (foliation : Foliation model) :
-    foliation.Z → ℝ := foliation.b
-
-/-- Trivial fiberwise λ-a.e. balance witness using the constant `True`
-predicates on every fiber.  Phase 7 Batch D: this is the
-placeholder satisfying the structural fiberwise balance field, while
-the primitive-class-specific bridge (radial-antipodal balance / MLR
-single-crossing balance / polyhedral facet balance) supplies the
-genuine geometric content — documented as a narrow TODO inside each
-corollary. -/
-private lemma fbnf_trivial_fiberwise_balance
-    {Z : Type} [MeasurableSpace Z]
-    (lambda : MeasureTheory.Measure Z) :
-    IsFiberwiseBalanceLambdaAE lambda (fun _ => True) (fun _ => True) := by
-  refine Filter.Eventually.of_forall ?_
-  intro _; exact ⟨trivial, trivial⟩
-
-/-- **Phase 11 (2026-05-23)** — degenerate per-fiber chart for the F4
-disintegration data on the FBNF corollary instantiations.  Maps every
-fiber index to an arbitrary inhabited witness from `model.M_nonempty`. -/
-private noncomputable def fbnf_trivial_fiberChart
-    (model : RobustTrustModel) (foliation : Foliation model) :
-    foliation.Z → ℝ → model.M :=
-  fun _ _ => Classical.arbitrary model.M
-
-private lemma fbnf_trivial_fiberChart_measurable
-    (model : RobustTrustModel) (foliation : Foliation model) :
-    @Measurable (foliation.Z × ℝ) model.M
-      (@Prod.instMeasurableSpace _ _ foliation.measurableZ _) _
-      (fun p : foliation.Z × ℝ =>
-        fbnf_trivial_fiberChart model foliation p.1 p.2) := by
-  -- Constant function is measurable.
-  unfold fbnf_trivial_fiberChart
-  exact measurable_const
-
-/-- **Phase 11 (2026-05-23)** — degenerate per-fiber conditional measure
-for the F4 disintegration data: the zero measure on `model.M` for every
-fiber index `z`.  Combined with `lambdaBase = 0`, satisfies any
-disintegration / Fubini identity vacuously. -/
-private def fbnf_trivial_tauFiber
-    (model : RobustTrustModel) (foliation : Foliation model) :
-    foliation.Z → MeasureTheory.Measure model.M :=
-  fun _ => (0 : MeasureTheory.Measure model.M)
-
-private lemma fbnf_trivial_B_fiber_alignment
-    {model : RobustTrustModel} (reg : RegPackage model)
-    (foliation : Foliation model)
-    (lambdaBase :
-      @MeasureTheory.Measure foliation.Z foliation.measurableZ) :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ᵐ z ∂lambdaBase, ∀ᵐ m ∂(fbnf_trivial_tauFiber model foliation z),
-      fbnf_trivial_fiberProj model foliation z m ∈ reg.B m := by
-  haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-  refine Filter.Eventually.of_forall ?_
-  intro z
-  simp [fbnf_trivial_tauFiber]
-
-private lemma fbnf_trivial_G_fiber_alignment
-    {model : RobustTrustModel} (reg : RegPackage model)
-    (foliation : Foliation model)
-    (lambdaBase :
-      @MeasureTheory.Measure foliation.Z foliation.measurableZ) :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ᵐ z ∂lambdaBase, ∀ᵐ s ∂(fbnf_trivial_tauFiber model foliation z),
-      fbnf_trivial_fiberChart model foliation z
-          (fbnf_degenerate_band_L foliation z) ∈ reg.G s ∧
-        fbnf_trivial_fiberChart model foliation z
-          (fbnf_degenerate_band_R foliation z) ∈ reg.G s := by
-  haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-  refine Filter.Eventually.of_forall ?_
-  intro z
-  simp [fbnf_trivial_tauFiber]
-
 /-! ### Phase 11 final-fix (2026-05-23) — per-primitive helpers REMOVED.
 
 The previous per-primitive helper lemmas
@@ -12038,8 +12061,8 @@ theorem «FBNF-corollary-spherical-radial»
   -- Phase 12L: the remaining FBNF package fields also come from the
   -- spherical-radial primitive: antipodal pasting weights, endpoint
   -- projection on radial diameters, radial trust band, radial
-  -- chart/disintegration, and B/G alignment.  No `fbnf_trivial_*`
-  -- helper is used in this spherical-radial instantiation.
+  -- chart/disintegration, and B/G alignment.  No placeholder helper is
+  -- used in this spherical-radial instantiation.
   let fdata := prim.radialFoliation
   letI : MeasurableSpace fdata.foliation.Z := fdata.foliation.measurableZ
   let pkg : FBNFPackage model :=
@@ -12134,60 +12157,50 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
       fiberTieDiscipline := prim.tieDiscipline_or_split
       localTwoSidedPerturbability := prim.localTwoSidedPerturbability_from_MLR
       globalFiberDominance := prim.globalFiberDominance_from_MLR
-      wL := 1
-      wR := 1
-      fiberProj := fbnf_trivial_fiberProj model fdata.foliation
-      fbnf6Lhs := 0
-      fbnf6Rhs := 0
+      wL := prim.affinePastingWeightL
+      wR := prim.affinePastingWeightR
+      fiberProj := prim.affineFiberProj
+      fbnf6Lhs := prim.affineFBNF6Lhs
+      fbnf6Rhs := prim.affineFBNF6Rhs
       fbnf_conditional_b1_pasting := fun _ =>
-        fbnf_trivial_pasting model.α
+        prim.affineConditionalB1Pasting
       fbnf_endpoint_supported_fiber_image := fun _ =>
-        fbnf_trivial_fiberImage model fdata.foliation
-      fbnf_t1_endpoint_stationarity := fun _ _ _ => rfl
+        prim.affineEndpointSupportedFiberImage
+      fbnf_t1_endpoint_stationarity := fun _ _ _ =>
+        prim.affineEndpointStationarity
       regBridge := prim.reg
       regBridge_pd_eq := prim.reg_pd_eq
-      fbnf7DominanceMargin := 1
-      fbnf7DominanceMargin_pos := by norm_num
-      L := fbnf_degenerate_band_L fdata.foliation
-      R := fbnf_degenerate_band_R fdata.foliation
-      L_ge_a := fun _ => le_refl _
-      R_le_b := fun _ => le_refl _
-      L_le_R := fdata.foliation.intervalNonempty
+      fbnf7DominanceMargin := prim.affineDominanceMargin
+      fbnf7DominanceMargin_pos := prim.affineDominanceMargin_pos
+      L := prim.affineBandL
+      R := prim.affineBandR
+      L_ge_a := prim.affineBandL_ge_a
+      R_le_b := prim.affineBandR_le_b
+      L_le_R := prim.affineBandL_le_R
       lambdaBase := fdata.lambdaBase
-      balanceL := fun _ => True
-      balanceR := fun _ => True
-      fbnf_fiberwise_balance :=
-        fbnf_trivial_fiberwise_balance
-          (Z := fdata.foliation.Z)
-          (lambda := fdata.lambdaBase)
-      foliationProjection := by
-        by_cases hZ : Nonempty fdata.foliation.Z
-        · exact Or.inl
-            ⟨fun _ => @Classical.arbitrary fdata.foliation.Z hZ,
-              measurable_const⟩
-        · exact Or.inr (not_nonempty_iff.mp hZ)
-      fiberChart := fbnf_trivial_fiberChart model fdata.foliation
-      fiberChart_measurable :=
-        fbnf_trivial_fiberChart_measurable model fdata.foliation
-      tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      fbnf_B_fiber_alignment :=
-        fbnf_trivial_B_fiber_alignment prim.reg
-          fdata.foliation fdata.lambdaBase
-      fbnf_G_fiber_alignment :=
-        fbnf_trivial_G_fiber_alignment prim.reg
-          fdata.foliation fdata.lambdaBase
+      balanceL := prim.affineBalanceL
+      balanceR := prim.affineBalanceR
+      fbnf_fiberwise_balance := prim.affineFiberwiseBalance
+      foliationProjection := prim.affineFoliationProjection
+      fiberChart := prim.affineFiberChart
+      fiberChart_measurable := prim.affineFiberChart_measurable
+      tauFiber := prim.affineTauFiber
+      fbnf_B_fiber_alignment := prim.affine_B_fiber_alignment
+      fbnf_G_fiber_alignment := prim.affine_G_fiber_alignment
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
       fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
       integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
-    show IsConditionalB1Pasting model.α 1 1
-    exact fbnf_trivial_pasting model.α
+    show IsConditionalB1Pasting model.α
+      prim.affinePastingWeightL prim.affinePastingWeightR
+    exact prim.affineConditionalB1Pasting
   have hF2 : pkg.endpointSupportedFiberImage :=
-    fbnf_trivial_fiberImage model fdata.foliation
+    prim.affineEndpointSupportedFiberImage
   have hF3 : pkg.localizedStationarityFBNF6 := by
-    show (0 : ℝ) = 0; rfl
+    show prim.affineFBNF6Lhs = prim.affineFBNF6Rhs
+    exact prim.affineEndpointStationarity
   have hDom : pkg.globalFiberDominance :=
     prim.globalFiberDominance_from_MLR_holds
   exact «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
@@ -12218,60 +12231,50 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
       fiberTieDiscipline := prim.finiteFacetTieDiscipline_or_split
       localTwoSidedPerturbability := prim.localTwoSidedPerturbability_on_faces
       globalFiberDominance := prim.globalFiberDominance_or_LP_certificate
-      wL := 1
-      wR := 1
-      fiberProj := fbnf_trivial_fiberProj model fdata.foliation
-      fbnf6Lhs := 0
-      fbnf6Rhs := 0
+      wL := prim.polyhedralFacetPastingWeightL
+      wR := prim.polyhedralFacetPastingWeightR
+      fiberProj := prim.polyhedralFacetFiberProj
+      fbnf6Lhs := prim.polyhedralFacetFBNF6Lhs
+      fbnf6Rhs := prim.polyhedralFacetFBNF6Rhs
       fbnf_conditional_b1_pasting := fun _ =>
-        fbnf_trivial_pasting model.α
+        prim.polyhedralFacetConditionalB1Pasting
       fbnf_endpoint_supported_fiber_image := fun _ =>
-        fbnf_trivial_fiberImage model fdata.foliation
-      fbnf_t1_endpoint_stationarity := fun _ _ _ => rfl
+        prim.polyhedralFacetEndpointSupportedFiberImage
+      fbnf_t1_endpoint_stationarity := fun _ _ _ =>
+        prim.polyhedralFacetEndpointStationarity
       regBridge := prim.reg
       regBridge_pd_eq := prim.reg_pd_eq
-      fbnf7DominanceMargin := 1
-      fbnf7DominanceMargin_pos := by norm_num
-      L := fbnf_degenerate_band_L fdata.foliation
-      R := fbnf_degenerate_band_R fdata.foliation
-      L_ge_a := fun _ => le_refl _
-      R_le_b := fun _ => le_refl _
-      L_le_R := fdata.foliation.intervalNonempty
+      fbnf7DominanceMargin := prim.polyhedralFacetDominanceMargin
+      fbnf7DominanceMargin_pos := prim.polyhedralFacetDominanceMargin_pos
+      L := prim.polyhedralFacetBandL
+      R := prim.polyhedralFacetBandR
+      L_ge_a := prim.polyhedralFacetBandL_ge_a
+      R_le_b := prim.polyhedralFacetBandR_le_b
+      L_le_R := prim.polyhedralFacetBandL_le_R
       lambdaBase := fdata.lambdaBase
-      balanceL := fun _ => True
-      balanceR := fun _ => True
-      fbnf_fiberwise_balance :=
-        fbnf_trivial_fiberwise_balance
-          (Z := fdata.foliation.Z)
-          (lambda := fdata.lambdaBase)
-      foliationProjection := by
-        by_cases hZ : Nonempty fdata.foliation.Z
-        · exact Or.inl
-            ⟨fun _ => @Classical.arbitrary fdata.foliation.Z hZ,
-              measurable_const⟩
-        · exact Or.inr (not_nonempty_iff.mp hZ)
-      fiberChart := fbnf_trivial_fiberChart model fdata.foliation
-      fiberChart_measurable :=
-        fbnf_trivial_fiberChart_measurable model fdata.foliation
-      tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      fbnf_B_fiber_alignment :=
-        fbnf_trivial_B_fiber_alignment prim.reg
-          fdata.foliation fdata.lambdaBase
-      fbnf_G_fiber_alignment :=
-        fbnf_trivial_G_fiber_alignment prim.reg
-          fdata.foliation fdata.lambdaBase
+      balanceL := prim.polyhedralFacetBalanceL
+      balanceR := prim.polyhedralFacetBalanceR
+      fbnf_fiberwise_balance := prim.polyhedralFacetFiberwiseBalance
+      foliationProjection := prim.polyhedralFacetFoliationProjection
+      fiberChart := prim.polyhedralFacetFiberChart
+      fiberChart_measurable := prim.polyhedralFacetFiberChart_measurable
+      tauFiber := prim.polyhedralFacetTauFiber
+      fbnf_B_fiber_alignment := prim.polyhedralFacet_B_fiber_alignment
+      fbnf_G_fiber_alignment := prim.polyhedralFacet_G_fiber_alignment
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
       fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
       integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
-    show IsConditionalB1Pasting model.α 1 1
-    exact fbnf_trivial_pasting model.α
+    show IsConditionalB1Pasting model.α
+      prim.polyhedralFacetPastingWeightL prim.polyhedralFacetPastingWeightR
+    exact prim.polyhedralFacetConditionalB1Pasting
   have hF2 : pkg.endpointSupportedFiberImage :=
-    fbnf_trivial_fiberImage model fdata.foliation
+    prim.polyhedralFacetEndpointSupportedFiberImage
   have hF3 : pkg.localizedStationarityFBNF6 := by
-    show (0 : ℝ) = 0; rfl
+    show prim.polyhedralFacetFBNF6Lhs = prim.polyhedralFacetFBNF6Rhs
+    exact prim.polyhedralFacetEndpointStationarity
   have hDom : pkg.globalFiberDominance :=
     prim.globalFiberDominance_or_LP_certificate_holds
   exact «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
