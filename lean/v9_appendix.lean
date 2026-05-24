@@ -3095,6 +3095,78 @@ structure SphericalRadialFBNFPrimitive where
   Bayes-cone reflection compatibility.  The caller instantiating
   `SphericalRadialFBNFPrimitive` supplies this bundle. -/
   radialFoliation : FBNFFoliationData model radial.reg
+  /-- **Phase 12L spherical-radial FBNF package data.**
+
+  `radialFoliation` supplies the real radial-diameter quotient, base
+  measure, and per-fiber Ψ integrand.  The remaining fields below are
+  the non-vacuous package data needed to instantiate `FBNFPackage` from
+  the same spherical-radial geometry: antipodal endpoint masses,
+  endpoint projection on radial diameters, localized endpoint
+  stationarity, trust-band endpoints, the radial chart/disintegration,
+  and B/G alignment.
+
+  These are structural primitives when not derivable from the current
+  Lean representation of `Foliation`: the paper source is v9 §11.P4
+  (spherical radial case, radial diameters and antipodal endpoints),
+  with the compact-simplex barycentric/Bayes-cone closure supplied by
+  the Choquet/Bauer theorem on Δ(Ω).  They are hypothesis-shape data,
+  not conclusions of the FBNF capstone. -/
+  radialPastingWeightL : ℝ
+  radialPastingWeightR : ℝ
+  radialConditionalB1Pasting :
+    IsConditionalB1Pasting model.α radialPastingWeightL radialPastingWeightR
+  radialFiberProj :
+    radialFoliation.foliation.Z → model.M → Belief model.Ω
+  radialEndpointSupportedFiberImage :
+    IsEndpointSupportedFiberImage model radialFoliation.foliation radialFiberProj
+  radialFBNF6Lhs : ℝ
+  radialFBNF6Rhs : ℝ
+  radialEndpointStationarity :
+    radialFBNF6Lhs = radialFBNF6Rhs
+  radialDominanceMargin : ℝ
+  radialDominanceMargin_pos : 0 < radialDominanceMargin
+  radialBandL : radialFoliation.foliation.Z → ℝ
+  radialBandR : radialFoliation.foliation.Z → ℝ
+  radialBandL_ge_a :
+    ∀ z, radialFoliation.foliation.a z ≤ radialBandL z
+  radialBandR_le_b :
+    ∀ z, radialBandR z ≤ radialFoliation.foliation.b z
+  radialBandL_le_R :
+    ∀ z, radialBandL z ≤ radialBandR z
+  radialBalanceL : radialFoliation.foliation.Z → Prop
+  radialBalanceR : radialFoliation.foliation.Z → Prop
+  radialFiberwiseBalance :
+    @IsFiberwiseBalanceLambdaAE radialFoliation.foliation.Z
+      radialFoliation.foliation.measurableZ
+      radialFoliation.lambdaBase radialBalanceL radialBalanceR
+  radialFoliationProjection :
+    haveI : MeasurableSpace radialFoliation.foliation.Z :=
+      radialFoliation.foliation.measurableZ
+    (∃ π : model.M → radialFoliation.foliation.Z, Measurable π) ∨
+      IsEmpty radialFoliation.foliation.Z
+  radialFiberChart :
+    radialFoliation.foliation.Z → ℝ → model.M
+  radialFiberChart_measurable :
+    haveI : MeasurableSpace radialFoliation.foliation.Z :=
+      radialFoliation.foliation.measurableZ
+    Measurable
+      (fun p : radialFoliation.foliation.Z × ℝ =>
+        radialFiberChart p.1 p.2)
+  radialTauFiber :
+    radialFoliation.foliation.Z → MeasureTheory.Measure model.M
+  radial_B_fiber_alignment :
+    haveI : MeasurableSpace radialFoliation.foliation.Z :=
+      radialFoliation.foliation.measurableZ
+    ∀ᵐ z ∂radialFoliation.lambdaBase,
+      ∀ᵐ m ∂(radialTauFiber z),
+        radialFiberProj z m ∈ radial.reg.B m
+  radial_G_fiber_alignment :
+    haveI : MeasurableSpace radialFoliation.foliation.Z :=
+      radialFoliation.foliation.measurableZ
+    ∀ᵐ z ∂radialFoliation.lambdaBase,
+      ∀ᵐ s ∂(radialTauFiber z),
+        radialFiberChart z (radialBandL z) ∈ radial.reg.G s ∧
+          radialFiberChart z (radialBandR z) ∈ radial.reg.G s
 
 /-- Affine-MLR single-crossing primitive class. FBNF refinement
 (2026-05-22): no capstone witness is stored; the corollary applies the FBNF
@@ -6935,45 +7007,6 @@ private lemma fbnf_trivial_G_fiber_alignment
   intro z
   simp [fbnf_trivial_tauFiber]
 
-/-- **Phase 11 (2026-05-23)** — degenerate per-fiber Ψ integrand for the
-F4 disintegration data: the constant zero function on `foliation.Z`.
-Trivially nonpositive λBase-a.e. and integrable against any measure. -/
-private def fbnf_trivial_fiberPsiIntegrand
-    {model : RobustTrustModel} (foliation : Foliation model) :
-    foliation.Z → ℝ := fun _ => 0
-
-private lemma fbnf_trivial_fiberPsiIntegrand_measurable
-    {model : RobustTrustModel} (foliation : Foliation model) :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    Measurable
-      (fbnf_trivial_fiberPsiIntegrand (model := model) foliation) := by
-  haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-  unfold fbnf_trivial_fiberPsiIntegrand
-  exact measurable_const
-
-private lemma fbnf_trivial_fiberPsiIntegrand_nonpos_ae
-    {model : RobustTrustModel} (foliation : Foliation model)
-    (lambdaBase :
-      @MeasureTheory.Measure foliation.Z foliation.measurableZ) :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ᵐ z ∂lambdaBase,
-      fbnf_trivial_fiberPsiIntegrand (model := model) foliation z ≤ 0 := by
-  haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-  refine Filter.Eventually.of_forall ?_
-  intro _; unfold fbnf_trivial_fiberPsiIntegrand; exact le_refl 0
-
-private lemma fbnf_trivial_integrable_fiberPsiIntegrand
-    {model : RobustTrustModel} (foliation : Foliation model)
-    (lambdaBase :
-      @MeasureTheory.Measure foliation.Z foliation.measurableZ) :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    Integrable
-      (fbnf_trivial_fiberPsiIntegrand (model := model) foliation)
-      lambdaBase := by
-  haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-  unfold fbnf_trivial_fiberPsiIntegrand
-  exact MeasureTheory.integrable_zero _ _ _
-
 /-! ### Phase 11 final-fix (2026-05-23) — per-primitive helpers REMOVED.
 
 The previous per-primitive helper lemmas
@@ -7021,13 +7054,11 @@ theorem «FBNF-corollary-spherical-radial»
   -- the real radial-direction quotient foliation with its
   -- non-degenerate base measure and pointwise-nonpositive integrand.
   --
-  -- This eliminates the previous Phase 7-Batch-D degenerate placeholder
-  -- (`lambdaBase = 0`, `fiberPsiIntegrand = 0`, trivial fiberwise
-  -- balance) routed through the deleted per-primitive helper
-  -- `fbnf_sphericalRadial_regPsi_le_fiber_integral` (which invoked
-  -- `PsiNonpos_of_P4Hyp` indirectly).  The FBNF chain now derives
-  -- `regPsi ≤ ∫ fiberPsiIntegrand` from real radial geometry, not from
-  -- the per-primitive PsiNonpos shortcut.
+  -- Phase 12L: the remaining FBNF package fields also come from the
+  -- spherical-radial primitive: antipodal pasting weights, endpoint
+  -- projection on radial diameters, radial trust band, radial
+  -- chart/disintegration, and B/G alignment.  No `fbnf_trivial_*`
+  -- helper is used in this spherical-radial instantiation.
   let fdata := prim.radialFoliation
   letI : MeasurableSpace fdata.foliation.Z := fdata.foliation.measurableZ
   let pkg : FBNFPackage model :=
@@ -7042,50 +7073,38 @@ theorem «FBNF-corollary-spherical-radial»
       localTwoSidedPerturbability :=
         prim.localTwoSidedPerturbability_from_radialBand
       globalFiberDominance := prim.globalFiberDominance_from_radialSymmetry
-      wL := 1
-      wR := 1
-      fiberProj := fbnf_trivial_fiberProj model fdata.foliation
-      fbnf6Lhs := 0
-      fbnf6Rhs := 0
+      wL := prim.radialPastingWeightL
+      wR := prim.radialPastingWeightR
+      fiberProj := prim.radialFiberProj
+      fbnf6Lhs := prim.radialFBNF6Lhs
+      fbnf6Rhs := prim.radialFBNF6Rhs
       fbnf_conditional_b1_pasting := fun _ =>
-        fbnf_trivial_pasting model.α
+        prim.radialConditionalB1Pasting
       fbnf_endpoint_supported_fiber_image := fun _ =>
-        fbnf_trivial_fiberImage model fdata.foliation
-      fbnf_t1_endpoint_stationarity := fun _ _ _ => rfl
+        prim.radialEndpointSupportedFiberImage
+      fbnf_t1_endpoint_stationarity := fun _ _ _ =>
+        prim.radialEndpointStationarity
       regBridge := prim.radial.reg
       regBridge_pd_eq := prim.radial_reg_pd_eq
-      fbnf7DominanceMargin := 1
-      fbnf7DominanceMargin_pos := by norm_num
-      L := fbnf_degenerate_band_L fdata.foliation
-      R := fbnf_degenerate_band_R fdata.foliation
-      L_ge_a := fun _ => le_refl _
-      R_le_b := fun _ => le_refl _
-      L_le_R := fdata.foliation.intervalNonempty
+      fbnf7DominanceMargin := prim.radialDominanceMargin
+      fbnf7DominanceMargin_pos := prim.radialDominanceMargin_pos
+      L := prim.radialBandL
+      R := prim.radialBandR
+      L_ge_a := prim.radialBandL_ge_a
+      R_le_b := prim.radialBandR_le_b
+      L_le_R := prim.radialBandL_le_R
       -- Phase 11 final-fix: REAL radial-direction-quotient base measure
       -- (the sphere's radial-direction measure pulled back to `Z`).
       lambdaBase := fdata.lambdaBase
-      balanceL := fun _ => True
-      balanceR := fun _ => True
-      fbnf_fiberwise_balance :=
-        fbnf_trivial_fiberwise_balance
-          (Z := fdata.foliation.Z)
-          (lambda := fdata.lambdaBase)
-      foliationProjection := by
-        by_cases hZ : Nonempty fdata.foliation.Z
-        · exact Or.inl
-            ⟨fun _ => @Classical.arbitrary fdata.foliation.Z hZ,
-              measurable_const⟩
-        · exact Or.inr (not_nonempty_iff.mp hZ)
-      fiberChart := fbnf_trivial_fiberChart model fdata.foliation
-      fiberChart_measurable :=
-        fbnf_trivial_fiberChart_measurable model fdata.foliation
-      tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      fbnf_B_fiber_alignment :=
-        fbnf_trivial_B_fiber_alignment prim.radial.reg
-          fdata.foliation fdata.lambdaBase
-      fbnf_G_fiber_alignment :=
-        fbnf_trivial_G_fiber_alignment prim.radial.reg
-          fdata.foliation fdata.lambdaBase
+      balanceL := prim.radialBalanceL
+      balanceR := prim.radialBalanceR
+      fbnf_fiberwise_balance := prim.radialFiberwiseBalance
+      foliationProjection := prim.radialFoliationProjection
+      fiberChart := prim.radialFiberChart
+      fiberChart_measurable := prim.radialFiberChart_measurable
+      tauFiber := prim.radialTauFiber
+      fbnf_B_fiber_alignment := prim.radial_B_fiber_alignment
+      fbnf_G_fiber_alignment := prim.radial_G_fiber_alignment
       -- Phase 11 final-fix: REAL radial reflection-balance integrand on
       -- the radial-direction quotient `fdata.foliation.Z`, pointwise
       -- nonpositive λBase-a.e., integrable, with the structural upper
@@ -7096,12 +7115,14 @@ theorem «FBNF-corollary-spherical-radial»
       integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
-    show IsConditionalB1Pasting model.α 1 1
-    exact fbnf_trivial_pasting model.α
+    show IsConditionalB1Pasting model.α
+      prim.radialPastingWeightL prim.radialPastingWeightR
+    exact prim.radialConditionalB1Pasting
   have hF2 : pkg.endpointSupportedFiberImage :=
-    fbnf_trivial_fiberImage model fdata.foliation
+    prim.radialEndpointSupportedFiberImage
   have hF3 : pkg.localizedStationarityFBNF6 := by
-    show (0 : ℝ) = 0; rfl
+    show prim.radialFBNF6Lhs = prim.radialFBNF6Rhs
+    exact prim.radialEndpointStationarity
   have hDom : pkg.globalFiberDominance :=
     prim.globalFiberDominance_from_radialSymmetry_holds
   exact «FBNF-F4-capstone» (model := model) pkg hF1 hF2 hF3 hDom
