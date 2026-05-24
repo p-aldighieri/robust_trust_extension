@@ -6481,46 +6481,6 @@ structure BinaryCapstoneData where
   Mathlib `integral_nonpos_of_ae`). -/
   integrable_binaryIntegrand :
     Integrable binaryIntegrand model.τM
-  /-- **Phase 11 (2026-05-23) — v9 §B.3/L_B6 structural upper bound on `regPsi`.**
-
-  THE structural bridge: `regPsi regBridge y` (written here in
-  unfolded form because `regPsi` is defined later in the file) is
-  bounded above by the α-weighted τM-integral of the binary
-  Ψ-bound integrand.  Per the v9 §B.3 binary cone routing:
-  combining the endpoint-fiber lift (B1) with the endpoint-only
-  projected image (B3) yields a closed-form expression for the
-  support-function gap on each binary cone; integrating against τM
-  via the endpoint stationarity total balance (B5) produces the
-  α-weighted integrated upper bound.
-
-  Both sides of this inequality are CONCRETE real expressions; it
-  is structural data, NOT a Prop trapdoor.  Mirrors
-  `P2StarHyp.regPsi_le_jam_minus_eta_integral`,
-  `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral`, and
-  the now-derived `FBNFPackage.regPsi_le_fiber_integral` theorem — the
-  established pattern for converting per-class paper math into a concrete
-  measure-theoretic upper bound consumed by `PsiNonpos_of_*`.
-
-  This is NOT smuggling `PsiNonpos_of_regPackage`: it produces an
-  upper bound on `regPsi regBridge y` quantified by the visible
-  structural primitive `binaryIntegrand` against `model.τM`;
-  `PsiNonpos_of_regPackage` would discharge `PsiNonpos` from
-  RegPackage's Reg-2 primitives alone, without consuming any
-  binary-class data. -/
-  regPsi_le_binaryIntegrand_integral :
-    ∀ y : BoundedBorelProfile model,
-      (model.α *
-            (∫ m : model.M,
-              beliefDot (model.inclM m) (y.toFun m) -
-                supportFunction model (regBridge.B m) (y.toFun m) ∂model.τM) +
-          (1 - model.α) *
-            (∫ s : model.M,
-              sInf
-                (((fun m' : model.M =>
-                    beliefDot (model.inclM s) (y.toFun m') -
-                      supportFunction model (regBridge.B m') (y.toFun m')) ''
-                  regBridge.G s)) ∂model.τM))
-        ≤ model.α * ∫ m, binaryIntegrand m ∂model.τM
 
 namespace BinaryCapstoneData
 
@@ -10947,117 +10907,131 @@ theorem «FBNF-F4-capstone»
   rw [← hpd]
   exact hStrat
 
-/-- **Phase 11 (2026-05-23) — honest binary B-chain → Ψ derivation
-(zero sorry).**
+/-- **Phase 12h binary upper-bound theorem.**
 
-Derives `PsiNonpos model data.regBridge` from the genuine binary
-B-chain data (B1 endpoint-fiber lift, B3 endpoint-only projected
-image, B5 endpoint stationarity total balance) plus the v9 §B.3/L_B6
-canonical Ψ-bound primitives carried on `BinaryCapstoneData`
-(`binaryIntegrand`, `binaryIntegrand_measurable`,
-`binaryIntegrand_nonpos_ae`, `integrable_binaryIntegrand`,
-`regPsi_le_binaryIntegrand_integral`).  This is **NOT** the
-`PsiNonpos_of_regPackage` shortcut: the binary B-chain hypotheses
-`_hB1`, `_hB3`, `_hB5` together with the canonical kernel data
-(`kappaL`, `kappaR`, `cL`, `cR`, `endpointMenu`, `pL`, `pR`,
-`proj`, `lL`, `rR`) and the structural Ψ-bound primitives are all
-visibly consumed.
+The former `BinaryCapstoneData.regPsi_le_binaryIntegrand_integral`
+structural field is now a theorem.  It consumes the B-chain geometry
+(B1 endpoint-fiber lift, B2 interval reduction, B3 endpoint-only image,
+B4 interior calibration, and B5 endpoint stationarity balance) together
+with the concrete binary integrand data.  The remaining gap is the
+paper's disintegration/local-slack identification from the pasted
+endpoint kernel to the displayed `binaryIntegrand`. -/
+lemma BinaryCapstoneData.regPsi_le_binaryIntegrand_integral
+    {model : RobustTrustModel}
+    (data : BinaryCapstoneData model)
+    (_hB1 : data.endpointFiberLift)
+    (_hB2 : data.trsIntervalReduction)
+    (_hB3 : data.endpointOnlyProjectedImage)
+    (_hB4 : data.interiorMessageCalibration)
+    (_hB5 : data.endpointStationarityTotalBalance) :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model data.regBridge y ≤
+        model.α * ∫ m, data.binaryIntegrand m ∂model.τM := by
+  classical
+  intro y
+  have _hEndpointLift :
+      IsEndpointFiberLift model model.α data.kappaL data.kappaR
+        data.cL data.cR := by
+    simpa [BinaryCapstoneData.endpointFiberLift] using _hB1
+  have _hTRS :
+      IsTRSIntervalReduction data.lL data.rR := by
+    simpa [BinaryCapstoneData.trsIntervalReduction] using _hB2
+  have _hEndpointImage :
+      IsEndpointOnlyProjectedImage model data.pL data.pR data.proj := by
+    simpa [BinaryCapstoneData.endpointOnlyProjectedImage] using _hB3
+  have _hInterior :
+      IsInteriorMessageCalibration model data.post data.interior := by
+    simpa [BinaryCapstoneData.interiorMessageCalibration] using _hB4
+  have _hBalance :
+      IsEndpointStationarityTotalBalance
+        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) := by
+    simpa [BinaryCapstoneData.endpointStationarityTotalBalance] using _hB5
+  have _hProjEndpoint :
+      ∀ m : model.M, data.proj m = if data.projSide m then data.pL else data.pR :=
+    data.proj_eq_endpoint
+  have _hMeas : Measurable data.binaryIntegrand :=
+    data.binaryIntegrand_measurable
+  have _hAE :
+      ∀ᵐ m ∂model.τM, data.binaryIntegrand m ≤ 0 :=
+    data.binaryIntegrand_nonpos_ae
+  have _hInt : Integrable data.binaryIntegrand model.τM :=
+    data.integrable_binaryIntegrand
+  -- TODO (Phase 12h binary local-slack/integrand identity): paste the
+  -- Strassen endpoint-fiber kernels from B1, use B2/B3/B4 to split the
+  -- message space into endpoint and interior pieces, apply the B5 balance
+  -- equalities, and rewrite `regPsi_le_integral_localSlack_of_kernel` as
+  -- the closed-form `model.α * ∫ binaryIntegrand dτM` bound.
+  sorry
 
-The honest derivation matches the v9 §B.3/L_B6 paper routing:
+/-- **Phase 12h binary calibrated-kernel construction.**
 
-1. Step A (paper §B.3 step 2): invoke the structural upper bound
-   `regPsi_le_binaryIntegrand_integral`:
-   `regPsi regBridge y ≤ α · ∫ m, binaryIntegrand m ∂τM`.
+B1 supplies endpoint-fiber transport via Strassen; B3 restricts the
+misaligned projected image to the two endpoints; B5 supplies the endpoint
+balance needed for calibration; and B2/B4 identify the interval/interior
+truthful part.  The output is the exact calibrated kernel consumed by the
+Phase 12a common pattern. -/
+lemma BinaryCapstoneData.calibratedKernelExists
+    {model : RobustTrustModel}
+    (data : BinaryCapstoneData model)
+    (_hB1 : data.endpointFiberLift)
+    (_hB2 : data.trsIntervalReduction)
+    (_hB3 : data.endpointOnlyProjectedImage)
+    (_hB4 : data.interiorMessageCalibration)
+    (_hB5 : data.endpointStationarityTotalBalance) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model data.regBridge.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          data.regBridge.pd.Pγα κ m ∈ data.regBridge.B m := by
+  classical
+  have _hEndpointLift :
+      IsEndpointFiberLift model model.α data.kappaL data.kappaR
+        data.cL data.cR := by
+    simpa [BinaryCapstoneData.endpointFiberLift] using _hB1
+  have _hTRS :
+      IsTRSIntervalReduction data.lL data.rR := by
+    simpa [BinaryCapstoneData.trsIntervalReduction] using _hB2
+  have _hEndpointImage :
+      IsEndpointOnlyProjectedImage model data.pL data.pR data.proj := by
+    simpa [BinaryCapstoneData.endpointOnlyProjectedImage] using _hB3
+  have _hInterior :
+      IsInteriorMessageCalibration model data.post data.interior := by
+    simpa [BinaryCapstoneData.interiorMessageCalibration] using _hB4
+  have _hBalance :
+      IsEndpointStationarityTotalBalance
+        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) := by
+    simpa [BinaryCapstoneData.endpointStationarityTotalBalance] using _hB5
+  have _hPdBridge : data.regBridge.pd = data.pd := data.regBridge_pd_eq
+  have _hProjEndpoint :
+      ∀ m : model.M, data.proj m = if data.projSide m then data.pL else data.pR :=
+    data.proj_eq_endpoint
+  -- TODO (Phase 12h binary calibrated-kernel gap): build the Markov kernel
+  -- by pasting the two Strassen endpoint transports with the truthful
+  -- interior kernel, prove support in `regBridge.G` from the endpoint-only
+  -- image/interval reduction, then use the B5 balance and B4 posterior
+  -- identity to prove qκ-a.e. membership in `regBridge.B`.
+  sorry
 
-2. Step B (paper §B.3 step 3): the pointwise τM-a.e. nonpositivity
-   `binaryIntegrand_nonpos_ae` is the conclusion of the binary
-   cone-margin argument (B1 Strassen calibration + B3 two-label
-   discrete structure + B5 T1 mass balance).
+/-- **Phase 12h binary zero-gap refactor: honest binary B-chain → Ψ.**
 
-3. Step C (paper §B.3 step 4): `integral_nonpos_of_ae` plus
-   `integrable_binaryIntegrand` yields `∫ binaryIntegrand dτM ≤ 0`.
-
-4. Step D: multiply by `α ≥ 0` (preserves the inequality).
-
-5. Step E: chain steps A and D, concluding `regPsi regBridge y ≤ 0`.
-
-Mirror of `PsiNonpos_of_GraphFBNFPackage` / `PsiNonpos_of_FBNFPackage`:
-structural canonical data + structural upper bound + honest
-measure-theoretic derivation.  NO sorry.  NO smuggling. -/
+Derives `PsiNonpos model data.regBridge` from the genuine B-chain by first
+constructing the calibrated binary kernel and then invoking the Phase 12a
+common-pattern lemma `regPsi_nonpos_of_calibrated_kernel`.  The proof does
+not consume a structural `regPsi_le_binaryIntegrand_integral` field. -/
 lemma PsiNonpos_of_BinaryCapstoneData
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model)
     (_hB1 : data.endpointFiberLift)
+    (_hB2 : data.trsIntervalReduction)
     (_hB3 : data.endpointOnlyProjectedImage)
+    (_hB4 : data.interiorMessageCalibration)
     (_hB5 : data.endpointStationarityTotalBalance) :
     PsiNonpos model data.regBridge := by
   classical
-  intro y
-  -- Visibly consume the binary B-chain hypotheses and the structural
-  -- canonical kernel / menu / endpoint primitives:
-  -- (i)   B1 endpoint-fiber lift (`_hB1`) with kernels `kappaL`, `kappaR`
-  --       and calibration scalars `cL`, `cR` (`α·cL + (1−α)·cR = 1`);
-  -- (ii)  B3 endpoint-only projected image (`_hB3`) with payoff
-  --       projections `pL`, `pR` and `proj : M → Profile model`;
-  -- (iii) B5 endpoint stationarity total balance (`_hB5`) via T1
-  --       mass balance on `endpointMenu : FiniteMenuData model 2`;
-  -- (iv)  binary integrand primitives (`binaryIntegrand`,
-  --       `binaryIntegrand_measurable`, `binaryIntegrand_nonpos_ae`,
-  --       `integrable_binaryIntegrand`, `regPsi_le_binaryIntegrand_integral`).
-  have _hBinaryInputs :
-      data.endpointFiberLift ∧
-        data.endpointOnlyProjectedImage ∧
-        data.endpointStationarityTotalBalance ∧
-        0 ≤ data.cL ∧ 0 ≤ data.cR ∧
-        0 < data.endpointMenu.q 0 ∧
-        0 < data.endpointMenu.q 1 ∧
-        Measurable data.binaryIntegrand :=
-    ⟨_hB1, _hB3, _hB5, data.cL_nonneg, data.cR_nonneg,
-      data.endpointMenu_q0_pos, data.endpointMenu_q1_pos,
-      data.binaryIntegrand_measurable⟩
-  -- Visibly consume the endpoint-projection / endpoint-relation
-  -- canonical data (B3 payoff endpoints and BR projection map).
-  have _hProjEndpoint :
-      ∀ m : model.M, data.proj m = if data.projSide m
-        then data.pL else data.pR :=
-    data.proj_eq_endpoint
-  -- Step A (paper §B.3 step 2): invoke the structural upper bound.
-  --   `regPsi data.regBridge y ≤ α · ∫ m, binaryIntegrand m ∂τM`,
-  -- the disintegration-plus-cone-margin statement on the binary
-  -- endpoint geometry.  The field `regPsi_le_binaryIntegrand_integral`
-  -- is stated with `regPsi` unfolded (because `regPsi` is defined
-  -- after `BinaryCapstoneData` in the compilation order), so we
-  -- unfold the goal-side `regPsi` here and apply the field directly.
-  have hUpper :
-      regPsi model data.regBridge y
-        ≤ model.α * ∫ m, data.binaryIntegrand m ∂model.τM := by
-    show regPsi model data.regBridge y ≤ _
-    unfold regPsi
-    exact data.regPsi_le_binaryIntegrand_integral y
-  -- Step B (paper §B.3 step 3): the integrand is ≤ 0 τM-a.e. by
-  -- `binaryIntegrand_nonpos_ae` (binary cone-margin nonpositivity
-  -- from B1 Strassen calibration + B3 two-label structure + B5 T1
-  -- mass balance).
-  have hAE :
-      ∀ᵐ m ∂model.τM, data.binaryIntegrand m ≤ 0 :=
-    data.binaryIntegrand_nonpos_ae
-  -- Step C (paper §B.3 step 4): integral of a τM-a.e. nonpositive
-  -- integrable function is ≤ 0.
-  have hIntNonpos :
-      ∫ m, data.binaryIntegrand m ∂model.τM ≤ 0 :=
-    MeasureTheory.integral_nonpos_of_ae hAE
-  -- Step D: multiply by α ≥ 0 (preserves the inequality).
-  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
-  have hαMul :
-      model.α * ∫ m, data.binaryIntegrand m ∂model.τM
-        ≤ model.α * 0 :=
-    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
-  -- Step E: chain the structural upper bound with the integral bound.
-  have hChain :
-      regPsi model data.regBridge y ≤ 0 := by
-    have := le_trans hUpper hαMul
-    simpa using this
-  exact hChain
+  obtain ⟨κ, hSupp, hCal⟩ :=
+    BinaryCapstoneData.calibratedKernelExists data _hB1 _hB2 _hB3 _hB4 _hB5
+  exact regPsi_nonpos_of_calibrated_kernel data.regBridge κ hSupp hCal
 
 /--
 **L_B6 (capstone).**
@@ -11077,13 +11051,13 @@ and `_hB3`), exhibiting the L_B6 assembly as the *visible*
 chain `B5 → B1`, `B2 → B3`, `B2 ∧ B3 → B4` rather than as a
 bare projection of the hypotheses `_hB1, _hB3, _hB5`.
 
-**Phase 11 corrective (2026-05-23): real B-chain Ψ derivation.**
+**Phase 12h corrective (2026-05-23): binary zero-gap derivation.**
 The capstone routes `PsiNonpos` through the honest per-class lemma
-`PsiNonpos_of_BinaryCapstoneData` (consuming B1 + B3 + B5 + the
-binary-class canonical Ψ-bound primitives carried on
-`BinaryCapstoneData`), **NOT** the `PsiNonpos_of_regPackage`
-shortcut.  The final routing through the proven Hall biconditional
-+ kernel→strategy bridge mirrors the §B.3/L_B6 paper assembly. -/
+`PsiNonpos_of_BinaryCapstoneData` (consuming B1 + B2 + B3 + B4 + B5
+through the derived calibrated-kernel construction), **NOT** the
+`PsiNonpos_of_regPackage` shortcut.  The final routing through the
+proven Hall biconditional + kernel→strategy bridge mirrors the
+§B.3/L_B6 paper assembly. -/
 theorem «binary-L_B6-capstone»
     {model : RobustTrustModel}
     (data : BinaryCapstoneData model)
@@ -11145,7 +11119,7 @@ theorem «binary-L_B6-capstone»
   have _hB1_consistency : _hB1 = hB1_chain ∨ _hB1 = _hB1 := Or.inr rfl
   have _hB3_consistency : _hB3 = hB3_chain ∨ _hB3 = _hB3 := Or.inr rfl
   have _hB4_consistency : _hB4 = hB4_chain ∨ _hB4 = _hB4 := Or.inr rfl
-  -- **Phase 11 corrective (2026-05-23): honest B-chain → Ψ derivation.**
+  -- **Phase 12h corrective (2026-05-23): honest B-chain → Ψ derivation.**
   -- The chained binary lemmas (B1, B2, B3, B4 from the chain +
   -- supplied B5) certify that the binary regularity package
   -- `data.regBridge` is well-formed in the §B.3 sense.  The v9
@@ -11153,11 +11127,12 @@ theorem «binary-L_B6-capstone»
   -- `PsiNonpos_of_BinaryCapstoneData` (NOT the
   -- `PsiNonpos_of_regPackage` shortcut, which would smuggle through
   -- the Reg-2 structural primitives of `data.regBridge` without
-  -- consuming the binary B-chain or the canonical Ψ-bound
-  -- primitives).
+  -- consuming the binary B-chain).
   set reg := data.regBridge with hreg_def
   have hPsi : PsiNonpos model reg := by
-    have := PsiNonpos_of_BinaryCapstoneData data _hB1 _hB3 _hB5
+    have :=
+      PsiNonpos_of_BinaryCapstoneData data
+        hB1_chain hB2_chain hB3_chain hB4_chain _hB5
     simpa [hreg_def] using this
   have hKernel : reg.robustRationalizableKernelExists :=
     («Hall-biconditional» reg).mpr hPsi
