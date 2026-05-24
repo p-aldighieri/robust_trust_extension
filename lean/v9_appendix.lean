@@ -1987,12 +1987,13 @@ the **common pattern** lemmas used by every class's derivation:
    mixture marginal), `regPsi ≤ 0` for every `BoundedBorelProfile`.
 
 Lemmas (3) and (4) are placed AFTER `«Hall-biconditional»` (§15 below)
-because (4) is a direct corollary of `«Hall-biconditional».mp` and
-(3) shares the same qκ-decomposition chain.  Lemma (4) is proved
-without sorry.  Lemma (3) carries a single narrow `-- TODO` sorry
-recording the qκ-decomposition Mathlib gap; the signature is correct
-and downstream classes will build on it.  Phase 12b–12i class
-refactors will call (1)–(4) as the common derivation core. -/
+because (3) shares the same qκ-decomposition chain as the Hall-forward
+calculation.  Lemma (4) is proved without a new sorry and now uses (3)
+plus the kernel posterior-calibration hypothesis `hcal` directly; it no
+longer delegates to `«Hall-biconditional».mp`.  Lemma (3) carries a
+single narrow `-- TODO` sorry recording the qκ-decomposition Mathlib gap;
+the signature is correct and downstream classes will build on it.
+Phase 12b–12k class refactors call (1)–(4) as the common derivation core. -/
 
 /-- **Common pattern (1): Pointwise Hall slack.**
 
@@ -5558,40 +5559,10 @@ theorem «Hall-biconditional»
 
 Continuation of the Phase 12a common-pattern API (lemmas (1) `localSlack`
 and (2) `localSlack_nonpos_of_mem_B` were defined in §9.5 near `regPsi`).
-Lemmas (3) and (4) are placed here because they consume the
-`«Hall-biconditional»` forward chain and (4) is exactly its corollary. -/
-
-/-- **Common pattern (4): Calibrated kernel ⇒ `regPsi ≤ 0` for all `y`.**
-
-The corollary that drives every P-class's `regPsi ≤ 0` derivation: for
-a calibrated kernel (`κ` supported on `G`, posterior `Pγα κ` lies in
-`B(m)` q-a.e. on the mixture marginal), `regPsi reg y ≤ 0` for every
-`BoundedBorelProfile y`.
-
-This is exactly the forward direction of `«Hall-biconditional»`,
-packaged as a named lemma so that the Phase 12b–12i class refactors
-can call it as the common derivation core: each class will assemble a
-calibrated kernel from its class-specific primitives (cone margin,
-LP feasibility, radial-antipodal symmetry, …) and then close
-`regPsi ≤ 0` via this lemma. -/
-lemma regPsi_nonpos_of_calibrated_kernel
-    {model : RobustTrustModel}
-    (reg : RegPackage model)
-    (κ : AdviserKernel model)
-    (hκG : KernelSupportedOnRegG model reg.G κ)
-    (hcal :
-      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
-        reg.pd.Pγα κ m ∈ reg.B m) :
-    ∀ y : BoundedBorelProfile model, regPsi model reg y ≤ 0 := by
-  -- The calibrated kernel `κ` together with `hκG` and `hcal` witnesses
-  -- `reg.robustRationalizableKernelExists`.  The forward direction of
-  -- `«Hall-biconditional»` then delivers `PsiNonpos`, which unfolds
-  -- exactly to the desired conclusion.
-  have hKernel : reg.robustRationalizableKernelExists :=
-    ⟨κ, hκG, hcal⟩
-  have hPsi : PsiNonpos model reg :=
-    («Hall-biconditional» reg).mp hKernel
-  exact hPsi
+Lemma (3) is the decomposition bound from the two Hall summands to the
+mixture-marginal localSlack integral.  Lemma (4) now consumes the kernel's
+posterior-calibration hypothesis directly through that integral, instead
+of delegating to the Hall biconditional forward direction. -/
 
 /-- **Common pattern (3): `regPsi` is bounded above by an integral of
 `localSlack` along the mixture marginal.**
@@ -5603,7 +5574,7 @@ For an adviser kernel `κ` supported on `reg.G` q-a.e., the Hall dual
 message marginal and `Pγα κ` is the canonical posterior.
 
 The substantive content is the qκ-decomposition identity
-  qκ = α·(inclM)#τM + (1−α)·(τM ⊗ κ).map snd
+  qκ = α·(inclM)#τM + (1-α)·(τM ⊗ κ).map snd
 combined with the sInf ≤ value bound on the misaligned `regPsi`
 integrand against any rowwise-minimizer kernel `κ` supported on `G`.
 
@@ -5636,6 +5607,47 @@ lemma regPsi_le_integral_localSlack_of_kernel
   --       (use `_hκG` to place the kernel-routed `m'` in `reg.G s`
   --       and apply `csInf_le` against the bounded image).
   sorry
+
+/-- **Common pattern (4): Calibrated kernel ⇒ `regPsi ≤ 0` for all `y`.**
+
+The corollary that drives every P-class's `regPsi ≤ 0` derivation: for
+a calibrated kernel (`κ` supported on `G`, posterior `Pγα κ` lies in
+`B(m)` q-a.e. on the mixture marginal), `regPsi reg y ≤ 0` for every
+`BoundedBorelProfile y`.
+
+Proof shape after Phase 12k:
+* `hκG` is used only to compare the two explicit Hall summands with the
+  mixture-marginal `localSlack` integral.
+* `hcal` is the load-bearing support-function input: qκ-a.e.,
+  `Pγα κ m ∈ reg.B m`, so `localSlack reg y m (Pγα κ m) ≤ 0` by
+  `localSlack_nonpos_of_mem_B`.
+* Integrating that qκ-a.e. nonpositivity gives the final `regPsi ≤ 0`.
+
+Thus the aligned and misaligned mass are both controlled through the
+same calibrated posterior on the message marginal; the Reg-2 rowwise
+cone primitives are no longer the mathematical engine of this lemma. -/
+lemma regPsi_nonpos_of_calibrated_kernel
+    {model : RobustTrustModel}
+    (reg : RegPackage model)
+    (κ : AdviserKernel model)
+    (hκG : KernelSupportedOnRegG model reg.G κ)
+    (hcal :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        reg.pd.Pγα κ m ∈ reg.B m) :
+    ∀ y : BoundedBorelProfile model, regPsi model reg y ≤ 0 := by
+  intro y
+  have hPsi_le :
+      regPsi model reg y ≤
+        ∫ m, localSlack model reg y m (reg.pd.Pγα κ m)
+          ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd) :=
+    regPsi_le_integral_localSlack_of_kernel reg y κ hκG
+  have hSlack_nonpos :
+      (∫ m, localSlack model reg y m (reg.pd.Pγα κ m)
+          ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd)) ≤ 0 := by
+    refine MeasureTheory.integral_nonpos_of_ae ?_
+    filter_upwards [hcal] with m hm
+    exact localSlack_nonpos_of_mem_B (model := model) reg y hm
+  exact le_trans hPsi_le hSlack_nonpos
 
 /-- Bridge from Hall's calibrated-kernel-exists labeling to strategy
 existence. Constructs the q-a.e. Bayes-optimal Definition-2 witness from
