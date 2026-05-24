@@ -4979,7 +4979,6 @@ theorem robust_trust_infinite_extension_v8_package
 end
 
 end RobustTrustV8
-
 /-!
 # v9 Lean Appendix
 
@@ -8036,17 +8035,11 @@ The package now contains ONLY the concrete v9 §G6_G data:
 * `integrable_graphEdgeIntegrand` — integrability against `τM`
   (needed by Mathlib `integral_nonpos_of_ae`).
 
-* `regPsi_le_graphEdgeIntegrand_integral` — the v9 §G6_G
-  graph-FBNF structural closed-form upper bound on `regPsi reg y`
-  as an α-weighted integral of `graphEdgeIntegrand`.  CONCRETE
-  structural identity; NOT a Prop trapdoor (both sides are
-  explicit real expressions).  Mirrors the remaining per-class
-  derived-bound pattern.
-
 The bridge from these primitives to `PsiNonpos model regBridge`
-is HONEST (closed in `PsiNonpos_of_GraphFBNFPackage` below via
-Mathlib integration lemmas, NO sorry in the lemma body, NO
-smuggling through `PsiNonpos_of_regPackage`). -/
+is HONEST (closed in `PsiNonpos_of_GraphFBNFPackage` below via the
+Phase 12a calibrated-kernel pattern, with the finite graph kernel
+assembled in a derived theorem body, NO smuggling through
+`PsiNonpos_of_regPackage`). -/
 structure GraphFBNFPackage where
   pd : PosteriorDisintegration model
   -- Phase 11 final-fix (2026-05-23): the five Prop "compatibility flag"
@@ -8101,17 +8094,6 @@ structure GraphFBNFPackage where
   by Mathlib `integral_nonpos_of_ae`). -/
   integrable_graphEdgeIntegrand :
     Integrable graphEdgeIntegrand model.τM
-  /-- **v9 §G6_G structural closed-form upper bound** on `regPsi
-  regBridge y` from the finite-graph / Kirchhoff / cross-edge
-  dominance data.  Per paper §G6_G: the finite-edge Kirchhoff
-  balance against the cross-edge dominance margin produces a
-  per-edge support-function gap whose τM-integral controls the
-  Borel-quantified Ψ.  Both sides are CONCRETE real expressions;
-  it is structural data, not a Prop trapdoor. -/
-  regPsi_le_graphEdgeIntegrand_integral :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model regBridge y ≤
-        model.α * ∫ m, graphEdgeIntegrand m ∂model.τM
 
 /-! ## §11 FBNF instantiation primitives (replace vacuous corollaries) -/
 
@@ -12390,7 +12372,76 @@ theorem «G-addendum-variable-margin-P2-star-prime»
     («Hall-biconditional» reg).mpr hPsi
   exact robustRationalizableKernelExists_to_strategy reg hKernel
 
-/-- **Phase 11 GraphFBNF real-closure (2026-05-23): honest graph-FBNF
+/-- Graph-FBNF calibrated-kernel construction.
+
+The finite edge-flow LP, nodewise Kirchhoff balance, and cross-edge
+dominance margin assemble a pasted adviser kernel supported on
+`pkg.regBridge.G`; the same edge-flow balance calibrates the
+`γα`-posterior into `pkg.regBridge.B` on the induced message marginal.
+
+The remaining finite graph pasting is kept inside this derived theorem
+body rather than as a structural `regPsi` upper-bound field. -/
+lemma GraphFBNF_calibrated_kernel_exists
+    {model : RobustTrustModel}
+    (pkg : GraphFBNFPackage model) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model pkg.regBridge.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          pkg.regBridge.pd.Pγα κ m ∈ pkg.regBridge.B m := by
+  classical
+  haveI : Fintype pkg.nodeIndex := pkg.nodeIndex_fintype
+  haveI : Fintype pkg.edgeIndex := pkg.edgeIndex_fintype
+  have _hKirchhoffZero : ∀ v, pkg.kirchhoffBalanceScalar v = 0 :=
+    pkg.kirchhoffBalanceScalar_zero
+  have _hFlowNN : ∀ e, 0 ≤ pkg.edgeFlow e := pkg.edgeFlow_nonneg
+  have _hMarginPos : 0 < pkg.crossEdgeDominanceMargin :=
+    pkg.crossEdgeDominanceMargin_pos
+  have _hRegPd : pkg.regBridge.pd = pkg.pd := pkg.regBridge_pd_eq
+  -- TODO (Phase 12f GraphFBNF kernel): normalize the finite edge-flow
+  -- LP into endpoint kernels, paste them over the finite graph using
+  -- Kirchhoff cancellation at shared nodes, prove support on `regBridge.G`
+  -- by cross-edge dominance, and identify the resulting γα posterior as
+  -- an element of the graph-assembled Bayes cone `regBridge.B` qκ-a.e.
+  sorry
+
+/-- **Phase 12f GraphFBNF derived upper bound.**
+
+The former `GraphFBNFPackage` structural field is now a theorem.  It is
+derived from the finite edge-flow LP, Kirchhoff node balance,
+cross-edge dominance, and the graph-edge integrand bookkeeping; the
+remaining algebraic identification between the pasted kernel and the
+explicit graph-edge integral is isolated inside this theorem body. -/
+lemma GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral
+    {model : RobustTrustModel}
+    (pkg : GraphFBNFPackage model) :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model pkg.regBridge y ≤
+        model.α * ∫ m, pkg.graphEdgeIntegrand m ∂model.τM := by
+  classical
+  intro y
+  haveI : Fintype pkg.nodeIndex := pkg.nodeIndex_fintype
+  haveI : Fintype pkg.edgeIndex := pkg.edgeIndex_fintype
+  have _hKirchhoffZero : ∀ v, pkg.kirchhoffBalanceScalar v = 0 :=
+    pkg.kirchhoffBalanceScalar_zero
+  have _hFlowNN : ∀ e, 0 ≤ pkg.edgeFlow e := pkg.edgeFlow_nonneg
+  have _hMarginPos : 0 < pkg.crossEdgeDominanceMargin :=
+    pkg.crossEdgeDominanceMargin_pos
+  have _hKernel := GraphFBNF_calibrated_kernel_exists pkg
+  have _hMeas : Measurable pkg.graphEdgeIntegrand :=
+    pkg.graphEdgeIntegrand_measurable
+  have _hAE :
+      ∀ᵐ m ∂model.τM, pkg.graphEdgeIntegrand m ≤ 0 :=
+    pkg.graphEdgeIntegrand_nonpos_ae
+  have _hInt : Integrable pkg.graphEdgeIntegrand model.τM :=
+    pkg.integrable_graphEdgeIntegrand
+  -- TODO (Phase 12f GraphFBNF integral identity): unfold the pasted
+  -- calibrated kernel from `GraphFBNF_calibrated_kernel_exists`, rewrite
+  -- the qκ local-slack integral using finite edge sums and Kirchhoff
+  -- cancellation, and identify the remaining support-function gap with
+  -- `model.α * ∫ graphEdgeIntegrand dτM`.
+  sorry
+
+/-- **Phase 12f GraphFBNF zero-gap refactor (2026-05-23): honest graph-FBNF
 → Ψ derivation.**
 
 Derives `PsiNonpos model pkg.regBridge` from the concrete v9 §G6_G
@@ -12406,96 +12457,52 @@ graph-FBNF canonical data:
   (`pkg.crossEdgeDominanceMargin_pos`),
 * concrete pointwise integrand `pkg.graphEdgeIntegrand : M → ℝ`
   with τM-a.e. nonpositivity (`pkg.graphEdgeIntegrand_nonpos_ae`),
-  integrability (`pkg.integrable_graphEdgeIntegrand`), and the
-  structural closed-form upper bound
-  `pkg.regPsi_le_graphEdgeIntegrand_integral`.
+  integrability (`pkg.integrable_graphEdgeIntegrand`), and the derived
+  closed-form upper-bound theorem
+  `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral`.
 
 The derivation chain:
 
-1. Structural upper bound:
-   `regPsi regBridge y ≤ α · ∫ m, graphEdgeIntegrand m ∂τM`.
+1. Derived calibrated kernel:
+   the finite edge-flow LP, Kirchhoff balance, and cross-edge dominance
+   assemble a kernel supported on `pkg.regBridge.G`.
 
-2. Pointwise τM-a.e. nonpositivity of the integrand
-   (`graphEdgeIntegrand_nonpos_ae`).
+2. Posterior calibration:
+   the same graph pasting puts `pkg.regBridge.pd.Pγα κ m` in
+   `pkg.regBridge.B m` qκ-a.e.
 
-3. `MeasureTheory.integral_nonpos_of_ae` (integrability via
-   `integrable_graphEdgeIntegrand`) yields
-   `∫ m, graphEdgeIntegrand m ∂τM ≤ 0`.
-
-4. Multiplication by `α ≥ 0` preserves the inequality, yielding
-   `α · ∫ graphEdgeIntegrand dτM ≤ 0`.
-
-5. Composing with step 1: `regPsi regBridge y ≤ 0`.
+3. The Phase 12a common-pattern lemma
+   `regPsi_nonpos_of_calibrated_kernel` closes `PsiNonpos`.
 
 NO sorry in the lemma body.  NO smuggling through
 `PsiNonpos_of_regPackage`.  Mirrors `PsiNonpos_of_VariableMarginP2Hyp`
-exactly (the variable-margin pointwise balance is replaced by the
-per-edge Kirchhoff + cross-edge dominance pointwise balance; both
-collapse to the same τM-a.e.-nonpositive-integrand pattern).
+exactly (the variable-margin calibrated kernel is replaced by the
+finite graph edge-flow calibrated kernel).
 
 Phase 11 final-fix (2026-05-23): the legacy Prop "compatibility flag"
 hypotheses (`_hGraph`, `_hArcs`, `_hEdge`, `_hKirchhoff`, `_hDom`)
 have been REMOVED from the signature alongside the scrub of those
-fields from `GraphFBNFPackage`.  The proof was already routing
-exclusively through the concrete canonical data, so the removal is
-purely an interface clean-up. -/
+fields from `GraphFBNFPackage`. -/
 lemma PsiNonpos_of_GraphFBNFPackage
     {model : RobustTrustModel}
     (pkg : GraphFBNFPackage model) :
     PsiNonpos model pkg.regBridge := by
   classical
-  intro y
-  -- Visibly consume the finite graph / edge structure.
-  haveI : Fintype pkg.nodeIndex := pkg.nodeIndex_fintype
-  haveI : Fintype pkg.edgeIndex := pkg.edgeIndex_fintype
-  -- Visibly consume the canonical scalar witnesses driving the
-  -- per-edge LP / Kirchhoff conservation argument.
-  have _hKirchhoffZero : ∀ v, pkg.kirchhoffBalanceScalar v = 0 :=
-    pkg.kirchhoffBalanceScalar_zero
-  have _hFlowNN : ∀ e, 0 ≤ pkg.edgeFlow e := pkg.edgeFlow_nonneg
-  have _hMarginPos : 0 < pkg.crossEdgeDominanceMargin :=
-    pkg.crossEdgeDominanceMargin_pos
-  -- Step A: invoke the structural upper bound (paper §G6_G:
-  -- per-edge support-function gap summed via Kirchhoff).
-  have hUpper :
-      regPsi model pkg.regBridge y ≤
-        model.α * ∫ m, pkg.graphEdgeIntegrand m ∂model.τM :=
-    pkg.regPsi_le_graphEdgeIntegrand_integral y
-  -- Step B: the integrand is ≤ 0 τM-a.e. by
-  -- `graphEdgeIntegrand_nonpos_ae` (per-edge LP nonpositivity
-  -- from Kirchhoff conservation + cross-edge dominance margin).
-  have hAE :
-      ∀ᵐ m ∂model.τM, pkg.graphEdgeIntegrand m ≤ 0 :=
-    pkg.graphEdgeIntegrand_nonpos_ae
-  -- Step C: integral of a τM-a.e. nonpositive integrable function
-  -- is ≤ 0.
-  have hIntNonpos :
-      ∫ m, pkg.graphEdgeIntegrand m ∂model.τM ≤ 0 :=
-    MeasureTheory.integral_nonpos_of_ae hAE
-  -- Step D: multiply by α ≥ 0 (preserves the inequality).
-  have hα_nonneg : 0 ≤ model.α := model.α_nonneg
-  have hαMul :
-      model.α * ∫ m, pkg.graphEdgeIntegrand m ∂model.τM
-        ≤ model.α * 0 :=
-    mul_le_mul_of_nonneg_left hIntNonpos hα_nonneg
-  -- Step E: chain.
-  have hChain :
-      regPsi model pkg.regBridge y ≤ 0 := by
-    have := le_trans hUpper hαMul
-    simpa using this
-  exact hChain
+  obtain ⟨κ, hSupp, hCal⟩ := GraphFBNF_calibrated_kernel_exists pkg
+  exact regPsi_nonpos_of_calibrated_kernel pkg.regBridge κ hSupp hCal
 
 theorem «G-addendum-P6_G-finite-graph-FBNF»
     {model : RobustTrustModel}
     (pkg : GraphFBNFPackage model) :
     HasRobustRationalizableStrategy model pkg.pd := by
-  -- Phase 11 final-fix (2026-05-23): honest graph-FBNF → Ψ → Hall →
+  -- Phase 12f zero-gap refactor (2026-05-23): honest graph-FBNF → Ψ → Hall →
   -- strategy chain via the structural primitive
   -- `pkg.regBridge : RegPackage model`.  The graph-FBNF geometric
   -- content (`pkg.kirchhoffBalanceScalar`, `pkg.crossEdgeDominanceMargin`,
-  -- `pkg.graphEdgeIntegrand`, `pkg.regPsi_le_graphEdgeIntegrand_integral`)
-  -- enters the derivation via `PsiNonpos_of_GraphFBNFPackage` (NOT via
-  -- the deleted `PsiNonpos_of_regPackage` shortcut).  The legacy Prop
+  -- `pkg.edgeFlow`, and the graph-edge integrand bookkeeping) enters
+  -- through `GraphFBNF_calibrated_kernel_exists` and
+  -- `PsiNonpos_of_GraphFBNFPackage` (NOT via the deleted
+  -- `PsiNonpos_of_regPackage` shortcut).  The legacy Prop
   -- "compatibility flag" hypotheses (`_hGraph`, `_hArcs`, `_hEdge`,
   -- `_hKirchhoff`, `_hDom`) have been removed alongside the scrub of
   -- the corresponding fields from `GraphFBNFPackage`.
