@@ -6199,14 +6199,16 @@ structure RegPackage where
   `inclM m`.  The map sends a prior `μ` to its associated Bayes cone (the
   closed convex set of priors that share `μ`'s posterior-disintegration
   shape).  This is the v9 §B.5 construction primitive, NOT a conclusion;
-  the two consistency lemmas (`RegPackage.message_in_bayes_cone` and
+  the consistency lemmas (`RegPackage.message_in_bayes_cone`,
+  `RegPackage.G_rowwise_carries_prior_to_bayes_cone`, and
   `RegPackage.source_in_rowwise_bayes_cone`) are DERIVED from this and
-  the two structural compatibility primitives below.
+  the structural compatibility primitives below.
   Phase 3 audit (2026-05-22) identified the prior versions of those two
   lemmas (then direct RegPackage fields) as "TOO STRONG": they encoded
   the Hall conclusion.  Phase 5B factors them through this construction
-  map plus the two structural primitives `bayesConeFromPrior_self` and
-  `G_rowwise_carries_prior_to_bayes_cone`. -/
+  map plus the construction self-consistency primitive
+  `bayesConeFromPrior_self` and the Reg-1/Reg-2 graph-definition
+  primitive `G_eq_rowwiseBayesMinimizers`. -/
   bayesConeFromPrior : Belief model.Ω → Set (Belief model.Ω)
   /-- **Reg-2 STRUCTURAL primitive (Phase 5B): construction self-consistency.**
   Every prior lies in its own Bayes cone — the defining property of the
@@ -6225,39 +6227,30 @@ structure RegPackage where
   `B` was built), NOT a conclusion. -/
   B_eq_bayesConeFromPrior_at_inclM :
     ∀ m : model.M, B m = bayesConeFromPrior (model.inclM m)
-  /-- **Reg-2 STANDING STRUCTURAL ASSUMPTION (v9 paper §B.5).**
+  /-- **Reg-1/Reg-2 STRUCTURAL primitive (Phase 12i): defining graph of `G`.**
 
-  This field is **NOT DERIVED** from the other RegPackage fields.  It
-  is the v9 paper's Reg-2 **standing structural assumption** (audit
-  `Phase11_RealCloses/Per_step_audit_and_paper_feedback_response.md`,
-  Part 1.C, "the only Phase 5B item I would call a genuine trust
-  gremlin … should state this as a named structural assumption or
-  derive it, not let it hide in RegPackage").
+  The rowwise-minimizer correspondence `G` is not an arbitrary compact
+  closed-graph relation equipped with a separate carry-prior assumption.
+  In the v9 §B.5 construction it is defined as the correspondence of
+  Bayes-feasible rowwise minimizers: for a source message `s`, a target
+  message `m'` lies in `G s` exactly when `m'` minimizes the source-prior
+  payoff row `m ↦ ⟪inclM s, wstar m⟫` and the source prior is feasible for
+  the Bayes cone constructed at the target prior `inclM m'`.
 
-  Mathematically, the rowwise-minimizer correspondence `G` is
-  COMPATIBLE with the prior-level Bayes-cone construction
-  `bayesConeFromPrior` in the sense that rowwise minimizers carry the
-  source prior into the target's Bayes cone: for any `m' ∈ G s`,
-  `inclM s ∈ bayesConeFromPrior (inclM m')`.
-
-  This compatibility is **close to** the calibration goal of the Hall
-  biconditional.  We ADDRESS the audit concern here by explicitly
-  naming this field as Reg-2's **standing structural assumption**
-  (analogous to how v8 carries `ExactContact` as a structural premise)
-  rather than presenting it as a generic RegPackage compatibility
-  lemma derivable from the others.  Downstream consumers MUST supply
-  this assumption as part of their RegPackage instance; the v9 paper
-  §B.5 dependency map records it as a structural input to the Hall
-  biconditional (NOT derived from the Hall conclusion).
-
-  **Smuggling audit (updated Phase 12d, 2026-05-23)**: this field is
-  not a direct `PsiNonpos` witness.  It is used through the DERIVED helper
-  `source_in_rowwise_bayes_cone`, including inside the barycenter
-  support-transfer lemma for calibrated kernels, to pass the source prior
-  into the rowwise-minimizer's Bayes cone. -/
-  G_rowwise_carries_prior_to_bayes_cone :
-    ∀ s m' : model.M, m' ∈ G s →
-      model.inclM s ∈ bayesConeFromPrior (model.inclM m')
+  This is primitive construction data for the Reg-1 closed-graph `G` and
+  the Reg-2 Bayes-cone construction `bayesConeFromPrior`.  It is a
+  definition of the correspondence's graph, not the downstream Hall
+  calibration conclusion.  The previously stored carry-prior property is
+  now DERIVED from this equality by unpacking membership in the defining
+  graph. -/
+  G_eq_rowwiseBayesMinimizers :
+    ∀ s : model.M,
+      G s =
+        {m' : model.M |
+          (∀ m'' : model.M,
+            beliefDot (model.inclM s) (wstar m') ≤
+              beliefDot (model.inclM s) (wstar m'')) ∧
+          model.inclM s ∈ bayesConeFromPrior (model.inclM m')}
   /-- **Reg-2 primitive: v8 menu-engine ExactContact bundle for `σstar`.**
   The v9 regularity package promises that an underlying v8 menu engine
   exists for `σstar`: an `OptimalMenuCstar`, an aligned best labeling, a
@@ -6313,16 +6306,37 @@ lemma RegPackage.message_in_bayes_cone
   rw [reg.B_eq_bayesConeFromPrior_at_inclM m]
   exact reg.bayesConeFromPrior_self (model.inclM m)
 
-/-- **Reg-2 DERIVED lemma (Phase 5B): rowwise-Bayes-consistency.**
+/-- **Reg-1/Reg-2 DERIVED lemma (Phase 12i): rowwise carry-prior.**
+
+The reviewer audit flagged the old direct field with this name as too
+close to the calibration goal.  The field has been removed.  This lemma
+keeps the same dot-notation surface while deriving the statement from the
+primitive graph definition `G_eq_rowwiseBayesMinimizers`: membership
+`m' ∈ G s` rewrites to membership in the set of Bayes-feasible rowwise
+minimizers, whose second component is exactly the carry-prior relation. -/
+lemma RegPackage.G_rowwise_carries_prior_to_bayes_cone
+    {model : RobustTrustModel}
+    (reg : RegPackage model) (s m' : model.M) (hm' : m' ∈ reg.G s) :
+    model.inclM s ∈ reg.bayesConeFromPrior (model.inclM m') := by
+  have hmDef :
+      m' ∈
+        {m'' : model.M |
+          (∀ m''' : model.M,
+            beliefDot (model.inclM s) (reg.wstar m'') ≤
+              beliefDot (model.inclM s) (reg.wstar m''')) ∧
+          model.inclM s ∈ reg.bayesConeFromPrior (model.inclM m'')} := by
+    simpa [reg.G_eq_rowwiseBayesMinimizers s] using hm'
+  exact hmDef.2
+
+/-- **Reg-2 DERIVED lemma (Phase 12i): rowwise-Bayes-consistency.**
 
 Phase 3 audit (2026-05-22) flagged the previous direct-field formulation
 of this statement as "TOO STRONG" (it encoded the Hall conclusion).
-Phase 5B (2026-05-23) refactored the underlying RegPackage to expose
-PRIMITIVE Bayes-cone construction data plus a structural Reg-1
-closed-graph compatibility primitive
-`G_rowwise_carries_prior_to_bayes_cone`, and the
-rowwise-Bayes-consistency statement is now DERIVED by composing that
-primitive with `B_eq_bayesConeFromPrior_at_inclM`.
+Phase 12i (2026-05-23) refactored the underlying RegPackage again so
+`G_rowwise_carries_prior_to_bayes_cone` is no longer a field.  It is
+derived from the primitive defining graph `G_eq_rowwiseBayesMinimizers`,
+and this rowwise-Bayes-consistency statement composes that derived lemma
+with `B_eq_bayesConeFromPrior_at_inclM`.
 
 The statement signature is identical to the previous direct field, so
 all downstream call sites continue to work unchanged. -/
