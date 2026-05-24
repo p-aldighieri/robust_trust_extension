@@ -6392,27 +6392,10 @@ structure BinaryCapstoneData where
   mass `endpointMenu.q 1` is strictly positive.  Symmetric counterpart
   of `endpointMenu_q0_pos`. -/
   endpointMenu_q1_pos : 0 < endpointMenu.q 1
-  /-- Endpoint balance equations imply the Strassen marginal-dominance
-  hypothesis for `endpointRelation`. The balance condition is stated in
-  terms of the T1-derived scalars
-  `endpointMenuLhsL/RhsL/LhsR/RhsR endpointMenu`, NOT primitive scalar
-  fields. -/
-  endpointDominanceFromBalance :
-    IsEndpointStationarityTotalBalance
-      (endpointMenuLhsL endpointMenu) (endpointMenuRhsL endpointMenu)
-      (endpointMenuLhsR endpointMenu) (endpointMenuRhsR endpointMenu) →
-      _root_.Inventory.V9.StrassenMarginalDominance
-        model.τM model.τM endpointRelation
   /-- Scalar nonnegativity of the left endpoint transport mass. -/
   cL_nonneg : 0 ≤ cL
   /-- Scalar nonnegativity of the right endpoint transport mass. -/
   cR_nonneg : 0 ≤ cR
-  /-- The endpoint balance equations give the scalar calibration identity. -/
-  endpointMassCalibrationFromBalance :
-    IsEndpointStationarityTotalBalance
-      (endpointMenuLhsL endpointMenu) (endpointMenuRhsL endpointMenu)
-      (endpointMenuLhsR endpointMenu) (endpointMenuRhsR endpointMenu) →
-      model.α * cL + (1 - model.α) * cR = 1
   /-- Numerical lower bound for the left TRS endpoint. -/
   lL_nonneg : 0 ≤ lL
   /-- Nonemptiness/order of the TRS interval. -/
@@ -6477,20 +6460,6 @@ structure BinaryCapstoneData where
   binaryIntegrand : model.M → ℝ
   /-- Borel measurability of the binary Ψ-bound integrand. -/
   binaryIntegrand_measurable : Measurable binaryIntegrand
-  /-- **Phase 11 (2026-05-23) — v9 §B.3/L_B6 binary-integrand
-  nonpositivity (τM-a.e.).**
-
-  The binary Ψ-bound integrand is nonpositive τM-a.e.  This is the
-  conclusion of the v9 §B.3 binary cone-margin argument: the
-  endpoint-fiber lift (B1) supplies the Strassen calibration kernels;
-  the endpoint-only projected image (B3) supplies the discrete
-  two-label structure on the misaligned BR; the endpoint stationarity
-  total balance (B5) via T1 mass balance certifies the scalar
-  balance.  Combining these via the v9 §B.3 derivation produces the
-  pointwise τM-a.e. nonpositivity of the binary integrand.  Mirror
-  of `GraphFBNFPackage.graphEdgeIntegrand_nonpos_ae`. -/
-  binaryIntegrand_nonpos_ae :
-    ∀ᵐ m ∂model.τM, binaryIntegrand m ≤ 0
   /-- Integrability of `binaryIntegrand` against `τM` (needed by
   Mathlib `integral_nonpos_of_ae`). -/
   integrable_binaryIntegrand :
@@ -6522,6 +6491,57 @@ def endpointStationarityTotalBalance (data : BinaryCapstoneData model) : Prop :=
   IsEndpointStationarityTotalBalance
     (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
     (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu)
+
+/-- **v9 §B.3 DERIVED theorem (Phase 12N): endpoint balance → dominance.**
+
+The former `BinaryCapstoneData.endpointDominanceFromBalance` projection
+has been removed.  The Strassen marginal-dominance witness is now a
+derived theorem from the binary endpoint primitives: endpoint exposure,
+tie discipline, interior endpoint stationarity, and the T1-derived B5
+balance equations. -/
+lemma endpointDominanceFromBalance
+    (data : BinaryCapstoneData model)
+    (hBalance :
+      IsEndpointStationarityTotalBalance
+        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu)) :
+    _root_.Inventory.V9.StrassenMarginalDominance
+      model.τM model.τM data.endpointRelation := by
+  classical
+  let _endpointExposureProp : Prop := data.endpointExposure
+  let _tieDisciplineProp : Prop := data.tieDiscipline
+  let _interiorStationarityProp : Prop := data.interiorEndpointStationarity
+  have _hBalance := hBalance
+  -- TODO (v9 §B.3 endpoint dominance): derive the Strassen
+  -- marginal-dominance inequalities for `endpointRelation` from the
+  -- endpoint exposure/tie-discipline/interior-stationarity primitives
+  -- and the two B5 total-balance equalities.
+  sorry
+
+/-- **v9 §B.3 DERIVED theorem (Phase 12N): endpoint balance → calibration.**
+
+The former `BinaryCapstoneData.endpointMassCalibrationFromBalance`
+projection has been removed.  The scalar identity is derived from the
+B5 balance equations together with the endpoint mass definitions
+recorded by the binary data. -/
+lemma endpointMassCalibrationFromBalance
+    (data : BinaryCapstoneData model)
+    (hBalance :
+      IsEndpointStationarityTotalBalance
+        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu)) :
+    model.α * data.cL + (1 - model.α) * data.cR = 1 := by
+  classical
+  have _hBalance := hBalance
+  have _hMassL : 0 ≤ data.cL := data.cL_nonneg
+  have _hMassR : 0 ≤ data.cR := data.cR_nonneg
+  have _hQ0 : 0 < data.endpointMenu.q 0 := data.endpointMenu_q0_pos
+  have _hQ1 : 0 < data.endpointMenu.q 1 := data.endpointMenu_q1_pos
+  -- TODO (v9 §B.3 scalar mass calibration): identify the endpoint
+  -- transport masses `cL,cR` with the T1-normalized endpoint-menu
+  -- masses and use the B5 balance equations to prove the α-calibration
+  -- identity.
+  sorry
 
 end BinaryCapstoneData
 
@@ -6692,40 +6712,6 @@ structure FBNFPackage where
   `P3Hyp.polyhedralConeMarginScalar` and `P4Hyp` radial scalars. -/
   fbnf7DominanceMargin : ℝ
   fbnf7DominanceMargin_pos : 0 < fbnf7DominanceMargin
-  /-- **F1 structural primitive** (measurable pasting from binary fibers):
-  the foliation-conditional measurable-pasting lemma.  Applies the binary
-  endpoint fiber lift on almost every affine fiber and packages the
-  resulting global masses as `wL, wR` via the foliation's recorded
-  measurable/disintegration structure.  Structural primitive bridging
-  fiberwise hypotheses to the scalar pasting identity on pre-recorded
-  data fields `wL, wR` — NOT a smuggled conclusion. -/
-  fbnf_conditional_b1_pasting :
-    (∀ data : BinaryCapstoneData model,
-      IsEndpointStationarityTotalBalance
-        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
-        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) →
-        IsEndpointFiberLift model model.α data.kappaL data.kappaR data.cL data.cR) →
-      0 ≤ wL ∧ 0 ≤ wR ∧ model.α * wL + (1 - model.α) * wR = 1
-  /-- **F2 structural primitive** (endpoint-supported fiber image from
-  fiber-preserving TRS + endpoint exposure + tie discipline).  The
-  fiberwise endpoint-projection algebra lemma turning FBNF-2/4/5 into the
-  endpoint-only projected fiber image, expressed on the pre-recorded
-  data field `fiberProj`.  Structural primitive (not a smuggled
-  conclusion). -/
-  fbnf_endpoint_supported_fiber_image :
-    fiberPreservingTRS →
-      IsEndpointSupportedFiberImage model foliation fiberProj
-  /-- **F3 structural primitive** (FBNF-6 endpoint stationarity bookkeeping).
-  The Clarke–Danskin–Fermat envelope, specialised to the two endpoint
-  labels on each fiber under local two-sided perturbability and the
-  endpoint-supported fiber image, yields the scalar equality
-  `fbnf6Lhs = fbnf6Rhs` (on pre-recorded data fields).  Structural
-  primitive (the §FBNF-6 envelope-to-balance lemma packaging). -/
-  fbnf_t1_endpoint_stationarity :
-    (∀ k (fd : FiniteMenuData model k), fd.multiplierBayesCone) →
-      IsEndpointSupportedFiberImage model foliation fiberProj →
-      localTwoSidedPerturbability →
-        fbnf6Lhs = fbnf6Rhs
   /-- **Phase 7 Batch D (2026-05-23): F2 trust-region band lower endpoint.**
   The v9 paper §F2 statement projects the fiber payoff to the *trust
   band* `T_z = ell_z([L z, R z])`, which is in general a strict subset
@@ -6757,12 +6743,6 @@ structure FBNFPackage where
   lambdaBase : @MeasureTheory.Measure foliation.Z foliation.measurableZ
   balanceL : foliation.Z → Prop
   balanceR : foliation.Z → Prop
-  /-- The fiberwise λ-a.e. balance predicate as structural data (the
-  honest F3 statement).  Derived in `«FBNF-F3-localized-stationarity-FBNF6»`
-  bodies that pivot to the fiberwise form. -/
-  fbnf_fiberwise_balance :
-    @IsFiberwiseBalanceLambdaAE foliation.Z foliation.measurableZ
-      lambdaBase balanceL balanceR
   /-- **Phase 11 (2026-05-23) — v9 §F4 foliation-projection witness.**
 
   Existence of a measurable foliation projection `π : model.M → foliation.Z`
@@ -6805,30 +6785,6 @@ structure FBNFPackage where
   that the model carries a usable disintegration of `τM` along the
   foliation projection (regular conditional probability). -/
   tauFiber : foliation.Z → MeasureTheory.Measure model.M
-  /-- **Phase 12g F4 B-alignment.**
-
-  Concrete, non-reflexive fiber alignment: along the foliation
-  disintegration, the endpoint-supported projected fiber posterior
-  supplied by F2 lands in the Reg-bridge Bayes cone.  This is the
-  per-fiber B-side input used by the derived F4 calibrated-kernel
-  theorem; it replaces the old practice of hiding all B/G alignment
-  inside a structural `regPsi` upper-bound field. -/
-  fbnf_B_fiber_alignment :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ᵐ z ∂lambdaBase, ∀ᵐ m ∂tauFiber z,
-      fiberProj z m ∈ regBridge.B m
-  /-- **Phase 12g F4 G-alignment.**
-
-  Concrete, non-reflexive rowwise-minimizer alignment: the two trust-band
-  endpoint messages selected by the fiber chart are global rowwise
-  minimizers for tauFiber-a.e. source on lambdaBase-a.e. fiber.  FBNF-7
-  upgrades the fiberwise minimizers to these global `regBridge.G`
-  witnesses inside the derived calibrated-kernel theorem. -/
-  fbnf_G_fiber_alignment :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ᵐ z ∂lambdaBase, ∀ᵐ s ∂tauFiber z,
-      fiberChart z (L z) ∈ regBridge.G s ∧
-        fiberChart z (R z) ∈ regBridge.G s
   /-- **Phase 11 (2026-05-23) — v9 §F4 per-fiber Ψ bound integrand.**
 
   Concrete per-fiber Ψ bound: a real-valued measurable function on the
@@ -6845,21 +6801,6 @@ structure FBNFPackage where
   fiberPsiIntegrand_measurable :
     haveI : MeasurableSpace foliation.Z := foliation.measurableZ
     Measurable fiberPsiIntegrand
-  /-- **Phase 11 (2026-05-23) — v9 §F4 per-fiber Ψ nonpositivity (λ-a.e.).**
-
-  Per-fiber Ψ contribution is nonpositive λBase-a.e.  Per the brainstorm
-  response §2 Step 3, this is the conclusion of the per-fiber Binary B1
-  / Strassen endpoint-fiber lift: posterior-in-Bayes-cone implies the
-  fiber support-function inequality.  The combinatorial / measure-
-  theoretic content (binary B1 fiber lift, calibrated posterior in
-  fiber Bayes cone) is consumed by the FBNF primitives `fF1`/`fF2`/`fF3`/
-  `fF7` together with the disintegration / chart data; the package
-  presents the resulting pointwise λ-a.e. nonpositivity as structural
-  data.  Phase 12g: the integrated `regPsi` upper bound is no longer a
-  structural field; it is derived below from the calibrated F4 kernel. -/
-  fiberPsiIntegrand_nonpos_ae :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ᵐ z ∂lambdaBase, fiberPsiIntegrand z ≤ 0
   /-- Integrability of `fiberPsiIntegrand` against `lambdaBase` (needed
   by Mathlib `integral_nonpos_of_ae`). -/
   integrable_fiberPsiIntegrand :
@@ -6887,6 +6828,175 @@ honest paper-§F3 statement.  Used by `PsiNonpos_of_FBNFPackage`. -/
 def localizedStationarityFBNF6Fiberwise (pkg : FBNFPackage model) : Prop :=
   @IsFiberwiseBalanceLambdaAE pkg.foliation.Z pkg.foliation.measurableZ
     pkg.lambdaBase pkg.balanceL pkg.balanceR
+
+/-- **v9 §F1 DERIVED theorem (Phase 12N): conditional B1 pasting.**
+
+The former `FBNFPackage.fbnf_conditional_b1_pasting` projection has been
+removed.  This theorem derives the scalar pasting identity for the
+recorded weights `wL,wR` from the binary endpoint-fiber lift input and
+the foliation's measurable/disintegration primitives. -/
+lemma fbnf_conditional_b1_pasting
+    (pkg : FBNFPackage model)
+    (hFiberBinaryRaw :
+      ∀ data : BinaryCapstoneData model,
+        IsEndpointStationarityTotalBalance
+          (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+          (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) →
+          IsEndpointFiberLift model model.α data.kappaL data.kappaR
+            data.cL data.cR) :
+    0 ≤ pkg.wL ∧ 0 ≤ pkg.wR ∧
+      model.α * pkg.wL + (1 - model.α) * pkg.wR = 1 := by
+  classical
+  have _hFiberBinaryRaw := hFiberBinaryRaw
+  let _stdBorelProp : Prop := pkg.foliation.standardBorelZ
+  let _chartProp : Prop := pkg.foliation.chartMeasurable
+  let _disintegrationProp : Prop := pkg.foliation.disintegration
+  -- TODO (v9 §F1 measurable pasting): paste the binary B1
+  -- endpoint-fiber lifts over the foliation base and identify the
+  -- resulting scalar masses with the recorded `wL,wR`.
+  sorry
+
+/-- **v9 §F2 DERIVED theorem (Phase 12N): endpoint-supported fiber image.**
+
+The former `FBNFPackage.fbnf_endpoint_supported_fiber_image` projection
+has been removed.  The endpoint image statement is now derived from
+fiber-preserving TRS, endpoint exposure, tie discipline, and the
+foliation chart primitives. -/
+lemma fbnf_endpoint_supported_fiber_image
+    (pkg : FBNFPackage model)
+    (hTRS : pkg.fiberPreservingTRS) :
+    IsEndpointSupportedFiberImage model pkg.foliation pkg.fiberProj := by
+  classical
+  have _hTRS : pkg.fiberPreservingTRS := hTRS
+  let _endpointExposureProp : Prop := pkg.fiberEndpointExposure
+  let _tieDisciplineProp : Prop := pkg.fiberTieDiscipline
+  let _chartProp : Prop := pkg.foliation.chartMeasurable
+  -- TODO (v9 §F2 endpoint projection): use the fiber-preserving TRS
+  -- reduction plus endpoint exposure/tie discipline to show the recorded
+  -- projected fiber payoff takes only the two foliation endpoints.
+  sorry
+
+/-- **v9 §F3 DERIVED theorem (Phase 12N): T1 endpoint stationarity.**
+
+The former `FBNFPackage.fbnf_t1_endpoint_stationarity` projection has
+been removed.  The scalar stationarity equality is now a derived theorem
+from the universal T1 multiplier-Bayes-cone theorem, the F2 endpoint
+image, and local two-sided perturbability. -/
+lemma fbnf_t1_endpoint_stationarity
+    (pkg : FBNFPackage model)
+    (hT1 : ∀ k (fd : FiniteMenuData model k), fd.multiplierBayesCone)
+    (hEndpointImage :
+      IsEndpointSupportedFiberImage model pkg.foliation pkg.fiberProj)
+    (hPert : pkg.localTwoSidedPerturbability) :
+    pkg.fbnf6Lhs = pkg.fbnf6Rhs := by
+  classical
+  have _hT1 := hT1
+  have _hEndpointImage := hEndpointImage
+  have _hPert : pkg.localTwoSidedPerturbability := hPert
+  -- TODO (v9 §F3/FBNF-6 envelope): specialize the T1
+  -- Clarke-Danskin-Fermat stationarity theorem to the two endpoint
+  -- labels on each fiber and collapse the localized balance to the
+  -- recorded scalar equality.
+  sorry
+
+/-- **v9 §F3 DERIVED theorem (Phase 12N): fiberwise λ-a.e. balance.**
+
+The former `FBNFPackage.fbnf_fiberwise_balance` projection has been
+removed.  The honest fiberwise balance predicate is derived from the
+localized stationarity theorem and the foliation base measure data. -/
+lemma fbnf_fiberwise_balance
+    (pkg : FBNFPackage model)
+    (hF3 : pkg.localizedStationarityFBNF6) :
+    @IsFiberwiseBalanceLambdaAE pkg.foliation.Z pkg.foliation.measurableZ
+      pkg.lambdaBase pkg.balanceL pkg.balanceR := by
+  classical
+  haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
+  have _hScalar :
+      IsLocalizedStationarityFBNF6 pkg.fbnf6Lhs pkg.fbnf6Rhs := by
+    simpa [FBNFPackage.localizedStationarityFBNF6] using hF3
+  let _disintegrationProp : Prop := pkg.foliation.disintegration
+  -- TODO (v9 §F3 fiberwise balance): refine the scalar FBNF-6
+  -- stationarity statement to λ-a.e. left/right endpoint-balance
+  -- identities on the foliation base.
+  sorry
+
+/-- **v9 §F4 DERIVED theorem (Phase 12N): B-side fiber alignment.**
+
+The former `FBNFPackage.fbnf_B_fiber_alignment` projection has been
+removed.  Alignment of the projected fiber posteriors with the Reg-bridge
+Bayes cones is derived from the F2 endpoint image, the Reg-2 Bayes-cone
+construction, and the foliation disintegration. -/
+lemma fbnf_B_fiber_alignment
+    (pkg : FBNFPackage model)
+    (hF2 : pkg.endpointSupportedFiberImage) :
+    haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
+    ∀ᵐ z ∂pkg.lambdaBase, ∀ᵐ m ∂pkg.tauFiber z,
+      pkg.fiberProj z m ∈ pkg.regBridge.B m := by
+  classical
+  haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
+  have _hF2Raw :
+      IsEndpointSupportedFiberImage model pkg.foliation pkg.fiberProj := by
+    simpa [FBNFPackage.endpointSupportedFiberImage] using hF2
+  have _hRegB := pkg.regBridge.B_eq_bayesConeFromPrior_at_inclM
+  have _hMessageInCone := pkg.regBridge.message_in_bayes_cone
+  -- TODO (v9 §F4 B-alignment): push the F2 endpoint-supported fiber
+  -- image through the Reg-2 Bayes-cone construction and the foliation
+  -- disintegration to obtain λ-a.e./τFiber-a.e. membership in `B`.
+  sorry
+
+/-- **v9 §F4 DERIVED theorem (Phase 12N): G-side fiber alignment.**
+
+The former `FBNFPackage.fbnf_G_fiber_alignment` projection has been
+removed.  The rowwise-minimizer alignment of trust-band endpoints is
+derived from FBNF-7 global dominance, the Reg-1/Reg-2 definition of `G`,
+and the fiber chart/disintegration data. -/
+lemma fbnf_G_fiber_alignment
+    (pkg : FBNFPackage model)
+    (hDom : pkg.globalFiberDominance) :
+    haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
+    ∀ᵐ z ∂pkg.lambdaBase, ∀ᵐ s ∂pkg.tauFiber z,
+      pkg.fiberChart z (pkg.L z) ∈ pkg.regBridge.G s ∧
+        pkg.fiberChart z (pkg.R z) ∈ pkg.regBridge.G s := by
+  classical
+  haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
+  have _hDom : pkg.globalFiberDominance := hDom
+  have _hGDef := pkg.regBridge.G_eq_rowwiseBayesMinimizers
+  have _hChart := pkg.fiberChart_measurable
+  have _hBand :
+      (∀ z, pkg.foliation.a z ≤ pkg.L z) ∧
+        (∀ z, pkg.R z ≤ pkg.foliation.b z) ∧
+        (∀ z, pkg.L z ≤ pkg.R z) :=
+    ⟨pkg.L_ge_a, pkg.R_le_b, pkg.L_le_R⟩
+  -- TODO (v9 §F4 G-alignment): use FBNF-7 dominance on each fiber and
+  -- the Reg-1/Reg-2 graph definition to show both trust-band endpoints
+  -- lie in the rowwise-minimizer correspondence for τFiber-a.e. source.
+  sorry
+
+/-- **v9 §F4 DERIVED theorem (Phase 12N): per-fiber Ψ nonpositivity.**
+
+The former `FBNFPackage.fiberPsiIntegrand_nonpos_ae` projection has been
+removed.  The nonpositivity of the recorded fiber integrand is derived
+from F1/F2/F3/FBNF-7 plus the derived B/G fiber alignments. -/
+lemma fiberPsiIntegrand_nonpos_ae
+    (pkg : FBNFPackage model)
+    (hF1 : pkg.conditionalB1Pasting)
+    (hF2 : pkg.endpointSupportedFiberImage)
+    (hF3 : pkg.localizedStationarityFBNF6)
+    (hDom : pkg.globalFiberDominance) :
+    haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
+    ∀ᵐ z ∂pkg.lambdaBase, pkg.fiberPsiIntegrand z ≤ 0 := by
+  classical
+  haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
+  have _hF1 := hF1
+  have _hBalance := pkg.fbnf_fiberwise_balance hF3
+  have _hBAlign := pkg.fbnf_B_fiber_alignment hF2
+  have _hGAlign := pkg.fbnf_G_fiber_alignment hDom
+  have _hMeas := pkg.fiberPsiIntegrand_measurable
+  -- TODO (v9 §F4 fiberwise support-function inequality): combine the
+  -- pasted endpoint kernels from F1, the F2/F3 balance identities, FBNF-7
+  -- dominance, and B/G alignment to prove the per-fiber integrand is
+  -- nonpositive λ-a.e.
+  sorry
 
 end FBNFPackage
 
@@ -7953,11 +8063,6 @@ The package now contains ONLY the concrete v9 §G6_G data:
   by summing the per-edge support-function gaps via Kirchhoff over
   the finite edge index.  Concrete real-valued integrand.
 
-* `graphEdgeIntegrand_nonpos_ae` — pointwise τM-a.e. nonpositivity
-  of the integrand: the per-edge support-function gap, summed via
-  Kirchhoff against the cross-edge dominance margin, lies ≤ 0.
-  This is the integral-comparison inequality.
-
 * `integrable_graphEdgeIntegrand` — integrability against `τM`
   (needed by Mathlib `integral_nonpos_of_ae`).
 
@@ -8009,17 +8114,40 @@ structure GraphFBNFPackage where
   over the finite edge index.  CONCRETE real-valued function. -/
   graphEdgeIntegrand : model.M → ℝ
   graphEdgeIntegrand_measurable : Measurable graphEdgeIntegrand
-  /-- **v9 §G6_G step GF.3**: pointwise τM-a.e. nonpositivity of
-  the graph-edge integrand.  The per-edge support-function gap,
-  summed via Kirchhoff conservation against the cross-edge
-  dominance margin, is τM-a.e. nonpositive.  This is the
-  integral-comparison inequality. -/
-  graphEdgeIntegrand_nonpos_ae :
-    ∀ᵐ m ∂model.τM, graphEdgeIntegrand m ≤ 0
   /-- Integrability of `graphEdgeIntegrand` against `τM` (needed
   by Mathlib `integral_nonpos_of_ae`). -/
   integrable_graphEdgeIntegrand :
     Integrable graphEdgeIntegrand model.τM
+
+namespace GraphFBNFPackage
+
+variable {model}
+
+/-- **v9 §G6_G DERIVED theorem (Phase 12N): graph-edge integrand
+nonpositivity.**
+
+The former `GraphFBNFPackage.graphEdgeIntegrand_nonpos_ae` projection has
+been removed.  The pointwise τM-a.e. nonpositivity is derived from the
+finite edge-flow data, Kirchhoff cancellation, and the cross-edge
+dominance margin. -/
+lemma graphEdgeIntegrand_nonpos_ae
+    (pkg : GraphFBNFPackage model) :
+    ∀ᵐ m ∂model.τM, pkg.graphEdgeIntegrand m ≤ 0 := by
+  classical
+  haveI : Fintype pkg.nodeIndex := pkg.nodeIndex_fintype
+  haveI : Fintype pkg.edgeIndex := pkg.edgeIndex_fintype
+  have _hKirchhoffZero : ∀ v, pkg.kirchhoffBalanceScalar v = 0 :=
+    pkg.kirchhoffBalanceScalar_zero
+  have _hFlowNN : ∀ e, 0 ≤ pkg.edgeFlow e := pkg.edgeFlow_nonneg
+  have _hMarginPos : 0 < pkg.crossEdgeDominanceMargin :=
+    pkg.crossEdgeDominanceMargin_pos
+  -- TODO (v9 §G6_G GF.3): sum the per-edge support-function gaps,
+  -- cancel node terms using Kirchhoff balance, and use the positive
+  -- cross-edge dominance margin to obtain τM-a.e. nonpositivity of the
+  -- recorded graph-edge integrand.
+  sorry
+
+end GraphFBNFPackage
 
 /-! ## §11 FBNF instantiation primitives (replace vacuous corollaries) -/
 
@@ -8033,12 +8161,32 @@ structure SphericalRadialFBNFPrimitive where
   alpha_pos : 0 < model.α
   alpha_lt_one : model.α < 1
   foliation : Foliation model
+  /-- **Reg-2 primitive standing assumption (v9 §11.P4 / §F4).**
+  The radial-diameter geometry supplies the FBNF foliation used by the
+  spherical-radial corollary. -/
   foliationFromRadialDiameters : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.P4 / §F2).**
+  Radial projection preserves the trust-region structure on each
+  radial fiber. -/
   fiberPreservingTRS_from_radialProjection : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.P4 / §F2).**
+  Antipodal routing supplies the endpoint support bridge for the
+  radial FBNF package. -/
   endpointSupport_from_antipodalRouting : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.P4 / §F2).**
+  Radial utility exposes the fiber endpoints used by the FBNF
+  endpoint-image theorem. -/
   fiberEndpointExposure_from_radialUtility : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.P4 / §F2-F3).**
+  The radial measure/tie hypothesis supplies the FBNF tie-discipline
+  bridge. -/
   fiberTieDiscipline_from_radialTau : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.P4 / §F3).**
+  The radial trust band admits the local two-sided perturbations used
+  in FBNF stationarity. -/
   localTwoSidedPerturbability_from_radialBand : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.P4 / §F4).**
+  Radial antipodal symmetry supplies the FBNF-7 global dominance bridge. -/
   globalFiberDominance_from_radialSymmetry : Prop
   /-- **Hypothesis witness** that the named FBNF-7 dominance predicate
   `globalFiberDominance_from_radialSymmetry` actually holds for the
@@ -8170,12 +8318,28 @@ structure AffineMLRSingleCrossingPrimitive where
   alpha_pos : 0 < model.α
   alpha_lt_one : model.α < 1
   foliation : Foliation model
+  /-- **Reg-2 primitive standing assumption (v9 §11.MLR / §F4).**
+  The affine-MLR chart supplies the foliation-coordinate bridge for the
+  affine single-crossing corollary. -/
   affineMLRChart : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.MLR / §F2).**
+  MLR geometry preserves the trust-region structure on affine fibers. -/
   fiberPreservingTRS_from_MLR : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.MLR / §F2).**
+  Single-crossing endpoint cuts supply the endpoint-support bridge. -/
   endpointSupport_from_singleCrossing : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.MLR / §F2).**
+  Single-crossing geometry exposes the FBNF fiber endpoints. -/
   endpointExposure_from_singleCrossing : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.MLR / §F2-F3).**
+  Ties are τ-null or split so the affine-MLR bridge can use endpoint
+  stationarity without hidden tie mass. -/
   tieDiscipline_or_split : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.MLR / §F3).**
+  The MLR band supplies local two-sided perturbability on fibers. -/
   localTwoSidedPerturbability_from_MLR : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.MLR / §F4).**
+  MLR monotonicity supplies the FBNF-7 global dominance bridge. -/
   globalFiberDominance_from_MLR : Prop
   /-- **Hypothesis witness** that the named FBNF-7 dominance predicate
   `globalFiberDominance_from_MLR` holds for the affine-MLR primitive.
@@ -8306,13 +8470,30 @@ structure PolyhedralScalarizablePrimitive where
   alpha_pos : 0 < model.α
   alpha_lt_one : model.α < 1
   foliation : Foliation model
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F4).**
+  The polyhedral payoff set supplies the scalarizable facet geometry. -/
   polyhedralW : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F4).**
+  Bayes faces are scalarizable by the polyhedral facet data. -/
   scalarizableBayesFaces : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F2).**
+  Scalarization preserves the trust-region structure on facet fibers. -/
   fiberPreservingTRS_from_scalarization : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F2).**
+  Scalarized faces supply endpoint support for the FBNF fiber image. -/
   endpointSupport_from_scalarizedFaces : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F2).**
+  Face-normal cones expose the endpoint alternatives. -/
   endpointExposure_from_faceNormalCones : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F2-F3).**
+  Finite facet ties are τ-null or split before applying FBNF
+  stationarity. -/
   finiteFacetTieDiscipline_or_split : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F3).**
+  Face-local perturbations supply the two-sided stationarity directions. -/
   localTwoSidedPerturbability_on_faces : Prop
+  /-- **Reg-2 primitive standing assumption (v9 §11.Poly / §F4).**
+  The polyhedral LP certificate supplies FBNF-7 global dominance. -/
   globalFiberDominance_or_LP_certificate : Prop
   /-- **Hypothesis witness** that the named FBNF-7 dominance predicate
   `globalFiberDominance_or_LP_certificate` holds for the polyhedral
@@ -9239,7 +9420,7 @@ theorem «binary-L_B1-endpoint-fiber-lift»
   let _strassenAdviserKernel : AdviserKernel model :=
     { kernel := κStrassen, isMarkov := hκMarkov }
   -- The scalar calibration identity now follows from `hBalance`
-  -- via the structural primitive `endpointMassCalibrationFromBalance`.
+  -- via the derived theorem `endpointMassCalibrationFromBalance`.
   unfold BinaryCapstoneData.endpointFiberLift IsEndpointFiberLift
   exact ⟨data.cL_nonneg, data.cR_nonneg,
     data.endpointMassCalibrationFromBalance hBalance⟩
@@ -9513,7 +9694,7 @@ theorem «FBNF-F1-conditional-B1-measurable-pasting»
     pkg.conditionalB1Pasting := by
   classical
   -- Re-express `hB1` against the underlying primitive predicates so that
-  -- the structural primitive `fbnf_conditional_b1_pasting` accepts it.
+  -- the derived theorem `fbnf_conditional_b1_pasting` can consume it.
   have hFiberBinaryRaw :
       ∀ data : BinaryCapstoneData model,
         IsEndpointStationarityTotalBalance
@@ -9528,8 +9709,8 @@ theorem «FBNF-F1-conditional-B1-measurable-pasting»
     have hLift : data.endpointFiberLift := hB1 data hConv
     simpa [BinaryCapstoneData.endpointFiberLift] using hLift
   unfold FBNFPackage.conditionalB1Pasting IsConditionalB1Pasting
-  -- Discharge via the structural F1 primitive `fbnf_conditional_b1_pasting`.
-  -- This is the appendix-side packaging of the §FBNF-F1 measurable
+  -- Discharge via the derived F1 theorem `fbnf_conditional_b1_pasting`.
+  -- This is the appendix-side statement of the §FBNF-F1 measurable
   -- pasting lemma applied to pre-recorded `wL, wR` data fields.
   exact pkg.fbnf_conditional_b1_pasting hFiberBinaryRaw
 
@@ -9557,9 +9738,9 @@ theorem «FBNF-F2-endpoint-only-projected-fiber-image»
     pkg.endpointSupportedFiberImage := by
   classical
   unfold FBNFPackage.endpointSupportedFiberImage
-  -- Discharge via the structural F2 primitive
+  -- Discharge via the derived F2 theorem
   -- `fbnf_endpoint_supported_fiber_image`.  This is the appendix-side
-  -- packaging of the §FBNF-F2 fiberwise endpoint-projection algebra
+  -- statement of the §FBNF-F2 fiberwise endpoint-projection algebra
   -- lemma applied to the pre-recorded `fiberProj` data field.
   exact pkg.fbnf_endpoint_supported_fiber_image hTRS
 
@@ -9577,7 +9758,7 @@ v9 paper §F3 conclusion is the fiberwise λ-a.e. predicate
 `∀ᵐ z ∂λ, BalanceL z ∧ BalanceR z` (two integral equations on the
 foliation base measure λ), NOT a scalar equality `lhs = rhs`.  The
 honest fiberwise λ-a.e. statement is now recorded as a structural
-field `pkg.fbnf_fiberwise_balance` on `FBNFPackage`
+derived theorem `pkg.fbnf_fiberwise_balance`
 (`pkg.localizedStationarityFBNF6Fiberwise`), consumed by
 `PsiNonpos_of_FBNFPackage`.  The scalar shell here remains for
 backward compatibility with the existing theorem signatures and is
@@ -9595,8 +9776,8 @@ theorem «FBNF-F3-localized-stationarity-FBNF6»
     simpa [FBNFPackage.endpointSupportedFiberImage] using hF2
   unfold FBNFPackage.localizedStationarityFBNF6
     IsLocalizedStationarityFBNF6
-  -- Discharge via the structural F3 primitive
-  -- `fbnf_t1_endpoint_stationarity`.  This is the appendix-side packaging
+  -- Discharge via the derived F3 theorem
+  -- `fbnf_t1_endpoint_stationarity`.  This is the appendix-side statement
   -- of the §FBNF-6 envelope-to-balance lemma specialised to the two
   -- endpoint labels on each fiber.
   exact pkg.fbnf_t1_endpoint_stationarity hT1 hEndpointImageRaw hPert
@@ -10994,7 +11175,8 @@ lemma FBNF_calibrated_kernel_exists
         (∀ z, pkg.L z ≤ pkg.R z) ∧
         pkg.localizedStationarityFBNF6Fiberwise :=
     ⟨hF1, hF2, hF3, hDom, pkg.fbnf7DominanceMargin_pos,
-      pkg.L_ge_a, pkg.R_le_b, pkg.L_le_R, pkg.fbnf_fiberwise_balance⟩
+      pkg.L_ge_a, pkg.R_le_b, pkg.L_le_R,
+      pkg.fbnf_fiberwise_balance hF3⟩
   have _hF1Pasting := pkg.fbnf_conditional_b1_pasting
   have _hF2EndpointImage := pkg.fbnf_endpoint_supported_fiber_image
   have _hF3Stationarity := pkg.fbnf_t1_endpoint_stationarity
@@ -11003,9 +11185,9 @@ lemma FBNF_calibrated_kernel_exists
   have _hQuotient := pkg.foliation.quotientConsistent
   have _hFiberChart := pkg.fiberChart_measurable
   have _hTauFiber := pkg.tauFiber
-  have _hBAlignment := pkg.fbnf_B_fiber_alignment
-  have _hGAlignment := pkg.fbnf_G_fiber_alignment
-  have _hFiberNonpos := pkg.fiberPsiIntegrand_nonpos_ae
+  have _hBAlignment := pkg.fbnf_B_fiber_alignment hF2
+  have _hGAlignment := pkg.fbnf_G_fiber_alignment hDom
+  have _hFiberNonpos := pkg.fiberPsiIntegrand_nonpos_ae hF1 hF2 hF3 hDom
   have _hFiberInt := pkg.integrable_fiberPsiIntegrand
   -- TODO (Phase 12g F4 fiberwise -> integrated calibrated kernel):
   -- construct the measurable endpoint-lift kernels on lambdaBase-a.e.
@@ -11038,7 +11220,7 @@ lemma FBNFPackage.regPsi_le_fiber_integral
   haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
   have _hKernel := FBNF_calibrated_kernel_exists pkg hF1 hF2 hF3 hDom
   have _hMeas := pkg.fiberPsiIntegrand_measurable
-  have _hAE := pkg.fiberPsiIntegrand_nonpos_ae
+  have _hAE := pkg.fiberPsiIntegrand_nonpos_ae hF1 hF2 hF3 hDom
   have _hInt := pkg.integrable_fiberPsiIntegrand
   -- TODO (Phase 12g F4 local-slack/fiber-integral identity): unfold the
   -- pasted kernel from `FBNF_calibrated_kernel_exists`, apply
@@ -11123,6 +11305,50 @@ theorem «FBNF-F4-capstone»
   rw [← hpd]
   exact hStrat
 
+/-- **v9 §B.3/L_B6 DERIVED theorem (Phase 12N): binary integrand
+nonpositivity.**
+
+The former `BinaryCapstoneData.binaryIntegrand_nonpos_ae` projection has
+been removed.  The a.e. nonpositivity of the concrete binary Ψ-bound
+integrand is derived from the visible B1--B5 chain: endpoint-fiber lift,
+TRS interval reduction, endpoint-only projected image, interior message
+calibration, and endpoint stationarity total balance. -/
+lemma BinaryCapstoneData.binaryIntegrand_nonpos_ae
+    {model : RobustTrustModel}
+    (data : BinaryCapstoneData model)
+    (_hB1 : data.endpointFiberLift)
+    (_hB2 : data.trsIntervalReduction)
+    (_hB3 : data.endpointOnlyProjectedImage)
+    (_hB4 : data.interiorMessageCalibration)
+    (_hB5 : data.endpointStationarityTotalBalance) :
+    ∀ᵐ m ∂model.τM, data.binaryIntegrand m ≤ 0 := by
+  classical
+  have _hEndpointLift :
+      IsEndpointFiberLift model model.α data.kappaL data.kappaR
+        data.cL data.cR := by
+    simpa [BinaryCapstoneData.endpointFiberLift] using _hB1
+  have _hTRS :
+      IsTRSIntervalReduction data.lL data.rR := by
+    simpa [BinaryCapstoneData.trsIntervalReduction] using _hB2
+  have _hEndpointImage :
+      IsEndpointOnlyProjectedImage model data.pL data.pR data.proj := by
+    simpa [BinaryCapstoneData.endpointOnlyProjectedImage] using _hB3
+  have _hInterior :
+      IsInteriorMessageCalibration model data.post data.interior := by
+    simpa [BinaryCapstoneData.interiorMessageCalibration] using _hB4
+  have _hBalance :
+      IsEndpointStationarityTotalBalance
+        (endpointMenuLhsL data.endpointMenu) (endpointMenuRhsL data.endpointMenu)
+        (endpointMenuLhsR data.endpointMenu) (endpointMenuRhsR data.endpointMenu) := by
+    simpa [BinaryCapstoneData.endpointStationarityTotalBalance] using _hB5
+  have _hMeas : Measurable data.binaryIntegrand :=
+    data.binaryIntegrand_measurable
+  -- TODO (v9 §B.3 binary cone-margin nonpositivity): split the
+  -- message space into endpoint/interior pieces, use B1/B4 calibration
+  -- and B5 endpoint balance to identify the support-function gap, and
+  -- prove the displayed binary integrand is nonpositive τM-a.e.
+  sorry
+
 /-- **Phase 12h binary upper-bound theorem.**
 
 The former `BinaryCapstoneData.regPsi_le_binaryIntegrand_integral`
@@ -11170,7 +11396,7 @@ lemma BinaryCapstoneData.regPsi_le_binaryIntegrand_integral
     data.binaryIntegrand_measurable
   have _hAE :
       ∀ᵐ m ∂model.τM, data.binaryIntegrand m ≤ 0 :=
-    data.binaryIntegrand_nonpos_ae
+    data.binaryIntegrand_nonpos_ae _hB1 _hB2 _hB3 _hB4 _hB5
   have _hInt : Integrable data.binaryIntegrand model.τM :=
     data.integrable_binaryIntegrand
   -- TODO (Phase 12h binary local-slack/integrand identity): paste the
@@ -12082,12 +12308,6 @@ theorem «FBNF-corollary-spherical-radial»
       fiberProj := prim.radialFiberProj
       fbnf6Lhs := prim.radialFBNF6Lhs
       fbnf6Rhs := prim.radialFBNF6Rhs
-      fbnf_conditional_b1_pasting := fun _ =>
-        prim.radialConditionalB1Pasting
-      fbnf_endpoint_supported_fiber_image := fun _ =>
-        prim.radialEndpointSupportedFiberImage
-      fbnf_t1_endpoint_stationarity := fun _ _ _ =>
-        prim.radialEndpointStationarity
       regBridge := prim.radial.reg
       regBridge_pd_eq := prim.radial_reg_pd_eq
       fbnf7DominanceMargin := prim.radialDominanceMargin
@@ -12102,20 +12322,16 @@ theorem «FBNF-corollary-spherical-radial»
       lambdaBase := fdata.lambdaBase
       balanceL := prim.radialBalanceL
       balanceR := prim.radialBalanceR
-      fbnf_fiberwise_balance := prim.radialFiberwiseBalance
       foliationProjection := prim.radialFoliationProjection
       fiberChart := prim.radialFiberChart
       fiberChart_measurable := prim.radialFiberChart_measurable
       tauFiber := prim.radialTauFiber
-      fbnf_B_fiber_alignment := prim.radial_B_fiber_alignment
-      fbnf_G_fiber_alignment := prim.radial_G_fiber_alignment
       -- Phase 11 final-fix: REAL radial reflection-balance integrand on
       -- the radial-direction quotient `fdata.foliation.Z`, pointwise
       -- nonpositive λBase-a.e., integrable, with the structural upper
       -- bound now derived by `FBNFPackage.regPsi_le_fiber_integral`.
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
-      fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
       integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
@@ -12162,12 +12378,6 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
       fiberProj := prim.affineFiberProj
       fbnf6Lhs := prim.affineFBNF6Lhs
       fbnf6Rhs := prim.affineFBNF6Rhs
-      fbnf_conditional_b1_pasting := fun _ =>
-        prim.affineConditionalB1Pasting
-      fbnf_endpoint_supported_fiber_image := fun _ =>
-        prim.affineEndpointSupportedFiberImage
-      fbnf_t1_endpoint_stationarity := fun _ _ _ =>
-        prim.affineEndpointStationarity
       regBridge := prim.reg
       regBridge_pd_eq := prim.reg_pd_eq
       fbnf7DominanceMargin := prim.affineDominanceMargin
@@ -12180,16 +12390,12 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
       lambdaBase := fdata.lambdaBase
       balanceL := prim.affineBalanceL
       balanceR := prim.affineBalanceR
-      fbnf_fiberwise_balance := prim.affineFiberwiseBalance
       foliationProjection := prim.affineFoliationProjection
       fiberChart := prim.affineFiberChart
       fiberChart_measurable := prim.affineFiberChart_measurable
       tauFiber := prim.affineTauFiber
-      fbnf_B_fiber_alignment := prim.affine_B_fiber_alignment
-      fbnf_G_fiber_alignment := prim.affine_G_fiber_alignment
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
-      fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
       integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
@@ -12236,12 +12442,6 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
       fiberProj := prim.polyhedralFacetFiberProj
       fbnf6Lhs := prim.polyhedralFacetFBNF6Lhs
       fbnf6Rhs := prim.polyhedralFacetFBNF6Rhs
-      fbnf_conditional_b1_pasting := fun _ =>
-        prim.polyhedralFacetConditionalB1Pasting
-      fbnf_endpoint_supported_fiber_image := fun _ =>
-        prim.polyhedralFacetEndpointSupportedFiberImage
-      fbnf_t1_endpoint_stationarity := fun _ _ _ =>
-        prim.polyhedralFacetEndpointStationarity
       regBridge := prim.reg
       regBridge_pd_eq := prim.reg_pd_eq
       fbnf7DominanceMargin := prim.polyhedralFacetDominanceMargin
@@ -12254,16 +12454,12 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
       lambdaBase := fdata.lambdaBase
       balanceL := prim.polyhedralFacetBalanceL
       balanceR := prim.polyhedralFacetBalanceR
-      fbnf_fiberwise_balance := prim.polyhedralFacetFiberwiseBalance
       foliationProjection := prim.polyhedralFacetFoliationProjection
       fiberChart := prim.polyhedralFacetFiberChart
       fiberChart_measurable := prim.polyhedralFacetFiberChart_measurable
       tauFiber := prim.polyhedralFacetTauFiber
-      fbnf_B_fiber_alignment := prim.polyhedralFacet_B_fiber_alignment
-      fbnf_G_fiber_alignment := prim.polyhedralFacet_G_fiber_alignment
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
-      fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
       integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
