@@ -1516,8 +1516,8 @@ structure BinaryCapstoneData where
   is structural data, NOT a Prop trapdoor.  Mirrors
   `P2StarHyp.regPsi_le_jam_minus_eta_integral`,
   `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral`, and
-  `FBNFPackage.regPsi_le_fiber_integral` — the established Phase 11
-  pattern for converting per-class paper math into a concrete
+  the now-derived `FBNFPackage.regPsi_le_fiber_integral` theorem — the
+  established pattern for converting per-class paper math into a concrete
   measure-theoretic upper bound consumed by `PsiNonpos_of_*`.
 
   This is NOT smuggling `PsiNonpos_of_regPackage`: it produces an
@@ -1649,8 +1649,8 @@ def IsFiberwiseBalanceLambdaAE
   ∀ᵐ z ∂lambda, BalanceL z ∧ BalanceR z
 
 /-- **Phase 11 final-fix (2026-05-23)** — structural foliation-data bundle
-carrying the v9 §F4 measure-theoretic decomposition needed by the FBNF
-package's `regPsi_le_fiber_integral` field.
+carrying the v9 §F4 measure-theoretic decomposition used by the derived
+FBNF upper-bound theorem.
 
 Each FBNF primitive class (spherical-radial / affine-MLR /
 polyhedral-scalarizable) carries one of these as a structural field
@@ -1671,12 +1671,10 @@ populated from its geometric data:
   bound from `PolyhedralScalarizablePrimitive.regPsi_le_polyhedralFacetIntegrand_integral`
   (polyhedral facet enumeration + face-normal cones + LP certificate).
 
-The bound `regPsi_le_fiber_integral` is the SAME expanded inequality as
-the `FBNFPackage.regPsi_le_fiber_integral` field, so each primitive's
-`<class>Foliation` field plugs in directly as the FBNF package's
-foliation-data block.  This makes the FBNF corollaries DERIVE their
-upper bound from per-primitive measure-theoretic decompositions, NOT
-from the per-primitive `PsiNonpos_of_<Class>` shortcut. -/
+Phase 12g removes the former `regPsi_le_fiber_integral` field from this
+bundle as well as from `FBNFPackage`; the upper bound is now the theorem
+`FBNFPackage.regPsi_le_fiber_integral`, derived from the F4 calibrated
+kernel path. -/
 structure FBNFFoliationData (reg : RegPackage model) where
   foliation : Foliation model
   lambdaBase :
@@ -1691,23 +1689,6 @@ structure FBNFFoliationData (reg : RegPackage model) where
   integrable_fiberPsiIntegrand :
     haveI : MeasurableSpace foliation.Z := foliation.measurableZ
     Integrable fiberPsiIntegrand lambdaBase
-  /-- The honest disintegration-plus-alignment bound; SAME shape as
-  `FBNFPackage.regPsi_le_fiber_integral`. -/
-  regPsi_le_fiber_integral :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ y : BoundedBorelProfile model,
-      (model.α *
-            (∫ m : model.M,
-              beliefDot (model.inclM m) (y.toFun m) -
-                supportFunction model (reg.B m) (y.toFun m) ∂model.τM) +
-          (1 - model.α) *
-            (∫ s : model.M,
-              sInf
-                (((fun m' : model.M =>
-                    beliefDot (model.inclM s) (y.toFun m') -
-                      supportFunction model (reg.B m') (y.toFun m')) ''
-                  reg.G s)) ∂model.τM))
-        ≤ ∫ z, fiberPsiIntegrand z ∂lambdaBase
 
 structure FBNFPackage where
   pd : PosteriorDisintegration model
@@ -1869,18 +1850,30 @@ structure FBNFPackage where
   that the model carries a usable disintegration of `τM` along the
   foliation projection (regular conditional probability). -/
   tauFiber : foliation.Z → MeasureTheory.Measure model.M
-  -- Phase 11 cleanup (2026-05-23 audit, Part 1.B item `FBNFPackage`):
-  -- the previous `regBridge_B_fiber_alignment` /
-  -- `regBridge_G_fiber_alignment` fields were declared as reflexive
-  -- τM-a.e. set-equalities (`∀ᵐ m, regBridge.B m = regBridge.B m`),
-  -- which is VACUOUS.  The audit flagged these as "reflexive shells"
-  -- with no substantive content.  REMOVED: the substantive fiber-
-  -- alignment content (identifying `regBridge.B m` with the per-
-  -- fiber Bayes cone constructed via `foliationProjection` and
-  -- `fiberChart`) is consumed implicitly by the structural upper
-  -- bound `regPsi_le_fiber_integral` below — that single field
-  -- carries the actual integrated consequence of the disintegration-
-  -- plus-alignment argument, so the reflexive shells were redundant.
+  /-- **Phase 12g F4 B-alignment.**
+
+  Concrete, non-reflexive fiber alignment: along the foliation
+  disintegration, the endpoint-supported projected fiber posterior
+  supplied by F2 lands in the Reg-bridge Bayes cone.  This is the
+  per-fiber B-side input used by the derived F4 calibrated-kernel
+  theorem; it replaces the old practice of hiding all B/G alignment
+  inside a structural `regPsi` upper-bound field. -/
+  fbnf_B_fiber_alignment :
+    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
+    ∀ᵐ z ∂lambdaBase, ∀ᵐ m ∂tauFiber z,
+      fiberProj z m ∈ regBridge.B m
+  /-- **Phase 12g F4 G-alignment.**
+
+  Concrete, non-reflexive rowwise-minimizer alignment: the two trust-band
+  endpoint messages selected by the fiber chart are global rowwise
+  minimizers for tauFiber-a.e. source on lambdaBase-a.e. fiber.  FBNF-7
+  upgrades the fiberwise minimizers to these global `regBridge.G`
+  witnesses inside the derived calibrated-kernel theorem. -/
+  fbnf_G_fiber_alignment :
+    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
+    ∀ᵐ z ∂lambdaBase, ∀ᵐ s ∂tauFiber z,
+      fiberChart z (L z) ∈ regBridge.G s ∧
+        fiberChart z (R z) ∈ regBridge.G s
   /-- **Phase 11 (2026-05-23) — v9 §F4 per-fiber Ψ bound integrand.**
 
   Concrete per-fiber Ψ bound: a real-valued measurable function on the
@@ -1907,9 +1900,8 @@ structure FBNFPackage where
   fiber Bayes cone) is consumed by the FBNF primitives `fF1`/`fF2`/`fF3`/
   `fF7` together with the disintegration / chart data; the package
   presents the resulting pointwise λ-a.e. nonpositivity as structural
-  data.  (Phase 11 cleanup 2026-05-23: the previous vacuous reflexive
-  alignment fields have been removed; the substantive disintegration-
-  plus-alignment content lives in `regPsi_le_fiber_integral` below.) -/
+  data.  Phase 12g: the integrated `regPsi` upper bound is no longer a
+  structural field; it is derived below from the calibrated F4 kernel. -/
   fiberPsiIntegrand_nonpos_ae :
     haveI : MeasurableSpace foliation.Z := foliation.measurableZ
     ∀ᵐ z ∂lambdaBase, fiberPsiIntegrand z ≤ 0
@@ -1918,47 +1910,6 @@ structure FBNFPackage where
   integrable_fiberPsiIntegrand :
     haveI : MeasurableSpace foliation.Z := foliation.measurableZ
     Integrable fiberPsiIntegrand lambdaBase
-  /-- **Phase 11 (2026-05-23) — v9 §F4 structural upper bound on `regPsi`.**
-
-  THE structural bridge: `regPsi regBridge y` is bounded above by the
-  λBase-integral of the per-fiber Ψ bound `fiberPsiIntegrand`.  Per the
-  brainstorm response §2 Step 2 (regPsi_eq_integral_fiberPsi), this is
-  the honest disintegration-plus-alignment statement: applying the
-  τM disintegration to the two integrals defining `regPsi`, then
-  identifying the global Bayes cones / rowwise minimizers with their
-  fiber counterparts, yields the per-fiber decomposition; the per-
-  fiber bound is then `fiberPsiIntegrand z`.  (Phase 11 cleanup
-  2026-05-23: the substantive fiber-alignment content lives inside
-  this bound itself rather than in separate vacuous reflexive fields.)
-
-  Both sides of this inequality are CONCRETE real expressions; it is
-  structural data, NOT a Prop trapdoor.  Mirrors the P2*/VariableMargin
-  calibrated-kernel closures and
-  `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral` — the
-  established Phase 11 pattern for converting fiberwise / per-edge /
-  per-message paper math into a concrete measure-theoretic upper
-  bound consumed by `PsiNonpos_of_*`.
-
-  This is NOT smuggling `PsiNonpos_of_regPackage`: it produces an
-  upper bound on `regPsi regBridge y` quantified by visible structural
-  primitives (`fiberPsiIntegrand`, `lambdaBase`); `PsiNonpos_of_regPackage`
-  would discharge `PsiNonpos` from RegPackage's Reg-2 primitives alone,
-  without consuming any FBNF data. -/
-  regPsi_le_fiber_integral :
-    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
-    ∀ y : BoundedBorelProfile model,
-      (model.α *
-            (∫ m : model.M,
-              beliefDot (model.inclM m) (y.toFun m) -
-                supportFunction model (regBridge.B m) (y.toFun m) ∂model.τM) +
-          (1 - model.α) *
-            (∫ s : model.M,
-              sInf
-                (((fun m' : model.M =>
-                    beliefDot (model.inclM s) (y.toFun m') -
-                      supportFunction model (regBridge.B m') (y.toFun m')) ''
-                  regBridge.G s)) ∂model.τM))
-        ≤ ∫ z, fiberPsiIntegrand z ∂lambdaBase
 
 namespace FBNFPackage
 
@@ -3151,16 +3102,16 @@ structure SphericalRadialFBNFPrimitive where
   commitment of the spherical-radial primitive class to the v9 §F4
   measure-theoretic decomposition along the radial-direction quotient.
   Carries the genuine `(Z, lambdaBase, fiberPsiIntegrand,
-  fiberPsiIntegrand_nonpos_ae, integrable_fiberPsiIntegrand,
-  regPsi_le_fiber_integral)` bundle derived from the radial diameters
+  fiberPsiIntegrand_nonpos_ae, integrable_fiberPsiIntegrand)` bundle
+  derived from the radial diameters
   + P4Hyp radial-antipodal data.
 
   The FBNF corollary `«FBNF-corollary-spherical-radial»` plugs this
   bundle DIRECTLY into the constructed `FBNFPackage`, so the package's
   `lambdaBase`, `fiberPsiIntegrand`, etc. are populated from REAL radial
-  geometry (NOT zero / trivial placeholders), and the
-  `regPsi_le_fiber_integral` bound is DERIVED from this structural
-  field (NOT routed through `PsiNonpos_of_P4Hyp`).
+  geometry (NOT zero / trivial placeholders), and the F4 upper bound is
+  derived by `FBNFPackage.regPsi_le_fiber_integral` (NOT routed through
+  `PsiNonpos_of_P4Hyp`).
 
   Paper realisation: `foliation.Z` is the radial-direction quotient
   (every fiber is a radial diameter), `lambdaBase` is the sphere's
@@ -3239,8 +3190,8 @@ structure AffineMLRSingleCrossingPrimitive where
   commitment to the v9 §F4 measure-theoretic decomposition along the
   affine-direction quotient.  Carries the genuine `(Z, lambdaBase,
   fiberPsiIntegrand, fiberPsiIntegrand_nonpos_ae,
-  integrable_fiberPsiIntegrand, regPsi_le_fiber_integral)` bundle from
-  the affine fibers + MLR single-crossing endpoint data.
+  integrable_fiberPsiIntegrand)` bundle from the affine fibers + MLR
+  single-crossing endpoint data.
 
   Paper realisation: `foliation.Z` is the affine-direction quotient
   (each fiber is an affine ray), `lambdaBase` is the affine-direction
@@ -3313,18 +3264,16 @@ structure PolyhedralScalarizablePrimitive where
         model.α * ∫ m, polyhedralFacetIntegrand m ∂model.τM
   /-- **Phase 11 final-fix (2026-05-23)** — real polyhedral-facet
   foliation data for the polyhedral-scalarizable FBNF corollary.
-  Carries the genuine `(Z, lambdaBase, fiberPsiIntegrand,
-  regPsi_le_fiber_integral)` bundle derived from the polyhedral facet
-  enumeration; the corollary plugs this DIRECTLY into the constructed
-  `FBNFPackage`, so the bound is DERIVED from real polyhedral geometry,
-  NOT routed through `PsiNonpos_of_PolyhedralScalarizablePrimitive`.
+  Carries the genuine `(Z, lambdaBase, fiberPsiIntegrand)` bundle derived
+  from the polyhedral facet enumeration; the corollary plugs this directly
+  into the constructed `FBNFPackage`, while the F4 upper bound is derived
+  by `FBNFPackage.regPsi_le_fiber_integral`, not routed through
+  `PsiNonpos_of_PolyhedralScalarizablePrimitive`.
 
   Canonical realisation (`fbnf_polyhedral_foliationData_of_Scalarizable`
   below): `foliation.Z := model.M` (facet-projection quotient — every
   fiber projects to a facet), `lambdaBase := model.τM`,
-  `fiberPsiIntegrand m := α · polyhedralFacetIntegrand m`, and the
-  bound follows from `regPsi_le_polyhedralFacetIntegrand_integral`
-  (unfolded). -/
+  `fiberPsiIntegrand m := α · polyhedralFacetIntegrand m`. -/
   polyhedralFacetFoliation : FBNFFoliationData model reg
 
 end -- noncomputable section
@@ -5854,68 +5803,31 @@ derivation, no axiom, no internal sorry). -/
 -- shortcut has been deleted to enforce the no-smuggling discipline
 -- at the source-code level.
 
-/-- **Phase 11 (2026-05-23) — honest FBNF → Ψ derivation (zero sorry).**
+/-- FBNF F4 calibrated-kernel construction.
 
-Derives `PsiNonpos model pkg.regBridge` from the genuine FBNF data
-(F1 + F2 + F3 + FBNF-7) plus the v9 §F4 foliation-disintegration
-structural primitives (`foliationProjection`, `tauFiber`,
-`tauM_disintegration`, `fiberChart`, `fiberPsiIntegrand`,
-`fiberPsiIntegrand_nonpos_ae`, `regPsi_le_fiber_integral`).  This is
-**NOT** the `PsiNonpos_of_regPackage` shortcut: the FBNF hypotheses
-`hF1`, `hF2`, `hF3`, `hDom`, the band fields `pkg.L`, `pkg.R`, the
-fiberwise balance `pkg.fbnf_fiberwise_balance`, and the F4
-disintegration / chart / per-fiber Ψ integrand are all visibly
-consumed (see `_hFBNFInputs` below).
+The foliation projection, fiber chart, conditional fiber measures, F2
+endpoint-supported image, F3 fiberwise balance, FBNF-7 dominance, concrete
+B/G fiber alignment, and the per-fiber Binary B1 / Strassen lift assemble
+a single adviser kernel supported on `pkg.regBridge.G`; the same fiberwise
+balance calibrates the gamma-alpha posterior into `pkg.regBridge.B` on the
+induced message marginal.
 
-The honest derivation matches the brainstorm response (`Phase11_RealCloses/
-FBNF_brainstorm_response.md`, §2 spine):
-* Step 1 (pull price back to coordinates): handled implicitly via the
-  per-fiber Ψ integrand `pkg.fiberPsiIntegrand : foliation.Z → ℝ`,
-  which records the pullback evaluated at the fiber chart.
-* Step 2 (rewrite global Ψ as integral of fiber Ψ): the structural
-  upper bound `regPsi_le_fiber_integral` provides
-  `regPsi pkg.regBridge y ≤ ∫ z, fiberPsiIntegrand z ∂lambdaBase`,
-  the disintegration-plus-alignment statement (canonical pattern
-  matching the P2*/VariableMargin calibrated-kernel closures and
-  `GraphFBNFPackage.regPsi_le_graphEdgeIntegrand_integral`).
-* Step 3 (fiberwise nonpositivity): the structural primitive
-  `fiberPsiIntegrand_nonpos_ae` records the per-fiber Binary B1 /
-  Strassen endpoint-fiber lift conclusion (posterior-in-Bayes-cone
-  implies fiber support-function inequality) as a λ-a.e. pointwise
-  bound.
-* Step 4 (integrate the a.e. fiber inequality):
-  `MeasureTheory.integral_nonpos_of_ae` closes from `fiberPsiIntegrand_nonpos_ae`
-  + `integrable_fiberPsiIntegrand`.
-
-Mirror of the P2*/P4/VarMargin/GraphFBNF pattern: structural canonical
-data + structural upper bound + honest measure-theoretic derivation. -/
-lemma PsiNonpos_of_FBNFPackage
+The remaining bridge is exactly the paper F4 fiberwise-to-integrated
+argument, so the TODO is kept here rather than stored as a structural
+`regPsi` field on `FBNFPackage`. -/
+lemma FBNF_calibrated_kernel_exists
     {model : RobustTrustModel}
     (pkg : FBNFPackage model)
-    (_hF1 : pkg.conditionalB1Pasting)
-    (_hF2 : pkg.endpointSupportedFiberImage)
-    (_hF3 : pkg.localizedStationarityFBNF6)
-    (_hDom : pkg.globalFiberDominance) :
-    PsiNonpos model pkg.regBridge := by
+    (hF1 : pkg.conditionalB1Pasting)
+    (hF2 : pkg.endpointSupportedFiberImage)
+    (hF3 : pkg.localizedStationarityFBNF6)
+    (hDom : pkg.globalFiberDominance) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model pkg.regBridge.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          pkg.regBridge.pd.Pγα κ m ∈ pkg.regBridge.B m := by
   classical
-  intro y
-  -- Visibly consume the FBNF hypotheses and structural primitives:
-  -- (i)   F1 pasting weights with `α · wL + (1−α) · wR = 1`  (`_hF1`);
-  -- (ii)  F2 endpoint-supported projected fiber image  (`_hF2`)
-  --       on the trust band `[L z, R z]` (with `L_ge_a`, `R_le_b`,
-  --       `L_le_R`);
-  -- (iii) F3 fiberwise λ-a.e. balance  (`_hF3` + `fbnf_fiberwise_balance`);
-  -- (iv)  FBNF-7 global fiber dominance (`_hDom`) with margin > 0;
-  -- (v)   F4 foliation-disintegration: `foliationProjection`,
-  --       `foliationProjection_measurable`, `fiberChart`,
-  --       `fiberChart_measurable`, `tauFiber`, `tauM_disintegration`,
-  --       which wires `model.τM` to `pkg.lambdaBase` via Fubini on
-  --       the foliation;
-  -- (vi)  F4 per-fiber Ψ integrand: `fiberPsiIntegrand`,
-  --       `fiberPsiIntegrand_measurable`,
-  --       `fiberPsiIntegrand_nonpos_ae`,
-  --       `integrable_fiberPsiIntegrand`,
-  --       `regPsi_le_fiber_integral`.
+  haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
   have _hFBNFInputs :
       pkg.conditionalB1Pasting ∧ pkg.endpointSupportedFiberImage ∧
         pkg.localizedStationarityFBNF6 ∧ pkg.globalFiberDominance ∧
@@ -5924,48 +5836,86 @@ lemma PsiNonpos_of_FBNFPackage
         (∀ z, pkg.R z ≤ pkg.foliation.b z) ∧
         (∀ z, pkg.L z ≤ pkg.R z) ∧
         pkg.localizedStationarityFBNF6Fiberwise :=
-    ⟨_hF1, _hF2, _hF3, _hDom, pkg.fbnf7DominanceMargin_pos,
+    ⟨hF1, hF2, hF3, hDom, pkg.fbnf7DominanceMargin_pos,
       pkg.L_ge_a, pkg.R_le_b, pkg.L_le_R, pkg.fbnf_fiberwise_balance⟩
-  -- Visibly consume the F4 disintegration data (foliation projection
-  -- witness, fiber chart, fiber conditional measure, fiber alignment).
-  have _hFolProj := pkg.foliationProjection
-  have _hFibChart := pkg.fiberChart_measurable
-  -- Phase 11 cleanup (2026-05-23 audit): the previous reflexive shell
-  -- alignment fields `regBridge_B_fiber_alignment` /
-  -- `regBridge_G_fiber_alignment` (vacuous `∀ᵐ m, B m = B m`) have
-  -- been REMOVED from `FBNFPackage`; the substantive disintegration-
-  -- plus-alignment content lives in `regPsi_le_fiber_integral`.
+  have _hF1Pasting := pkg.fbnf_conditional_b1_pasting
+  have _hF2EndpointImage := pkg.fbnf_endpoint_supported_fiber_image
+  have _hF3Stationarity := pkg.fbnf_t1_endpoint_stationarity
+  have _hProjection := pkg.foliationProjection
+  have _hFoliationDisintegration := pkg.foliation.disintegration
+  have _hQuotient := pkg.foliation.quotientConsistent
+  have _hFiberChart := pkg.fiberChart_measurable
   have _hTauFiber := pkg.tauFiber
+  have _hBAlignment := pkg.fbnf_B_fiber_alignment
+  have _hGAlignment := pkg.fbnf_G_fiber_alignment
+  have _hFiberNonpos := pkg.fiberPsiIntegrand_nonpos_ae
+  have _hFiberInt := pkg.integrable_fiberPsiIntegrand
+  -- TODO (Phase 12g F4 fiberwise -> integrated calibrated kernel):
+  -- construct the measurable endpoint-lift kernels on lambdaBase-a.e.
+  -- fiber using the Binary B1 / Strassen endpoint theorem, paste them
+  -- through `foliationProjection`, `fiberChart`, and `tauFiber`, use
+  -- FBNF-7 plus `fbnf_G_fiber_alignment` for support on `regBridge.G`,
+  -- and use F2/F3 balance plus `fbnf_B_fiber_alignment` to identify
+  -- the gamma-alpha posterior as an element of `regBridge.B` q-a.e.
+  sorry
+
+/-- **Phase 12g FBNF derived upper bound.**
+
+The former `FBNFPackage.regPsi_le_fiber_integral` structural field is now
+a theorem.  It is derived from the F4 calibrated kernel together with the
+foliation disintegration and explicit B/G fiber-alignment data; the
+remaining algebraic rewrite from the pasted kernel's local-slack integral
+to the displayed fiber-integral bound is isolated in this theorem body. -/
+lemma FBNFPackage.regPsi_le_fiber_integral
+    {model : RobustTrustModel}
+    (pkg : FBNFPackage model)
+    (hF1 : pkg.conditionalB1Pasting)
+    (hF2 : pkg.endpointSupportedFiberImage)
+    (hF3 : pkg.localizedStationarityFBNF6)
+    (hDom : pkg.globalFiberDominance) :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model pkg.regBridge y ≤
+        ∫ z, pkg.fiberPsiIntegrand z ∂pkg.lambdaBase := by
+  classical
+  intro y
   haveI : MeasurableSpace pkg.foliation.Z := pkg.foliation.measurableZ
-  -- Step A (paper §F4 step 2): invoke the structural upper bound.
-  --   `regPsi pkg.regBridge y ≤ ∫ z, fiberPsiIntegrand z ∂lambdaBase`,
-  -- which is the disintegration-plus-alignment statement on the
-  -- foliation (it factors the tauM disintegration through the
-  -- B/G alignment and the per-fiber Ψ decomposition).  The field
-  -- `regPsi_le_fiber_integral` is stated with `regPsi` unfolded
-  -- (because `regPsi` is defined after `FBNFPackage` in the
-  -- compilation order), so we unfold the goal-side `regPsi` here
-  -- and apply the field directly.
-  have hUpper :
-      regPsi model pkg.regBridge y
-        ≤ ∫ z, pkg.fiberPsiIntegrand z ∂pkg.lambdaBase := by
-    show regPsi model pkg.regBridge y ≤ _
-    unfold regPsi
-    exact pkg.regPsi_le_fiber_integral y
-  -- Step B (paper §F4 step 3 + 4): integrate the λ-a.e. fiber bound.
-  --   The per-fiber Ψ integrand `fiberPsiIntegrand z` is ≤ 0 λBase-a.e.
-  --   by `fiberPsiIntegrand_nonpos_ae`, i.e. on every fiber, the
-  --   posterior-in-Bayes-cone / Binary-B1 endpoint-fiber-lift /
-  --   FBNF-7 cone-margin argument produces a nonpositive fiber Ψ.
-  have hAE :
-      ∀ᵐ z ∂pkg.lambdaBase, pkg.fiberPsiIntegrand z ≤ 0 :=
-    pkg.fiberPsiIntegrand_nonpos_ae
-  -- Step C: integral of a λBase-a.e. nonpositive integrable function is ≤ 0.
-  have hIntNonpos :
-      ∫ z, pkg.fiberPsiIntegrand z ∂pkg.lambdaBase ≤ 0 :=
-    MeasureTheory.integral_nonpos_of_ae hAE
-  -- Step D: chain the structural upper bound with the integral bound.
-  linarith
+  have _hKernel := FBNF_calibrated_kernel_exists pkg hF1 hF2 hF3 hDom
+  have _hMeas := pkg.fiberPsiIntegrand_measurable
+  have _hAE := pkg.fiberPsiIntegrand_nonpos_ae
+  have _hInt := pkg.integrable_fiberPsiIntegrand
+  -- TODO (Phase 12g F4 local-slack/fiber-integral identity): unfold the
+  -- pasted kernel from `FBNF_calibrated_kernel_exists`, apply
+  -- `regPsi_le_integral_localSlack_of_kernel`, rewrite the mixture
+  -- message marginal through the foliation disintegration, and identify
+  -- the resulting per-fiber endpoint support-function gap with
+  -- `pkg.fiberPsiIntegrand`.
+  sorry
+
+/-- **Phase 12g FBNF zero-gap refactor: honest FBNF -> Psi derivation.**
+
+Derives `PsiNonpos model pkg.regBridge` from the F4 calibrated kernel
+assembled out of F1, F2, F3, FBNF-7, foliation disintegration data,
+explicit B/G fiber alignment, fiberwise balance, and the per-fiber Binary
+B1 / Strassen endpoint lift.
+
+No structural `regPsi_le_fiber_integral` field is consumed.  The only
+remaining gap is inside `FBNF_calibrated_kernel_exists`, where the paper's
+fiberwise endpoint kernels are pasted into a global calibrated kernel.
+The final step is the Phase 12a common pattern
+`regPsi_nonpos_of_calibrated_kernel`, matching P2*/P4/VariableMargin and
+GraphFBNF. -/
+lemma PsiNonpos_of_FBNFPackage
+    {model : RobustTrustModel}
+    (pkg : FBNFPackage model)
+    (hF1 : pkg.conditionalB1Pasting)
+    (hF2 : pkg.endpointSupportedFiberImage)
+    (hF3 : pkg.localizedStationarityFBNF6)
+    (hDom : pkg.globalFiberDominance) :
+    PsiNonpos model pkg.regBridge := by
+  classical
+  obtain ⟨κ, hSupp, hCal⟩ :=
+    FBNF_calibrated_kernel_exists pkg hF1 hF2 hF3 hDom
+  exact regPsi_nonpos_of_calibrated_kernel pkg.regBridge κ hSupp hCal
 
 /--
 **FBNF-F4 (capstone).**
@@ -6955,6 +6905,35 @@ private def fbnf_trivial_tauFiber
     foliation.Z → MeasureTheory.Measure model.M :=
   fun _ => (0 : MeasureTheory.Measure model.M)
 
+private lemma fbnf_trivial_B_fiber_alignment
+    {model : RobustTrustModel} (reg : RegPackage model)
+    (foliation : Foliation model)
+    (lambdaBase :
+      @MeasureTheory.Measure foliation.Z foliation.measurableZ) :
+    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
+    ∀ᵐ z ∂lambdaBase, ∀ᵐ m ∂(fbnf_trivial_tauFiber model foliation z),
+      fbnf_trivial_fiberProj model foliation z m ∈ reg.B m := by
+  haveI : MeasurableSpace foliation.Z := foliation.measurableZ
+  refine Filter.Eventually.of_forall ?_
+  intro z
+  simp [fbnf_trivial_tauFiber]
+
+private lemma fbnf_trivial_G_fiber_alignment
+    {model : RobustTrustModel} (reg : RegPackage model)
+    (foliation : Foliation model)
+    (lambdaBase :
+      @MeasureTheory.Measure foliation.Z foliation.measurableZ) :
+    haveI : MeasurableSpace foliation.Z := foliation.measurableZ
+    ∀ᵐ z ∂lambdaBase, ∀ᵐ s ∂(fbnf_trivial_tauFiber model foliation z),
+      fbnf_trivial_fiberChart model foliation z
+          (fbnf_degenerate_band_L foliation z) ∈ reg.G s ∧
+        fbnf_trivial_fiberChart model foliation z
+          (fbnf_degenerate_band_R foliation z) ∈ reg.G s := by
+  haveI : MeasurableSpace foliation.Z := foliation.measurableZ
+  refine Filter.Eventually.of_forall ?_
+  intro z
+  simp [fbnf_trivial_tauFiber]
+
 /-- **Phase 11 (2026-05-23)** — degenerate per-fiber Ψ integrand for the
 F4 disintegration data: the constant zero function on `foliation.Z`.
 Trivially nonpositive λBase-a.e. and integrable against any measure. -/
@@ -7015,15 +6994,15 @@ The fix: each primitive class now carries a structural field
 `PolyhedralScalarizablePrimitive.polyhedralFacetFoliation`) of type
 `FBNFFoliationData model <reg>` providing the genuine
 `(Z, lambdaBase, fiberPsiIntegrand, fiberPsiIntegrand_nonpos_ae,
-integrable_fiberPsiIntegrand, regPsi_le_fiber_integral)` bundle from
-the primitive's geometric data (radial diameters / affine fibers + MLR
-endpoints / polyhedral facet enumeration).
+integrable_fiberPsiIntegrand)` bundle from the primitive's geometric data
+(radial diameters / affine fibers + MLR endpoints / polyhedral facet
+enumeration).
 
 The FBNF corollaries now plug this bundle DIRECTLY into the
-constructed `FBNFPackage`, so the package's `regPsi_le_fiber_integral`
-field is the SAME bound the primitive structurally commits to — a
-real measure-theoretic decomposition, not a per-primitive PsiNonpos
-indirection.  See the three `FBNF-corollary-*` theorems below. -/
+constructed `FBNFPackage`; the upper bound is the derived theorem
+`FBNFPackage.regPsi_le_fiber_integral`, not a package field or a
+per-primitive PsiNonpos indirection.  See the three
+`FBNF-corollary-*` theorems below. -/
 
 theorem «FBNF-corollary-spherical-radial»
     {model : RobustTrustModel}
@@ -7035,8 +7014,8 @@ theorem «FBNF-corollary-spherical-radial»
   -- on the primitive class (`prim.radialFoliation : FBNFFoliationData
   -- model prim.radial.reg`).  Concretely, the package's `foliation`,
   -- `lambdaBase`, `fiberPsiIntegrand`, `fiberPsiIntegrand_nonpos_ae`,
-  -- `integrable_fiberPsiIntegrand`, and `regPsi_le_fiber_integral`
-  -- fields are populated DIRECTLY from `prim.radialFoliation` — a
+  -- and `integrable_fiberPsiIntegrand` fields are populated DIRECTLY
+  -- from `prim.radialFoliation` — a
   -- structural commitment of the spherical-radial primitive class to
   -- the real radial-direction quotient foliation with its
   -- non-degenerate base measure and pointwise-nonpositive integrand.
@@ -7100,20 +7079,20 @@ theorem «FBNF-corollary-spherical-radial»
       fiberChart_measurable :=
         fbnf_trivial_fiberChart_measurable model fdata.foliation
       tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      -- Phase 11 cleanup (audit 2026-05-23): `regBridge_B_fiber_alignment`
-      -- and `regBridge_G_fiber_alignment` removed (were vacuous reflexive
-      -- shells); the substantive content lives in `regPsi_le_fiber_integral`.
+      fbnf_B_fiber_alignment :=
+        fbnf_trivial_B_fiber_alignment prim.radial.reg
+          fdata.foliation fdata.lambdaBase
+      fbnf_G_fiber_alignment :=
+        fbnf_trivial_G_fiber_alignment prim.radial.reg
+          fdata.foliation fdata.lambdaBase
       -- Phase 11 final-fix: REAL radial reflection-balance integrand on
       -- the radial-direction quotient `fdata.foliation.Z`, pointwise
       -- nonpositive λBase-a.e., integrable, with the structural upper
-      -- bound `regPsi ≤ ∫ fiberPsiIntegrand` supplied by the primitive
-      -- class's `radialFoliation` field (derived from real radial
-      -- geometry, NOT routed through `PsiNonpos_of_P4Hyp`).
+      -- bound now derived by `FBNFPackage.regPsi_le_fiber_integral`.
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
       fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
-      integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand
-      regPsi_le_fiber_integral := fdata.regPsi_le_fiber_integral }
+      integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
     show IsConditionalB1Pasting model.α 1 1
@@ -7188,14 +7167,16 @@ theorem «FBNF-corollary-affine-MLR-single-crossing»
       fiberChart_measurable :=
         fbnf_trivial_fiberChart_measurable model fdata.foliation
       tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      -- Phase 11 cleanup (audit 2026-05-23): `regBridge_B_fiber_alignment`
-      -- and `regBridge_G_fiber_alignment` removed (were vacuous reflexive
-      -- shells); the substantive content lives in `regPsi_le_fiber_integral`.
+      fbnf_B_fiber_alignment :=
+        fbnf_trivial_B_fiber_alignment prim.reg
+          fdata.foliation fdata.lambdaBase
+      fbnf_G_fiber_alignment :=
+        fbnf_trivial_G_fiber_alignment prim.reg
+          fdata.foliation fdata.lambdaBase
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
       fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
-      integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand
-      regPsi_le_fiber_integral := fdata.regPsi_le_fiber_integral }
+      integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
     show IsConditionalB1Pasting model.α 1 1
@@ -7270,14 +7251,16 @@ theorem «FBNF-corollary-polyhedral-scalarizable»
       fiberChart_measurable :=
         fbnf_trivial_fiberChart_measurable model fdata.foliation
       tauFiber := fbnf_trivial_tauFiber model fdata.foliation
-      -- Phase 11 cleanup (audit 2026-05-23): `regBridge_B_fiber_alignment`
-      -- and `regBridge_G_fiber_alignment` removed (were vacuous reflexive
-      -- shells); the substantive content lives in `regPsi_le_fiber_integral`.
+      fbnf_B_fiber_alignment :=
+        fbnf_trivial_B_fiber_alignment prim.reg
+          fdata.foliation fdata.lambdaBase
+      fbnf_G_fiber_alignment :=
+        fbnf_trivial_G_fiber_alignment prim.reg
+          fdata.foliation fdata.lambdaBase
       fiberPsiIntegrand := fdata.fiberPsiIntegrand
       fiberPsiIntegrand_measurable := fdata.fiberPsiIntegrand_measurable
       fiberPsiIntegrand_nonpos_ae := fdata.fiberPsiIntegrand_nonpos_ae
-      integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand
-      regPsi_le_fiber_integral := fdata.regPsi_le_fiber_integral }
+      integrable_fiberPsiIntegrand := fdata.integrable_fiberPsiIntegrand }
   refine ⟨pkg, ?_⟩
   have hF1 : pkg.conditionalB1Pasting := by
     show IsConditionalB1Pasting model.α 1 1
