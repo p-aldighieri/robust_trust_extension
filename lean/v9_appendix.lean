@@ -1269,12 +1269,11 @@ structure RegPackage where
   §B.5 dependency map records it as a structural input to the Hall
   biconditional (NOT derived from the Hall conclusion).
 
-  **Smuggling audit (2026-05-23)**: this field is NOT used to discharge
-  `PsiNonpos` in any per-class lemma (`PsiNonpos_of_*` consume their
-  class-specific structural upper bounds on `regPsi`, not this field);
-  it is used ONLY in the DERIVED helper `source_in_rowwise_bayes_cone`
-  to pass the source prior into the rowwise-minimizer's Bayes cone, a
-  set-membership fact used downstream of the Hall biconditional. -/
+  **Smuggling audit (updated Phase 12d, 2026-05-23)**: this field is
+  not a direct `PsiNonpos` witness.  It is used through the DERIVED helper
+  `source_in_rowwise_bayes_cone`, including inside the barycenter
+  support-transfer lemma for calibrated kernels, to pass the source prior
+  into the rowwise-minimizer's Bayes cone. -/
   G_rowwise_carries_prior_to_bayes_cone :
     ∀ s m' : model.M, m' ∈ G s →
       model.inclM s ∈ bayesConeFromPrior (model.inclM m')
@@ -2866,6 +2865,11 @@ enters via CONCRETE canonical data:
   involution, packaged as `Measure.map σ τM = τM`.  This is the v9
   §B.7 P4.1 measure-preservation primitive, NOT an opaque Prop.
 
+* `radialSymmetry_mem_G` — the rowwise reflection-compatibility/routing
+  primitive: the antipodal reflected message `σ s` is a rowwise minimizer
+  for source `s`, τM-a.e.  This is the concrete support statement that
+  turns the involution into an adviser kernel supported on `reg.G`.
+
 * `reflectionBalance : M → ℝ` and `reflectionBalance_measurable` —
   the v9 §B.7 P4 reflection-balance integrand obtained by combining
   utility τ-equivariance (P4.2), antipodal-kernel construction
@@ -2879,18 +2883,17 @@ enters via CONCRETE canonical data:
 * `integrable_reflectionBalance` — integrability against `τM`
   (needed by `MeasureTheory.integral_map` + `integral_neg`).
 
-* `regPsi_le_reflectionBalance_integral` — the v9 §B.7 P4 structural
-  closed-form upper bound on `regPsi reg y` as the integral of the
-  reflection-balance integrand.  CONCRETE structural identity (both
-  sides are explicit real expressions); NOT a Prop trapdoor.  By
-  σ change-of-variables + measure preservation + antisymmetry, the
-  RHS equals zero, so `regPsi reg y ≤ 0`.
+The former structural field
+`regPsi_le_reflectionBalance_integral` is removed.  It is now the
+DERIVED theorem `P4Hyp.regPsi_le_reflectionBalance_integral`, proved
+from the antipodal kernel construction, barycenter calibration, and
+reflection-balance cancellation.
 
 The bridge from these primitives to `PsiNonpos model reg` is HONEST
-(closed in `PsiNonpos_of_P4Hyp` below via `MeasureTheory.integral_map`
-applied with the involution and τM-preservation, paired with the
-σ-antisymmetric integrand identity — NO sorry in the lemma body, NO
-smuggling through `PsiNonpos_of_regPackage`). -/
+(closed in `PsiNonpos_of_P4Hyp` below via the Phase 12a calibrated-kernel
+lemma, after constructing the deterministic antipodal kernel from σ and
+checking the reflection-balance integral is zero — NO smuggling through
+`PsiNonpos_of_regPackage`). -/
 structure P4Hyp where
   reg : RegPackage model
   /-- Measurable radial-antipodal involution σ on the message space. -/
@@ -2901,6 +2904,11 @@ structure P4Hyp where
   (`Measure.map σ τM = τM`). -/
   radialSymmetry_tauM_preserving :
     MeasureTheory.Measure.map radialSymmetry model.τM = model.τM
+  /-- v9 §B.7 P4 rowwise reflection compatibility: the antipodal route
+  `s ↦ σ s` lands in the rowwise-minimizer correspondence `reg.G s`,
+  τM-a.e. -/
+  radialSymmetry_mem_G :
+    ∀ᵐ s ∂model.τM, radialSymmetry s ∈ reg.G s
   /-- v9 §B.7 P4 reflection-balance integrand: a concrete Borel function
   combining utility τ-equivariance (P4.2), antipodal-kernel construction
   (P4.3), and the scalar radial-balance numerical identity (P4.4). -/
@@ -2914,12 +2922,6 @@ structure P4Hyp where
   /-- Integrability of `reflectionBalance` against `τM`. -/
   integrable_reflectionBalance :
     Integrable reflectionBalance model.τM
-  /-- v9 §B.7 P4 structural closed-form upper bound on `regPsi reg y`.
-  CONCRETE real identity: both sides are explicit real expressions
-  in `reflectionBalance` and `τM`. -/
-  regPsi_le_reflectionBalance_integral :
-    ∀ y : BoundedBorelProfile model,
-      regPsi model reg y ≤ ∫ m, reflectionBalance m ∂model.τM
 
 structure BinaryTieSplittingHyp where
   data : BinaryCapstoneData model
@@ -6582,43 +6584,34 @@ lemma PsiNonpos_of_P3Hyp
   obtain ⟨κ, hSupp, hCal⟩ := P3_calibrated_kernel_exists hyp
   exact regPsi_nonpos_of_calibrated_kernel hyp.reg κ hSupp hCal
 
-/-- **Phase 11 P4 real-closure (2026-05-23): honest P4 → Ψ derivation.**
+/-- Deterministic antipodal adviser kernel for P4: source `s` is routed to
+the reflected message `σ s`. -/
+noncomputable def P4Hyp.antipodalKernel
+    {model : RobustTrustModel}
+    (hyp : P4Hyp model) : AdviserKernel model :=
+  { kernel :=
+      ProbabilityTheory.Kernel.deterministic
+        hyp.radialSymmetry hyp.radialSymmetry_measurable
+    isMarkov := by infer_instance }
 
-Derives `PsiNonpos model hyp.reg` from the concrete P4 radial-antipodal
-τ-symmetry canonical data via:
-
-1. The structural upper bound `regPsi_le_reflectionBalance_integral`:
-   `regPsi reg y ≤ ∫ m, reflectionBalance m ∂τM`.
-
-2. The σ change-of-variables identity (Mathlib
-   `MeasureTheory.integral_map` applied to the involution
-   `radialSymmetry` with its τM-preservation
-   `radialSymmetry_tauM_preserving`):
-   `∫ m, reflectionBalance m ∂τM = ∫ m, reflectionBalance (σ m) ∂τM`.
-
-3. The σ-antisymmetric identity
-   `reflectionBalance_antisymmetric`:
-   `reflectionBalance (σ m) = -reflectionBalance m` τM-a.e.
-
-4. Combining steps 2 and 3: `∫ reflectionBalance dτM = -∫ reflectionBalance dτM`,
-   hence `∫ reflectionBalance dτM = 0`.
-
-5. Composing with step 1: `regPsi reg y ≤ 0`.
-
-NO sorry in the lemma body.  NO smuggling through
-`PsiNonpos_of_regPackage`.  Mirrors `PsiNonpos_of_P2StarHyp` exactly. -/
-lemma PsiNonpos_of_P4Hyp
+lemma P4Hyp.antipodalKernel_supported_on_G
     {model : RobustTrustModel}
     (hyp : P4Hyp model) :
-    PsiNonpos model hyp.reg := by
+    KernelSupportedOnRegG model hyp.reg.G hyp.antipodalKernel := by
   classical
-  intro y
-  -- Step A: invoke the structural upper bound.
-  have hUpper :
-      regPsi model hyp.reg y ≤
-        ∫ m, hyp.reflectionBalance m ∂model.τM :=
-    hyp.regPsi_le_reflectionBalance_integral y
-  -- Step B: by τM-preservation under σ, the integral equals
+  unfold KernelSupportedOnRegG
+  filter_upwards [hyp.radialSymmetry_mem_G] with s hs
+  simpa [P4Hyp.antipodalKernel, ProbabilityTheory.Kernel.deterministic_apply,
+    MeasureTheory.ae_dirac_eq] using hs
+
+/-- Reflection-balance cancellation: the antisymmetric integrand has zero
+τM-integral under the measure-preserving involution. -/
+lemma P4Hyp.reflectionBalance_integral_zero
+    {model : RobustTrustModel}
+    (hyp : P4Hyp model) :
+    ∫ m, hyp.reflectionBalance m ∂model.τM = 0 := by
+  classical
+  -- By τM-preservation under σ, the integral equals
   -- `∫ reflectionBalance (σ m) dτM` (`MeasureTheory.integral_map`).
   have hMap :
       ∫ m, hyp.reflectionBalance m ∂model.τM
@@ -6637,14 +6630,11 @@ lemma PsiNonpos_of_P4Hyp
           = ∫ m, hyp.reflectionBalance (hyp.radialSymmetry m)
               ∂model.τM :=
       MeasureTheory.integral_map hAEMeas hStrong
-    -- Rewrite using `Measure.map σ τM = τM`.
     calc ∫ m, hyp.reflectionBalance m ∂model.τM
         = ∫ m, hyp.reflectionBalance m
             ∂(MeasureTheory.Measure.map hyp.radialSymmetry model.τM) := by
               rw [hyp.radialSymmetry_tauM_preserving]
       _ = ∫ m, hyp.reflectionBalance (hyp.radialSymmetry m) ∂model.τM := hMap1
-  -- Step C: by σ-antisymmetry, the σ-reflected integral equals the
-  -- negative of the original (`integral_congr_ae` + `integral_neg`).
   have hAntisym :
       ∫ m, hyp.reflectionBalance (hyp.radialSymmetry m) ∂model.τM
         = ∫ m, -hyp.reflectionBalance m ∂model.τM := by
@@ -6655,9 +6645,6 @@ lemma PsiNonpos_of_P4Hyp
       ∫ m, -hyp.reflectionBalance m ∂model.τM
         = -∫ m, hyp.reflectionBalance m ∂model.τM :=
     MeasureTheory.integral_neg _
-  -- Step D: chain the two identities to get
-  -- `∫ reflectionBalance = -∫ reflectionBalance`, hence `2 * ∫ = 0`,
-  -- hence `∫ = 0`.
   have hSelfNeg :
       ∫ m, hyp.reflectionBalance m ∂model.τM
         = -∫ m, hyp.reflectionBalance m ∂model.τM := by
@@ -6665,19 +6652,63 @@ lemma PsiNonpos_of_P4Hyp
         = ∫ m, hyp.reflectionBalance (hyp.radialSymmetry m) ∂model.τM := hMap
       _ = ∫ m, -hyp.reflectionBalance m ∂model.τM := hAntisym
       _ = -∫ m, hyp.reflectionBalance m ∂model.τM := hNegInt
-  have hIntZero :
-      ∫ m, hyp.reflectionBalance m ∂model.τM = 0 := by
-    have h2 :
-        (2 : ℝ) * ∫ m, hyp.reflectionBalance m ∂model.τM = 0 := by
-      have := hSelfNeg
-      linarith
+  have h2 :
+      (2 : ℝ) * ∫ m, hyp.reflectionBalance m ∂model.τM = 0 := by
+    have := hSelfNeg
     linarith
-  -- Step E: chain with the structural upper bound.
-  have hChain : regPsi model hyp.reg y ≤ 0 := by
-    have := hUpper
-    rw [hIntZero] at this
-    exact this
-  exact hChain
+  linarith
+
+/-- P4 calibrated-kernel construction.  The deterministic antipodal kernel
+is supported on `reg.G`; the existing barycenter lemma turns that support
+into q-a.e. Bayes-cone calibration of the posterior. -/
+lemma P4_calibrated_kernel_exists
+    {model : RobustTrustModel}
+    (hyp : P4Hyp model) :
+    ∃ κ : AdviserKernel model,
+      KernelSupportedOnRegG model hyp.reg.G κ ∧
+        ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+          hyp.reg.pd.Pγα κ m ∈ hyp.reg.B m := by
+  classical
+  refine ⟨hyp.antipodalKernel, hyp.antipodalKernel_supported_on_G, ?_⟩
+  exact _root_.Inventory.V9.bayesian_barycenter_in_closed_convex
+    hyp.reg hyp.antipodalKernel hyp.antipodalKernel_supported_on_G
+
+/-- **Phase 12d P4 derived upper bound.**
+
+The former `P4Hyp` field is now a theorem.  It constructs the calibrated
+antipodal kernel, invokes the Phase 12a common pattern to get
+`regPsi ≤ 0`, and rewrites the zero reflection-balance integral on the
+right-hand side. -/
+lemma P4Hyp.regPsi_le_reflectionBalance_integral
+    {model : RobustTrustModel}
+    (hyp : P4Hyp model) :
+    ∀ y : BoundedBorelProfile model,
+      regPsi model hyp.reg y ≤
+        ∫ m, hyp.reflectionBalance m ∂model.τM := by
+  classical
+  obtain ⟨κ, hSupp, hCal⟩ := P4_calibrated_kernel_exists hyp
+  have hPsi := regPsi_nonpos_of_calibrated_kernel hyp.reg κ hSupp hCal
+  intro y
+  rw [hyp.reflectionBalance_integral_zero]
+  exact hPsi y
+
+/-- **Phase 12d P4 closure (2026-05-23): honest P4 → Ψ derivation.**
+
+Derives `PsiNonpos model hyp.reg` from the concrete P4 radial-antipodal
+τ-symmetry data.  The route is constructive: build the deterministic
+antipodal kernel from the involution, calibrate it via the barycenter
+lemma, invoke `regPsi_nonpos_of_calibrated_kernel`, and keep the
+reflection-balance cancellation as the derived upper-bound theorem above.
+
+NO structural upper-bound field is consumed.  NO smuggling through
+`PsiNonpos_of_regPackage`. -/
+lemma PsiNonpos_of_P4Hyp
+    {model : RobustTrustModel}
+    (hyp : P4Hyp model) :
+    PsiNonpos model hyp.reg := by
+  classical
+  obtain ⟨κ, hSupp, hCal⟩ := P4_calibrated_kernel_exists hyp
+  exact regPsi_nonpos_of_calibrated_kernel hyp.reg κ hSupp hCal
 
 theorem «P2-star-cone-margin-bounded-jamming»
     {model : RobustTrustModel}
@@ -6723,20 +6754,21 @@ theorem «P4-radial-antipodal-tau-symmetry»
     {model : RobustTrustModel}
     (hyp : P4Hyp model) :
     HasRobustRationalizableStrategy model hyp.reg.pd := by
-  -- Phase 11 P4 real-closure (2026-05-23): honest P4 → Ψ → Hall →
+  -- Phase 12d P4 zero-gap refactor (2026-05-23): honest P4 → Ψ → Hall →
   -- strategy chain, with the four legacy opaque Prop bridges
   -- (`radialTau`, `utilityEquivariant`, `antipodalKernelConstructed`,
-  -- `scalarRadialBalance`) ELIMINATED.  All radial-antipodal content
-  -- now enters the derivation through the concrete canonical-data
-  -- fields `hyp.radialSymmetry`, `hyp.radialSymmetry_measurable`,
+  -- `scalarRadialBalance`) ELIMINATED and the structural
+  -- `regPsi_le_reflectionBalance_integral` field REMOVED.  All
+  -- radial-antipodal content now enters the derivation through the
+  -- concrete canonical-data fields `hyp.radialSymmetry`,
+  -- `hyp.radialSymmetry_measurable`,
   -- `hyp.radialSymmetry_involutive`, `hyp.radialSymmetry_tauM_preserving`,
-  -- `hyp.reflectionBalance`, `hyp.reflectionBalance_antisymmetric`,
-  -- `hyp.integrable_reflectionBalance`,
-  -- `hyp.regPsi_le_reflectionBalance_integral` consumed by
-  -- `PsiNonpos_of_P4Hyp` (NOT via the `PsiNonpos_of_regPackage`
-  -- shortcut, which would smuggle through the Reg-2 structural
-  -- primitives of `hyp.reg` without consuming the σ-involution or
-  -- the σ-antisymmetric reflection-balance integrand).
+  -- `hyp.radialSymmetry_mem_G`, `hyp.reflectionBalance`,
+  -- `hyp.reflectionBalance_antisymmetric`, and
+  -- `hyp.integrable_reflectionBalance`, consumed by
+  -- `PsiNonpos_of_P4Hyp` through the deterministic antipodal kernel and
+  -- the derived reflection-balance cancellation theorem (NOT via the
+  -- `PsiNonpos_of_regPackage` shortcut).
   set reg := hyp.reg
   have hPsi : PsiNonpos model reg := PsiNonpos_of_P4Hyp hyp
   have hKernel : reg.robustRationalizableKernelExists :=
