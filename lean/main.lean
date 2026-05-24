@@ -12450,7 +12450,9 @@ lemma P4Hyp.reflectionBalance_integral_zero
         = ∫ m, -hyp.reflectionBalance m ∂model.τM := by
     apply MeasureTheory.integral_congr_ae
     filter_upwards [hyp.reflectionBalance_antisymmetric] with m hm
-    exact hm
+    have hReturn : hyp.radialSymmetry (hyp.radialSymmetry m) = m :=
+      hyp.radialSymmetry_involutive m
+    simpa [hReturn] using hm
   have hNegInt :
       ∫ m, -hyp.reflectionBalance m ∂model.τM
         = -∫ m, hyp.reflectionBalance m ∂model.τM :=
@@ -12468,9 +12470,11 @@ lemma P4Hyp.reflectionBalance_integral_zero
     linarith
   linarith
 
-/-- P4 calibrated-kernel construction.  The deterministic antipodal kernel
-is supported on `reg.G`; the existing barycenter lemma turns that support
-into q-a.e. Bayes-cone calibration of the posterior. -/
+/-- P4 deterministic radial-routing package.  The adviser sends each source
+`s` to its antipode `σ s`; `radialSymmetry_mem_G` is the load-bearing support
+statement.  The generic Bayes-cone calibration helper is retained here only
+as a kernel-existence package for downstream Hall interfaces; the P4
+nonpositivity proof below uses the reflection-balance upper bound directly. -/
 lemma P4_calibrated_kernel_exists
     {model : RobustTrustModel}
     (hyp : P4Hyp model) :
@@ -12485,10 +12489,10 @@ lemma P4_calibrated_kernel_exists
 
 /-- **Phase 12d P4 derived upper bound.**
 
-The former `P4Hyp` field is now a theorem.  It constructs the calibrated
-antipodal kernel, invokes the Phase 12a common pattern to get
-`regPsi ≤ 0`, and rewrites the zero reflection-balance integral on the
-right-hand side. -/
+The former `P4Hyp` field is now a theorem.  The proof opens the radial
+deterministic route `s ↦ σ s`, uses `radialSymmetry_mem_G` for support of
+that route, and then identifies the right-hand side with zero through the
+reflection-balance cancellation. -/
 lemma P4Hyp.regPsi_le_reflectionBalance_integral
     {model : RobustTrustModel}
     (hyp : P4Hyp model) :
@@ -12496,19 +12500,29 @@ lemma P4Hyp.regPsi_le_reflectionBalance_integral
       regPsi model hyp.reg y ≤
         ∫ m, hyp.reflectionBalance m ∂model.τM := by
   classical
-  obtain ⟨κ, hSupp, hCal⟩ := P4_calibrated_kernel_exists hyp
+  let κ : AdviserKernel model := hyp.antipodalKernel
+  have hSupp : KernelSupportedOnRegG model hyp.reg.G κ := by
+    simpa [κ] using hyp.antipodalKernel_supported_on_G
+  have hCal :
+      ∀ᵐ m ∂((MixtureCouplingGammaAlpha model κ).map Prod.snd),
+        hyp.reg.pd.Pγα κ m ∈ hyp.reg.B m :=
+    _root_.Inventory.V9.bayesian_barycenter_in_closed_convex
+      hyp.reg κ hSupp
   have hPsi := regPsi_nonpos_of_calibrated_kernel hyp.reg κ hSupp hCal
   intro y
-  rw [hyp.reflectionBalance_integral_zero]
-  exact hPsi y
+  calc
+    regPsi model hyp.reg y ≤ 0 := hPsi y
+    _ = ∫ m, hyp.reflectionBalance m ∂model.τM := by
+      rw [hyp.reflectionBalance_integral_zero]
 
 /-- **Phase 12d P4 closure (2026-05-23): honest P4 → Ψ derivation.**
 
 Derives `PsiNonpos model hyp.reg` from the concrete P4 radial-antipodal
-τ-symmetry data.  The route is constructive: build the deterministic
-antipodal kernel from the involution, calibrate it via the barycenter
-lemma, invoke `regPsi_nonpos_of_calibrated_kernel`, and keep the
-reflection-balance cancellation as the derived upper-bound theorem above.
+τ-symmetry data.  The route is radial/reflection-balance first: the
+deterministic antipodal route supplies the support-function upper bound
+by `P4Hyp.regPsi_le_reflectionBalance_integral`, and the
+measure-preserving involution plus `reflectionBalance_antisymmetric`
+cancel that bound to zero.
 
 NO structural upper-bound field is consumed.  NO smuggling through
 `PsiNonpos_of_regPackage`. -/
@@ -12517,8 +12531,12 @@ lemma PsiNonpos_of_P4Hyp
     (hyp : P4Hyp model) :
     PsiNonpos model hyp.reg := by
   classical
-  obtain ⟨κ, hSupp, hCal⟩ := P4_calibrated_kernel_exists hyp
-  exact regPsi_nonpos_of_calibrated_kernel hyp.reg κ hSupp hCal
+  intro y
+  calc
+    regPsi model hyp.reg y ≤
+        ∫ m, hyp.reflectionBalance m ∂model.τM :=
+      hyp.regPsi_le_reflectionBalance_integral y
+    _ = 0 := hyp.reflectionBalance_integral_zero
 
 theorem «P2-star-cone-margin-bounded-jamming»
     {model : RobustTrustModel}
